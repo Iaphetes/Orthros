@@ -6,24 +6,30 @@ use bevy::{
     prelude::*,
 };
 
-use crate::skybox::{animate_light_direction, asset_loaded, cycle_cubemap_asset, CubemapMaterial, CUBEMAPS, Cubemap};
+use crate::skybox::{Skybox};
 use crate::camera_controller::{camera_controller, CameraController};
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugin(MaterialPlugin::<CubemapMaterial>::default())
+        .add_plugin(Skybox)
         .add_startup_system(setup)
-        .add_system(cycle_cubemap_asset)
-        .add_system(asset_loaded.after(cycle_cubemap_asset))
-        .add_system(camera_controller)
+
+                .add_system(camera_controller)
         .add_system(animate_light_direction)
         .run();
 }
-
+fn animate_light_direction(
+    time: Res<Time>,
+    mut query: Query<&mut Transform, With<DirectionalLight>>,
+) {
+    for mut transform in &mut query {
+        transform.rotate_y(time.delta_seconds() * 0.5);
+    }
+}
 fn setup(
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
+    _asset_server: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>) {
     // directional 'sun' light
@@ -40,7 +46,6 @@ fn setup(
         ..default()
     });
 
-    let skybox_handle = asset_server.load(CUBEMAPS[0].0);
     // camera
     commands
         .spawn_bundle(Camera3dBundle {
@@ -62,9 +67,4 @@ fn setup(
         brightness: 1.0,
     });
 
-    commands.insert_resource(Cubemap {
-        is_loaded: false,
-        index: 0,
-        image_handle: skybox_handle,
-    });
-}
+    }

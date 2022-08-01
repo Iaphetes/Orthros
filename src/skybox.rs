@@ -17,7 +17,19 @@ use bevy::{
         texture::{CompressedImageFormats, FallbackImage},
     },
 };
-pub const CUBEMAPS: &[(&str, CompressedImageFormats)] = &[
+
+pub struct Skybox;
+impl Plugin for Skybox {
+    fn build(&self, app: &mut App){
+        app
+            .add_plugin(MaterialPlugin::<CubemapMaterial>::default())
+            .add_startup_system(setup_skybox)
+            .add_system(cycle_cubemap_asset)
+            .add_system(asset_loaded.after(cycle_cubemap_asset));
+
+    }
+}
+const CUBEMAPS: &[(&str, CompressedImageFormats)] = &[
     ("textures/skybox/stacked.png", CompressedImageFormats::NONE), // ,
                                                                    // (
                                                                    //     "textures/Ryfjallet_cubemap_astc4x4.ktx2",
@@ -32,14 +44,14 @@ pub const CUBEMAPS: &[(&str, CompressedImageFormats)] = &[
                                                                    //     CompressedImageFormats::ETC2,
                                                                    // ),
 ];
-pub struct Cubemap {
+struct Cubemap {
     pub is_loaded: bool,
     pub index: usize,
     pub image_handle: Handle<Image>,
 }
 const CUBEMAP_SWAP_DELAY: f64 = 3.0;
 
-pub fn cycle_cubemap_asset(
+fn cycle_cubemap_asset(
     time: Res<Time>,
     mut next_swap: Local<f64>,
     mut cubemap: ResMut<Cubemap>,
@@ -78,7 +90,7 @@ pub fn cycle_cubemap_asset(
     cubemap.is_loaded = false;
 }
 
-pub fn asset_loaded(
+fn asset_loaded(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut images: ResMut<Assets<Image>>,
@@ -126,18 +138,11 @@ pub fn asset_loaded(
     }
 }
 
-pub fn animate_light_direction(
-    time: Res<Time>,
-    mut query: Query<&mut Transform, With<DirectionalLight>>,
-) {
-    for mut transform in &mut query {
-        transform.rotate_y(time.delta_seconds() * 0.5);
-    }
-}
+
 
 #[derive(Debug, Clone, TypeUuid)]
 #[uuid = "9509a0f8-3c05-48ee-a13e-a93226c7f488"]
-pub struct CubemapMaterial {
+struct CubemapMaterial {
     base_color_texture: Option<Handle<Image>>,
 }
 
@@ -224,4 +229,16 @@ impl AsBindGroup for CubemapMaterial {
             label: None,
         })
     }
+}
+fn setup_skybox(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    ){
+    let skybox_handle = asset_server.load(CUBEMAPS[0].0);
+    commands.insert_resource(Cubemap {
+        is_loaded: false,
+        index: 0,
+        image_handle: skybox_handle,
+    });
+
 }

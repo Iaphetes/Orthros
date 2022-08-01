@@ -1,7 +1,4 @@
-use bevy::{
-    input::mouse::MouseMotion,
-    prelude::*,
-};
+use bevy::{input::mouse::MouseMotion, prelude::*};
 #[derive(Component)]
 pub struct CameraController {
     pub enabled: bool,

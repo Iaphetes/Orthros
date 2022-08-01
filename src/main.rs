@@ -1,21 +1,23 @@
 //! Load a cubemap texture onto a cube like a skybox and cycle through different compressed texture formats
 
-mod skybox;
 mod camera_controller;
+mod skybox;
 use bevy::{
     prelude::*,
+    reflect::TypeUuid,
+    render::render_resource::{AsBindGroup, ShaderRef},
 };
 
-use crate::skybox::{Skybox};
 use crate::camera_controller::{camera_controller, CameraController};
+use crate::skybox::Skybox;
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugin(Skybox)
+        .add_plugin(MaterialPlugin::<CustomMaterial>::default())
         .add_startup_system(setup)
-
-                .add_system(camera_controller)
+        .add_system(camera_controller)
         .add_system(animate_light_direction)
         .run();
 }
@@ -27,11 +29,33 @@ fn animate_light_direction(
         transform.rotate_y(time.delta_seconds() * 0.5);
     }
 }
+/// The Material trait is very configurable, but comes with sensible defaults for all methods.
+/// You only need to implement functions for features that need non-default behavior. See the Material api docs for details!
+impl Material for CustomMaterial {
+    fn fragment_shader() -> ShaderRef {
+        "shaders/plane_shader.wgsl".into()
+    }
+
+    fn alpha_mode(&self) -> AlphaMode {
+        self.alpha_mode
+    }
+}
+// This is the struct that will be passed to your shader
+#[derive(AsBindGroup, TypeUuid, Debug, Clone)]
+#[uuid = "f690fdae-d598-45ab-8225-97e2a3f056e0"]
+pub struct CustomMaterial {
+    #[uniform(0)]
+    color: Color,
+    alpha_mode: AlphaMode,
+}
+
 fn setup(
     mut commands: Commands,
     _asset_server: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>) {
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut custom_materials: ResMut<Assets<CustomMaterial>>,
+) {
     // directional 'sun' light
     commands.spawn_bundle(DirectionalLightBundle {
         directional_light: DirectionalLight {
@@ -53,9 +77,13 @@ fn setup(
             ..default()
         })
         .insert(CameraController::default());
-    commands.spawn_bundle(PbrBundle {
+
+    commands.spawn().insert_bundle(MaterialMeshBundle {
         mesh: meshes.add(shape::Plane { size: 1. }.into()),
-        material: materials.add(Color::SILVER.into()),
+        material: custom_materials.add(CustomMaterial {
+            color: Color::GREEN,
+            alpha_mode: AlphaMode::Opaque,
+        }),
         ..default()
     });
 
@@ -66,5 +94,4 @@ fn setup(
         color: Color::rgb_u8(210, 220, 240),
         brightness: 1.0,
     });
-
-    }
+}

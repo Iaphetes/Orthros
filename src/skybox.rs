@@ -20,13 +20,11 @@ use bevy::{
 
 pub struct Skybox;
 impl Plugin for Skybox {
-    fn build(&self, app: &mut App){
-        app
-            .add_plugin(MaterialPlugin::<CubemapMaterial>::default())
+    fn build(&self, app: &mut App) {
+        app.add_plugin(MaterialPlugin::<CubemapMaterial>::default())
             .add_startup_system(setup_skybox)
             .add_system(cycle_cubemap_asset)
             .add_system(asset_loaded.after(cycle_cubemap_asset));
-
     }
 }
 const CUBEMAPS: &[(&str, CompressedImageFormats)] = &[
@@ -138,8 +136,6 @@ fn asset_loaded(
     }
 }
 
-
-
 #[derive(Debug, Clone, TypeUuid)]
 #[uuid = "9509a0f8-3c05-48ee-a13e-a93226c7f488"]
 struct CubemapMaterial {
@@ -230,15 +226,11 @@ impl AsBindGroup for CubemapMaterial {
         })
     }
 }
-fn setup_skybox(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    ){
+fn setup_skybox(mut commands: Commands, asset_server: Res<AssetServer>) {
     let skybox_handle = asset_server.load(CUBEMAPS[0].0);
     commands.insert_resource(Cubemap {
         is_loaded: false,
         index: 0,
         image_handle: skybox_handle,
     });
-
 }

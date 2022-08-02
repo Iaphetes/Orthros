@@ -109,8 +109,7 @@ pub fn camera_controller(
         let forward = transform.forward();
         let right = transform.right();
         transform.translation += options.velocity.x * dt * right
-            + options.velocity.y * dt * Vec3::Y
-            + options.velocity.z * dt * forward;
+            + options.velocity.z * dt * Vec3::Z;
 
         // Handle mouse input
         let mut mouse_delta = Vec2::ZERO;

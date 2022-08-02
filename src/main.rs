@@ -73,16 +73,16 @@ fn setup(
     // camera
     commands
         .spawn_bundle(Camera3dBundle {
-            transform: Transform::from_xyz(0.0, 8.0, 0.0).looking_at(Vec3::ZERO, Vec3::Z),
+            transform: Transform::from_xyz(0.0, 1.0, 0.0).looking_at(Vec3::ZERO, Vec3::Z),
             ..default()
         })
         .insert(CameraController::default());
 
     commands.spawn().insert_bundle(MaterialMeshBundle {
-        mesh: meshes.add(shape::Plane { size: 1. }.into()),
+        mesh: meshes.add(shape::Plane { size: 10. }.into()),
         material: custom_materials.add(CustomMaterial {
             color: Color::GREEN,
-            alpha_mode: AlphaMode::Opaque,
+            alpha_mode: AlphaMode::Blend,
         }),
         ..default()
     });

@@ -16,13 +16,16 @@ fn fragment(
     var grid_x : f32 = f32(i32(uv.x * 10000.0) % 100);
     var grid_y : f32 = f32(i32(uv.y * 10000.0) % 100);
     var green : f32 = 0.0;
+    var alpha : f32 = 0.0;
     var grid_shift : f32 = grid_width / 2.0;
     var grid_scale : f32 = grid_shift * grid_shift;
     if grid_x < 6.0 {
-       green += (-(grid_x - grid_shift) * (grid_x - grid_shift) + grid_scale) / grid_scale * 128.0;
+       green += (-(grid_x - grid_shift) * (grid_x - grid_shift) + grid_scale) / grid_scale * 1.0;
+       alpha = 0.5;
     }
     if grid_y < 6.0 {
-       green += (-(grid_y - grid_shift) * (grid_y - grid_shift) + grid_scale) / grid_scale * 128.0;
+       green += (-(grid_y - grid_shift) * (grid_y - grid_shift) + grid_scale) / grid_scale * 1.0;
+       alpha = 0.5;
     }
-    return vec4<f32>(0.0, green, 0.0, 0.0) ;
+    return vec4<f32>(0.0, green, 0.0, alpha) ;
 }

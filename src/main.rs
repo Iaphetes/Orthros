@@ -51,7 +51,7 @@ pub struct CustomMaterial {
 
 fn setup(
     mut commands: Commands,
-    _asset_server: Res<AssetServer>,
+    asset_server: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut custom_materials: ResMut<Assets<CustomMaterial>>,
@@ -93,5 +93,10 @@ fn setup(
     commands.insert_resource(AmbientLight {
         color: Color::rgb_u8(210, 220, 240),
         brightness: 1.0,
+    });
+    commands.spawn_bundle(SceneBundle {
+        scene: asset_server.load("3d_models/blade_starship/scene.gltf#Scene0"),
+        transform: Transform::from_scale(Vec3::new(0.2, 0.2, 0.2)),
+        ..default()
     });
 }

@@ -1,6 +1,18 @@
 use bevy::{input::mouse::MouseMotion, prelude::*};
+
+
+pub struct CameraControl;
+impl Plugin for CameraControl{
+    fn build(&self, app: &mut App) {
+        app
+            .add_startup_system(camera_setup)
+            .add_system(camera_controller);
+
+    }
+}
+
 #[derive(Component)]
-pub struct CameraController {
+pub struct CameraControllerSettings {
     pub enabled: bool,
     pub initialized: bool,
     pub sensitivity: f32,
@@ -21,7 +33,7 @@ pub struct CameraController {
     pub velocity: Vec3,
 }
 
-impl Default for CameraController {
+impl Default for CameraControllerSettings {
     fn default() -> Self {
         Self {
             enabled: true,
@@ -52,7 +64,7 @@ pub fn camera_controller(
     mouse_button_input: Res<Input<MouseButton>>,
     key_input: Res<Input<KeyCode>>,
     mut move_toggled: Local<bool>,
-    mut query: Query<(&mut Transform, &mut CameraController), With<Camera>>,
+    mut query: Query<(&mut Transform, &mut CameraControllerSettings), With<Camera>>,
 ) {
     let dt = time.delta_seconds();
 
@@ -133,4 +145,17 @@ pub fn camera_controller(
             options.yaw = yaw;
         }
     }
+}
+
+
+fn camera_setup(
+    mut commands: Commands,
+){
+    // camera
+    commands
+        .spawn_bundle(Camera3dBundle {
+            transform: Transform::from_xyz(0.0, 1.0, 0.0).looking_at(Vec3::ZERO, Vec3::Z),
+            ..default()
+        })
+        .insert(CameraControllerSettings::default());
 }

@@ -41,6 +41,15 @@ fn animate_light_direction(
         transform.rotate_y(time.delta_seconds() * 0.5);
     }
 }
+
+// This is the struct that will be passed to your shader
+#[derive(AsBindGroup, TypeUuid, Debug, Clone)]
+#[uuid = "f690fdae-d598-45ab-8225-97e2a3f056e0"]
+pub struct CustomMaterial {
+    #[uniform(0)]
+    color: Color,
+    alpha_mode: AlphaMode,
+}
 /// The Material trait is very configurable, but comes with sensible defaults for all methods.
 /// You only need to implement functions for features that need non-default behavior. See the Material api docs for details!
 impl Material for CustomMaterial {
@@ -52,15 +61,6 @@ impl Material for CustomMaterial {
         self.alpha_mode
     }
 }
-// This is the struct that will be passed to your shader
-#[derive(AsBindGroup, TypeUuid, Debug, Clone)]
-#[uuid = "f690fdae-d598-45ab-8225-97e2a3f056e0"]
-pub struct CustomMaterial {
-    #[uniform(0)]
-    color: Color,
-    alpha_mode: AlphaMode,
-}
-
 
 pub fn environment_setup(
     mut commands: Commands,

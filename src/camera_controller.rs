@@ -154,7 +154,7 @@ fn camera_setup(
     // camera
     commands
         .spawn_bundle(Camera3dBundle {
-            transform: Transform::from_xyz(0.0, 1.0, 0.0).looking_at(Vec3::ZERO, Vec3::Z),
+            transform: Transform::from_xyz(0.0, 5.0, 0.0).looking_at(Vec3::ZERO, Vec3::Z),
             ..default()
         })
         .insert(CameraControllerSettings::default());

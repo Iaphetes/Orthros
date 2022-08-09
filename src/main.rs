@@ -39,24 +39,22 @@ fn setup(
         ..default()
     });
 
-    commands.spawn().insert(Transform::from_scale(Vec3::splat(0.2)))
+    let parent_id = commands.spawn().insert(Transform::from_scale(Vec3::splat(0.2)))
         .insert_bundle(SceneBundle {
         scene: asset_server.load("3d_models/blade_starship/scene.gltf#Scene0"),
 
         ..default()
-    }).insert_bundle(MaterialMeshBundle {
+    })
+    .insert(Selectable {})
+    .id();
+    let child_id = commands.spawn_bundle(MaterialMeshBundle {
         mesh: meshes.add(shape::Plane { size: 5. }.into()),
         material: material_handle,
-        transform: Transform::from_scale(Vec3::splat(0.2)),
-
+        transform: Transform::from_scale(Vec3::splat(1.0)),
         ..default()
-    })
-    .insert(Selectable {});
+    }).id();
+    commands.entity(parent_id).push_children(&[child_id]);
 
-    commands.spawn_bundle(SpriteBundle {
-        texture: asset_server.load("textures/selection_texture.png"),
-        ..default()
-    });
 }
 
 // fn disable_visual_select(material : &mut Handle<StandardMaterial>){

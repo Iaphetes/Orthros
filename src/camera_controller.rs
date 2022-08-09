@@ -1,13 +1,10 @@
 use bevy::{input::mouse::MouseMotion, prelude::*};
 
-
 pub struct CameraControl;
-impl Plugin for CameraControl{
+impl Plugin for CameraControl {
     fn build(&self, app: &mut App) {
-        app
-            .add_startup_system(camera_setup)
+        app.add_startup_system(camera_setup)
             .add_system(camera_controller);
-
     }
 }
 
@@ -120,8 +117,8 @@ pub fn camera_controller(
         }
         let forward = transform.forward();
         let right = transform.right();
-        transform.translation += options.velocity.x * dt * right
-            + options.velocity.z * dt * Vec3::Z;
+        transform.translation +=
+            options.velocity.x * dt * right + options.velocity.z * dt * Vec3::Z;
 
         // Handle mouse input
         let mut mouse_delta = Vec2::ZERO;
@@ -147,10 +144,7 @@ pub fn camera_controller(
     }
 }
 
-
-fn camera_setup(
-    mut commands: Commands,
-){
+fn camera_setup(mut commands: Commands) {
     // camera
     commands
         .spawn_bundle(Camera3dBundle {

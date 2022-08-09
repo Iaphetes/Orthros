@@ -1,13 +1,11 @@
 //! Load a cubemap texture onto a cube like a skybox and cycle through different compressed texture formats
 mod camera_controller;
-mod skybox;
 mod environment;
-use bevy::{
-    prelude::*
-};
+mod skybox;
+use bevy::prelude::*;
 use bevy::render::render_resource::Texture;
 
-use crate::camera_controller::{CameraControl};
+use crate::camera_controller::CameraControl;
 use crate::environment::Environment;
 use crate::shape::Plane;
 
@@ -17,13 +15,13 @@ fn main() {
         .add_plugin(Environment)
         .add_plugin(CameraControl)
         .add_startup_system(setup)
-        // .add_system(deselect_test)
+        .add_system(deselect_test)
         .run();
 }
 #[derive(Component)]
-struct Selectable{
-}
-
+struct Selectable {}
+#[derive(Component)]
+struct SelectionCircle {}
 
 fn setup(
     mut commands: Commands,
@@ -39,32 +37,42 @@ fn setup(
         ..default()
     });
 
-    let parent_id = commands.spawn().insert(Transform::from_scale(Vec3::splat(0.2)))
+    let parent_id = commands
+        .spawn()
+        .insert(Transform::from_scale(Vec3::splat(0.2)))
         .insert_bundle(SceneBundle {
-        scene: asset_server.load("3d_models/blade_starship/scene.gltf#Scene0"),
+            scene: asset_server.load("3d_models/blade_starship/scene.gltf#Scene0"),
 
-        ..default()
-    })
-    .insert(Selectable {})
-    .id();
-    let child_id = commands.spawn_bundle(MaterialMeshBundle {
-        mesh: meshes.add(shape::Plane { size: 5. }.into()),
-        material: material_handle,
-        transform: Transform::from_scale(Vec3::splat(1.0)),
-        ..default()
-    }).id();
+            ..default()
+        })
+        .insert(Selectable {})
+        .id();
+    let child_id = commands
+        .spawn_bundle(MaterialMeshBundle {
+            mesh: meshes.add(shape::Plane { size: 5. }.into()),
+            material: material_handle,
+            transform: Transform::from_scale(Vec3::splat(1.0)),
+            ..default()
+        })
+        .insert(SelectionCircle {})
+        .id();
     commands.entity(parent_id).push_children(&[child_id]);
-
 }
 
 // fn disable_visual_select(material : &mut Handle<StandardMaterial>){
 //     material.
 // }
-// fn deselect_test(
-//     mut query: Query<Entity, With<(Selectable, Handle<Mesh>)>>,
-// ){
-//     for  entity in query.iter_mut(){
-//         entity.remove
-//
-//     }
-// }
+fn deselect_test(
+    mut units: Query<Entity, With<(Selectable)>>,
+    mut selection_circles: Query<(&Parent, &mut Visibility), With<(SelectionCircle)>>
+){
+
+    for (parent, mut circle_visibility) in selection_circles.iter_mut(){
+        let unit = units.get(parent.get());
+        if circle_visibility.is_visible{
+            circle_visibility.is_visible = false;
+        }else{
+            circle_visibility.is_visible = true;
+        }
+    }
+}

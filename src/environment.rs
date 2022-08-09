@@ -24,12 +24,10 @@ pub struct Environment;
 
 impl Plugin for Environment {
     fn build(&self, app: &mut App) {
-        app
-            .add_plugin(MaterialPlugin::<CustomMaterial>::default())
+        app.add_plugin(MaterialPlugin::<CustomMaterial>::default())
             .add_plugin(Skybox)
             .add_startup_system(environment_setup)
             .add_system(animate_light_direction);
-
     }
 }
 
@@ -66,7 +64,7 @@ pub fn environment_setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut custom_materials: ResMut<Assets<CustomMaterial>>,
-){
+) {
     // directional 'sun' light
     commands.spawn_bundle(DirectionalLightBundle {
         directional_light: DirectionalLight {

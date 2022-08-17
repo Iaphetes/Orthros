@@ -1,21 +1,9 @@
 use bevy::{
-    asset::LoadState,
-    pbr::{MaterialPipeline, MaterialPipelineKey},
     prelude::*,
     reflect::TypeUuid,
-    render::{
-        mesh::MeshVertexBufferLayout,
-        render_asset::RenderAssets,
-        render_resource::{
-            AsBindGroup, AsBindGroupError, BindGroupDescriptor, BindGroupEntry, BindGroupLayout,
-            BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType,
-            OwnedBindingResource, PreparedBindGroup, RenderPipelineDescriptor, SamplerBindingType,
-            ShaderRef, ShaderStages, SpecializedMeshPipelineError, TextureSampleType,
-            TextureViewDescriptor, TextureViewDimension,
-        },
-        renderer::RenderDevice,
-        texture::{CompressedImageFormats, FallbackImage},
-    },
+    render::render_resource::{
+            AsBindGroup,             ShaderRef        },
+    
 };
 
 use crate::skybox::Skybox;

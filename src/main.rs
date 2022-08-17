@@ -3,11 +3,10 @@ mod camera_controller;
 mod environment;
 mod skybox;
 use bevy::prelude::*;
-use bevy::render::render_resource::Texture;
-
+//use bevy::render::render_resource::Texture;
+use bevy_rapier3d::geometry::Collider;
 use crate::camera_controller::CameraControl;
 use crate::environment::Environment;
-use crate::shape::Plane;
 
 fn main() {
     App::new()
@@ -15,7 +14,6 @@ fn main() {
         .add_plugin(Environment)
         .add_plugin(CameraControl)
         .add_startup_system(setup)
-        .add_system(deselect_test)
         .run();
 }
 #[derive(Component)]
@@ -31,7 +29,7 @@ fn setup(
 ) {
     let texture_handle = asset_server.load("textures/selection_texture.png");
     let material_handle = materials.add(StandardMaterial {
-        base_color_texture: Some(texture_handle.clone()),
+        base_color_texture: Some(texture_handle),
         alpha_mode: AlphaMode::Blend,
         unlit: true,
         ..default()
@@ -46,6 +44,7 @@ fn setup(
             ..default()
         })
         .insert(Selectable {})
+        .insert(Collider::round_cylinder(1.0, 1.0, 0.02))
         .id();
     let child_id = commands
         .spawn_bundle(MaterialMeshBundle {
@@ -62,17 +61,17 @@ fn setup(
 // fn disable_visual_select(material : &mut Handle<StandardMaterial>){
 //     material.
 // }
-fn deselect_test(
-    mut units: Query<Entity, With<(Selectable)>>,
-    mut selection_circles: Query<(&Parent, &mut Visibility), With<(SelectionCircle)>>
-){
-
-    for (parent, mut circle_visibility) in selection_circles.iter_mut(){
-        let unit = units.get(parent.get());
-        if circle_visibility.is_visible{
-            circle_visibility.is_visible = false;
-        }else{
-            circle_visibility.is_visible = true;
-        }
-    }
-}
+// fn deselect_test(
+//     mut units: Query<Entity, With<(Selectable)>>,
+//     mut selection_circles: Query<(&Parent, &mut Visibility), With<(SelectionCircle)>>
+// ){
+// 
+//     for (parent, mut circle_visibility) in selection_circles.iter_mut(){
+//         let unit = units.get(parent.get());
+//         if circle_visibility.is_visible{
+//             circle_visibility.is_visible = false;
+//         }else{
+//             circle_visibility.is_visible = true;
+//         }
+//     }
+// }

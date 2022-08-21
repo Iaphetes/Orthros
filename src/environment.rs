@@ -1,9 +1,7 @@
 use bevy::{
     prelude::*,
     reflect::TypeUuid,
-    render::render_resource::{
-            AsBindGroup,             ShaderRef        },
-    
+    render::render_resource::{AsBindGroup, ShaderRef},
 };
 
 use crate::skybox::Skybox;

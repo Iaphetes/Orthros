@@ -1,26 +1,27 @@
 //! Load a cubemap texture onto a cube like a skybox and cycle through different compressed texture formats
-mod camera_controller;
 mod environment;
+mod player_controller;
 mod skybox;
+mod ownable;
+
 use bevy::prelude::*;
 //use bevy::render::render_resource::Texture;
-use bevy_rapier3d::geometry::Collider;
-use crate::camera_controller::CameraControl;
 use crate::environment::Environment;
+use crate::player_controller::PlayerController;
+use crate::ownable::{Selectable, SelectionCircle};
+use bevy_rapier3d::geometry::Collider;
+use bevy_rapier3d::prelude::*;
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
+        .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugin(Environment)
-        .add_plugin(CameraControl)
+        .add_plugin(PlayerController)
+        .add_plugin(RapierDebugRenderPlugin::default())
         .add_startup_system(setup)
         .run();
 }
-#[derive(Component)]
-struct Selectable {}
-#[derive(Component)]
-struct SelectionCircle {}
-
 fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -43,14 +44,17 @@ fn setup(
 
             ..default()
         })
-        .insert(Selectable {})
-        .insert(Collider::round_cylinder(1.0, 1.0, 0.02))
+        .insert(Selectable {selected : false})
+        .insert(Collider::capsule_z(1.0, 1.5))
+        .insert(RigidBody::Dynamic)
+        .insert(GravityScale(0.0))
         .id();
     let child_id = commands
         .spawn_bundle(MaterialMeshBundle {
             mesh: meshes.add(shape::Plane { size: 5. }.into()),
             material: material_handle,
             transform: Transform::from_scale(Vec3::splat(1.0)),
+            visibility: Visibility{is_visible : false},
             ..default()
         })
         .insert(SelectionCircle {})
@@ -65,7 +69,7 @@ fn setup(
 //     mut units: Query<Entity, With<(Selectable)>>,
 //     mut selection_circles: Query<(&Parent, &mut Visibility), With<(SelectionCircle)>>
 // ){
-// 
+//
 //     for (parent, mut circle_visibility) in selection_circles.iter_mut(){
 //         let unit = units.get(parent.get());
 //         if circle_visibility.is_visible{

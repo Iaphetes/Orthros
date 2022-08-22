@@ -2,7 +2,7 @@ use bevy::{input::mouse::MouseMotion, prelude::*};
 
 use bevy_rapier3d::prelude::*;
 use crate::ownable::SelectionCircle;
-use crate::ownable::Selectable;
+use crate::ownable::{Selectable, Selected};
 
 pub struct PlayerController;
 impl Plugin for PlayerController{
@@ -176,7 +176,8 @@ fn mouse_controller(
     mut query: Query<(&mut Transform, &mut CameraControllerSettings), With<Camera>>,
     windows: Res<Windows>,
     mut selectable: Query<(&mut Selectable, &Children)>,
-    mut selection_circle: Query<&mut Visibility, With<SelectionCircle>>
+    mut selection_circle: Query<&mut Visibility, With<SelectionCircle>>,
+    mut selected: Query<&Selected> 
 ) {
     if let Ok((mut transform, options)) = query.get_single_mut() {
         if mouse_button_input.pressed(options.mouse_key_enable_mouse){
@@ -199,21 +200,18 @@ fn mouse_controller(
 
                 if let Some((entity, _toi)) = hit {
                     if let Ok((mut select, children)) = selectable.get_mut(entity){
-                        println!("Found selectable");
-                        if !select.selected{
-                            println!("Not yet selected");
-                            select.selected = true;
+                        if selected.get_mut(entity).is_err(){
                             for child in children.iter(){
                                 if let Ok(mut selection_visibility) = selection_circle.get_mut(*child){
-                                    println!("Making visible ");
                                     selection_visibility.is_visible = true;
                                 }
                             }
                             
                         }
                     }
-                    println!("Hit an entity");
+                    
                 }
+                
             }
         }
     }

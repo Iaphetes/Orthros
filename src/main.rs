@@ -8,7 +8,7 @@ use bevy::prelude::*;
 //use bevy::render::render_resource::Texture;
 use crate::environment::Environment;
 use crate::player_controller::PlayerController;
-use crate::ownable::{Selectable, SelectionCircle};
+use crate::ownable::{Selectable, SelectionCircle, Selected};
 use bevy_rapier3d::geometry::Collider;
 use bevy_rapier3d::prelude::*;
 
@@ -22,6 +22,7 @@ fn main() {
         .add_startup_system(setup)
         .run();
 }
+
 fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -41,10 +42,10 @@ fn setup(
         .insert(Transform::from_scale(Vec3::splat(0.2)))
         .insert_bundle(SceneBundle {
             scene: asset_server.load("3d_models/blade_starship/scene.gltf#Scene0"),
-
             ..default()
         })
-        .insert(Selectable {selected : false})
+        
+        .insert(Selectable{})
         .insert(Collider::capsule_z(1.0, 1.5))
         .insert(RigidBody::Dynamic)
         .insert(GravityScale(0.0))

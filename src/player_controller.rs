@@ -173,13 +173,14 @@ fn mouse_controller(
     mouse_button_input: Res<Input<MouseButton>>,
     rapier_context: Res<RapierContext>,
     cameras: Query<(&Camera, &GlobalTransform)>,
-    mut query: Query<(&mut Transform, &mut CameraControllerSettings), With<Camera>>,
+    mut camera_options: Query<&mut CameraControllerSettings, With<Camera>>,
     windows: Res<Windows>,
-    mut selectable: Query<(&mut Selectable, &Children)>,
+    mut selectable: Query<(Entity, &mut Selectable, &Children)>,
     mut selection_circle: Query<&mut Visibility, With<SelectionCircle>>,
-    mut selected: Query<&Selected> 
+    mut selected_entities: Query<&Selected>,
+    mut commands: Commands
 ) {
-    if let Ok((mut transform, options)) = query.get_single_mut() {
+    if let Ok(options) = camera_options.get_single_mut() {
         if mouse_button_input.pressed(options.mouse_key_enable_mouse){
             for (camera, camera_transform) in cameras.iter() {
                 // First, compute a ray from the mouse position.
@@ -197,25 +198,47 @@ fn mouse_controller(
                     true,
                     QueryFilter::only_dynamic(),
                 );
-
+                let mut hit_entity : Option<Entity> = None;
                 if let Some((entity, _toi)) = hit {
-                    if let Ok((mut select, children)) = selectable.get_mut(entity){
-                        if selected.get_mut(entity).is_err(){
+                    hit_entity = Some(entity.clone());
+                    if selected_entities.get_mut(entity).is_err(){
+                        if let Ok((_, _select, children)) = selectable.get_mut(entity){
                             for child in children.iter(){
                                 if let Ok(mut selection_visibility) = selection_circle.get_mut(*child){
                                     selection_visibility.is_visible = true;
+                                    commands.entity(entity).insert(Selected{});
                                 }
                             }
-                            
                         }
-                    }
-                    
+                   }
                 }
-                
+                for (sel_entity, _, children) in selectable.iter(){
+
+                     let mut deselect : bool = true;
+                     match hit_entity{
+                         Some(unwrapped) => {
+                             if sel_entity == unwrapped{
+                                 deselect = false;
+                             }
+                             
+                         }
+                         None => {println!{"No assignment"}}
+
+                     }
+                     if deselect{
+                         for child in children.iter(){
+                             if let Ok(mut selection_visibility) = selection_circle.get_mut(*child){
+                                     selection_visibility.is_visible = false;
+                                     commands.entity(sel_entity).remove::<Selected>();
+                                 }
+                             }
+                         }
+                     }
+                }
+ 
             }
         }
     }
-}
 
 // Credit to @doomy on discord.
 fn ray_from_mouse_position(

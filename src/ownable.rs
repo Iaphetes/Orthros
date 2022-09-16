@@ -8,4 +8,3 @@ pub struct SelectionCircle {}
 #[derive(Component)]
 
 pub struct Selected {}
-

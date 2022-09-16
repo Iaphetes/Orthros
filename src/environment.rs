@@ -12,19 +12,10 @@ impl Plugin for Environment {
     fn build(&self, app: &mut App) {
         app.add_plugin(MaterialPlugin::<CustomMaterial>::default())
             .add_plugin(Skybox)
-            .add_startup_system(environment_setup)
-            .add_system(animate_light_direction);
+            .add_startup_system(environment_setup);
     }
 }
 
-fn animate_light_direction(
-    time: Res<Time>,
-    mut query: Query<&mut Transform, With<DirectionalLight>>,
-) {
-    for mut transform in &mut query {
-        transform.rotate_y(time.delta_seconds() * 0.5);
-    }
-}
 
 // This is the struct that will be passed to your shader
 #[derive(AsBindGroup, TypeUuid, Debug, Clone)]
@@ -65,7 +56,7 @@ pub fn environment_setup(
         ..default()
     });
     commands.spawn().insert_bundle(MaterialMeshBundle {
-        mesh: meshes.add(shape::Plane { size: 10. }.into()),
+        mesh: meshes.add(shape::Plane { size: 100. }.into()),
         material: custom_materials.add(CustomMaterial {
             color: Color::GREEN,
             alpha_mode: AlphaMode::Blend,

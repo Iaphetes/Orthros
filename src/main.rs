@@ -1,14 +1,14 @@
 //! Load a cubemap texture onto a cube like a skybox and cycle through different compressed texture formats
 mod environment;
+mod ownable;
 mod player_controller;
 mod skybox;
-mod ownable;
 
 use bevy::prelude::*;
 //use bevy::render::render_resource::Texture;
 use crate::environment::Environment;
+use crate::ownable::{Selectable, Selected, SelectionCircle};
 use crate::player_controller::PlayerController;
-use crate::ownable::{Selectable, SelectionCircle, Selected};
 use bevy_rapier3d::geometry::Collider;
 use bevy_rapier3d::prelude::*;
 
@@ -41,11 +41,10 @@ fn setup(
         .spawn()
         .insert(Transform::from_scale(Vec3::splat(0.2)))
         .insert_bundle(SceneBundle {
-            scene: asset_server.load("3d_models/blade_starship/scene.gltf#Scene0"),
+            scene: asset_server.load("../assets/3d_models/dont_kill_me/maybe_don't_kill_me.glb#Scene0"),
             ..default()
         })
-        
-        .insert(Selectable{})
+        .insert(Selectable {})
         .insert(Collider::capsule_z(1.0, 1.5))
         .insert(RigidBody::Dynamic)
         .insert(GravityScale(0.0))
@@ -55,7 +54,7 @@ fn setup(
             mesh: meshes.add(shape::Plane { size: 5. }.into()),
             material: material_handle,
             transform: Transform::from_scale(Vec3::splat(1.0)),
-            visibility: Visibility{is_visible : false},
+            visibility: Visibility { is_visible: false },
             ..default()
         })
         .insert(SelectionCircle {})

@@ -7,7 +7,7 @@ mod skybox;
 use bevy::prelude::*;
 //use bevy::render::render_resource::Texture;
 use crate::environment::Environment;
-use crate::ownable::{Selectable, Selected, SelectionCircle};
+use crate::ownable::{Selectable, SelectionCircle};
 use crate::player_controller::PlayerController;
 use bevy_rapier3d::geometry::Collider;
 use bevy_rapier3d::prelude::*;
@@ -18,7 +18,7 @@ fn main() {
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugin(Environment)
         .add_plugin(PlayerController)
-        .add_plugin(RapierDebugRenderPlugin::default())
+        //.add_plugin(RapierDebugRenderPlugin::default())
         .add_startup_system(setup)
         .run();
 }
@@ -41,7 +41,7 @@ fn setup(
         .spawn()
         .insert(Transform::from_scale(Vec3::splat(0.2)))
         .insert_bundle(SceneBundle {
-            scene: asset_server.load("../assets/3d_models/dont_kill_me/maybe_don't_kill_me.glb#Scene0"),
+            scene: asset_server.load("../assets/3d_models/units/fighter_01.glb#Scene0"),
             ..default()
         })
         .insert(Selectable {})
@@ -62,20 +62,3 @@ fn setup(
     commands.entity(parent_id).push_children(&[child_id]);
 }
 
-// fn disable_visual_select(material : &mut Handle<StandardMaterial>){
-//     material.
-// }
-// fn deselect_test(
-//     mut units: Query<Entity, With<(Selectable)>>,
-//     mut selection_circles: Query<(&Parent, &mut Visibility), With<(SelectionCircle)>>
-// ){
-//
-//     for (parent, mut circle_visibility) in selection_circles.iter_mut(){
-//         let unit = units.get(parent.get());
-//         if circle_visibility.is_visible{
-//             circle_visibility.is_visible = false;
-//         }else{
-//             circle_visibility.is_visible = true;
-//         }
-//     }
-// }

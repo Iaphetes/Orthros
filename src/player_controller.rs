@@ -1,5 +1,7 @@
 use bevy::{input::mouse::MouseMotion, prelude::*};
-
+use bevy::input::mouse::MouseWheel;
+use bevy::input::mouse::MouseScrollUnit;
+use bevy::math::Quat;
 use crate::ownable::SelectionCircle;
 use crate::ownable::{Selectable, Selected};
 use bevy_rapier3d::prelude::*;
@@ -29,17 +31,19 @@ pub struct CameraControllerSettings {
     pub key_back: KeyCode,
     pub key_left: KeyCode,
     pub key_right: KeyCode,
-    pub key_up: KeyCode,
-    pub key_down: KeyCode,
+    pub rotate_key: KeyCode,
+    pub rotation_speed: f32,
     pub key_run: KeyCode,
     pub mouse_key_enable_mouse: MouseButton,
     pub keyboard_key_enable_mouse: KeyCode,
-    pub walk_speed: f32,
-    pub run_speed: f32,
+    pub pan_speed: f32,
     pub friction: f32,
     pub pitch: f32,
     pub yaw: f32,
     pub velocity: Vec3,
+    pub zoom_min: f32,
+    pub zoom_max: f32,
+    pub zoom_speed: f32
 }
 
 impl Default for CameraControllerSettings {
@@ -52,17 +56,19 @@ impl Default for CameraControllerSettings {
             key_back: KeyCode::S,
             key_left: KeyCode::A,
             key_right: KeyCode::D,
-            key_up: KeyCode::E,
-            key_down: KeyCode::Q,
+            rotate_key: KeyCode::LControl,
+            rotation_speed: 0.05,
             key_run: KeyCode::LShift,
             mouse_key_enable_mouse: MouseButton::Left,
             keyboard_key_enable_mouse: KeyCode::M,
-            walk_speed: 2.0,
-            run_speed: 6.0,
             friction: 0.5,
             pitch: 0.0,
             yaw: 0.0,
             velocity: Vec3::ZERO,
+            pan_speed: 4.0,
+            zoom_speed: 50.0,
+            zoom_min: 10.0,
+            zoom_max: 100.0,
         }
     }
 }
@@ -72,6 +78,7 @@ pub fn camera_controller(
     mut mouse_events: EventReader<MouseMotion>,
     mouse_button_input: Res<Input<MouseButton>>,
     key_input: Res<Input<KeyCode>>,
+    mut mouse_wheel: EventReader<MouseWheel>,
     mut move_toggled: Local<bool>,
     mut query: Query<(&mut Transform, &mut CameraControllerSettings), With<Camera>>,
 ) {
@@ -90,17 +97,37 @@ pub fn camera_controller(
 
         // Handle key input
         let mut axis_input = Vec3::ZERO;
-        if key_input.pressed(options.key_forward) {
-            axis_input.z += 1.0;
+        let mut yaw: f32 = 0.0;
+        let mut pitch: f32 = 0.0;
+        let mut roll: f32 = 0.0;
+
+        if key_input.pressed(options.rotate_key){
+            if key_input.pressed(options.key_forward) {
+                pitch += 1.0
+            }
+            if key_input.pressed(options.key_back) {
+                pitch -= 1.0
+            }
+            if key_input.pressed(options.key_right) {
+                yaw += 1.0;
+            }
+            if key_input.pressed(options.key_left) {
+                yaw -= 1.0;
+            }
         }
-        if key_input.pressed(options.key_back) {
-            axis_input.z -= 1.0;
-        }
-        if key_input.pressed(options.key_right) {
-            axis_input.x += 1.0;
-        }
-        if key_input.pressed(options.key_left) {
-            axis_input.x -= 1.0;
+        else {
+            if key_input.pressed(options.key_forward) {
+                axis_input.z += 1.0;
+            }
+            if key_input.pressed(options.key_back) {
+                axis_input.z -= 1.0;
+            }
+            if key_input.pressed(options.key_right) {
+                axis_input.x += 1.0;
+            }
+            if key_input.pressed(options.key_left) {
+                axis_input.x -= 1.0;
+            }
         }
         // if key_input.pressed(options.key_up) {
         //     axis_input.y += 1.0;
@@ -111,15 +138,21 @@ pub fn camera_controller(
         if key_input.just_pressed(options.keyboard_key_enable_mouse) {
             *move_toggled = !*move_toggled;
         }
-
+        for evt in mouse_wheel.iter(){
+            match evt.unit {
+                MouseScrollUnit::Line => {
+                    if (transform.translation.y > options.zoom_min || evt.y < 0.0) && (transform.translation.y < options.zoom_max  || evt.y > 0.0){
+                        axis_input.y = -evt.y;
+                    }
+                }
+                MouseScrollUnit::Pixel => {}
+            }
+        }
         // Apply movement update
         if axis_input != Vec3::ZERO {
-            let max_speed = if key_input.pressed(options.key_run) {
-                options.run_speed
-            } else {
-                options.walk_speed
-            };
-            options.velocity = axis_input.normalize() * max_speed;
+
+
+            options.velocity = axis_input.normalize() * Vec3{x: options.pan_speed, y: options.zoom_speed, z: options.pan_speed};
         } else {
             let friction = options.friction.clamp(0.0, 1.0);
             options.velocity *= 1.0 - friction;
@@ -127,32 +160,15 @@ pub fn camera_controller(
                 options.velocity = Vec3::ZERO;
             }
         }
-        let forward = transform.forward();
         let right = transform.right();
+        if options.velocity != Vec3::ZERO {
+            println!("transforming by {}", options.velocity);
+        }
         transform.translation +=
-            options.velocity.x * dt * right + options.velocity.z * dt * Vec3::Z;
+            options.velocity.x * dt * right + options.velocity.y * dt * Vec3::Y + options.velocity.z * dt * Vec3::Z;
+        transform.rotate_x(pitch * options.rotation_speed);
+        transform.rotate_y(yaw * options.rotation_speed);
 
-        // Handle mouse input
-        // let mut mouse_delta = Vec2::ZERO;
-        // if mouse_button_input.pressed(options.mouse_key_enable_mouse) || *move_toggled {
-        //     for mouse_event in mouse_events.iter() {
-        //         mouse_delta += mouse_event.delta;
-        //     }
-        // }
-
-        // if mouse_delta != Vec2::ZERO {
-        //     // Apply look update
-        //     let (pitch, yaw) = (
-        //         (options.pitch - mouse_delta.y * 0.5 * options.sensitivity * dt).clamp(
-        //             -0.99 * std::f32::consts::FRAC_PI_2,
-        //             0.99 * std::f32::consts::FRAC_PI_2,
-        //         ),
-        //         options.yaw - mouse_delta.x * options.sensitivity * dt,
-        //     );
-        //     transform.rotation = Quat::from_euler(EulerRot::ZYX, 0.0, yaw, pitch);
-        //     options.pitch = pitch;
-        //     options.yaw = yaw;
-        // }
     }
 }
 

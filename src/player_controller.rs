@@ -1,9 +1,9 @@
-use bevy::{input::mouse::MouseMotion, prelude::*};
-use bevy::input::mouse::MouseWheel;
-use bevy::input::mouse::MouseScrollUnit;
-use bevy::math::Quat;
 use crate::ownable::SelectionCircle;
 use crate::ownable::{Selectable, Selected};
+use bevy::input::mouse::MouseScrollUnit;
+use bevy::input::mouse::MouseWheel;
+use bevy::math::Quat;
+use bevy::{input::mouse::MouseMotion, prelude::*};
 use bevy_rapier3d::prelude::*;
 
 pub struct PlayerController;
@@ -43,7 +43,7 @@ pub struct CameraControllerSettings {
     pub velocity: Vec3,
     pub zoom_min: f32,
     pub zoom_max: f32,
-    pub zoom_speed: f32
+    pub zoom_speed: f32,
 }
 
 impl Default for CameraControllerSettings {
@@ -57,7 +57,7 @@ impl Default for CameraControllerSettings {
             key_left: KeyCode::A,
             key_right: KeyCode::D,
             rotate_key: KeyCode::LControl,
-            rotation_speed: 0.05,
+            rotation_speed: 0.005,
             key_run: KeyCode::LShift,
             mouse_key_enable_mouse: MouseButton::Left,
             keyboard_key_enable_mouse: KeyCode::M,
@@ -80,7 +80,10 @@ pub fn camera_controller(
     key_input: Res<Input<KeyCode>>,
     mut mouse_wheel: EventReader<MouseWheel>,
     mut move_toggled: Local<bool>,
+    windows: Res<Windows>,
+    cameras: Query<(&Camera, &GlobalTransform)>,
     mut query: Query<(&mut Transform, &mut CameraControllerSettings), With<Camera>>,
+    rapier_context: Res<RapierContext>,
 ) {
     let dt = time.delta_seconds();
 
@@ -101,12 +104,12 @@ pub fn camera_controller(
         let mut pitch: f32 = 0.0;
         let mut roll: f32 = 0.0;
 
-        if key_input.pressed(options.rotate_key){
+        if key_input.pressed(options.rotate_key) {
             if key_input.pressed(options.key_forward) {
-                pitch += 1.0
+                pitch -= 1.0
             }
             if key_input.pressed(options.key_back) {
-                pitch -= 1.0
+                pitch += 1.0
             }
             if key_input.pressed(options.key_right) {
                 yaw += 1.0;
@@ -114,8 +117,7 @@ pub fn camera_controller(
             if key_input.pressed(options.key_left) {
                 yaw -= 1.0;
             }
-        }
-        else {
+        } else {
             if key_input.pressed(options.key_forward) {
                 axis_input.z += 1.0;
             }
@@ -138,10 +140,12 @@ pub fn camera_controller(
         if key_input.just_pressed(options.keyboard_key_enable_mouse) {
             *move_toggled = !*move_toggled;
         }
-        for evt in mouse_wheel.iter(){
+        for evt in mouse_wheel.iter() {
             match evt.unit {
                 MouseScrollUnit::Line => {
-                    if (transform.translation.y > options.zoom_min || evt.y < 0.0) && (transform.translation.y < options.zoom_max  || evt.y > 0.0){
+                    if (transform.translation.y > options.zoom_min || evt.y < 0.0)
+                        && (transform.translation.y < options.zoom_max || evt.y > 0.0)
+                    {
                         axis_input.y = -evt.y;
                     }
                 }
@@ -150,9 +154,12 @@ pub fn camera_controller(
         }
         // Apply movement update
         if axis_input != Vec3::ZERO {
-
-
-            options.velocity = axis_input.normalize() * Vec3{x: options.pan_speed, y: options.zoom_speed, z: options.pan_speed};
+            options.velocity = axis_input.normalize()
+                * Vec3 {
+                    x: options.pan_speed,
+                    y: options.zoom_speed,
+                    z: options.pan_speed,
+                };
         } else {
             let friction = options.friction.clamp(0.0, 1.0);
             options.velocity *= 1.0 - friction;
@@ -164,11 +171,35 @@ pub fn camera_controller(
         if options.velocity != Vec3::ZERO {
             println!("transforming by {}", options.velocity);
         }
-        transform.translation +=
-            options.velocity.x * dt * right + options.velocity.y * dt * Vec3::Y + options.velocity.z * dt * Vec3::Z;
-        transform.rotate_x(pitch * options.rotation_speed);
-        transform.rotate_y(yaw * options.rotation_speed);
+        transform.translation += options.velocity.x * dt * right
+            + options.velocity.y * dt * Vec3::Y
+            + options.velocity.z * dt * Vec3::Z;
+        for (camera, camera_transform) in cameras.iter() {
+            // First, compute a ray from the mouse position.
+            let (ray_pos, ray_dir) =
+                ray_from_camera_center(windows.get_primary().unwrap(), camera, camera_transform);
+            println!("{:?}", ray_pos);
+            let intersection: Option<(Entity, RayIntersection)> = rapier_context
+                .cast_ray_and_get_normal(
+                    ray_pos,
+                    ray_dir,
+                    f32::MAX,
+                    true,
+                    QueryFilter::only_dynamic(),
+                );
+            match intersection {
+                Some((_, rayintersection)) => {
+                    let mut rot: Quat = Quat::from_rotation_x(pitch * options.rotation_speed)
+                        * Quat::from_rotation_y(yaw * options.rotation_speed);
+                    transform.rotate_around(rayintersection.point, rot);
+                }
+                None => {
+                    println!("Not rotating");
+                }
+            }
 
+            //transform.rotate_around(yaw * options.rotation_speed);
+        }
     }
 }
 
@@ -195,7 +226,6 @@ fn mouse_controller(
     mut commands: Commands,
 ) {
     if let Ok(options) = camera_options.get_single_mut() {
-        
         if mouse_button_input.pressed(options.mouse_key_enable_mouse) {
             for (camera, camera_transform) in cameras.iter() {
                 // First, compute a ray from the mouse position.
@@ -229,7 +259,7 @@ fn mouse_controller(
                         }
                     }
                 }
-                
+
                 for (sel_entity, _, children) in selectable.iter() {
                     let mut deselect: bool = true;
                     match hit_entity {
@@ -263,10 +293,28 @@ fn ray_from_mouse_position(
     camera_transform: &GlobalTransform,
 ) -> (Vec3, Vec3) {
     let mouse_position = window.cursor_position().unwrap_or(Vec2::new(0.0, 0.0));
-
     let x = 2.0 * (mouse_position.x / window.width() as f32) - 1.0;
     let y = 2.0 * (mouse_position.y / window.height() as f32) - 1.0;
 
+    let camera_inverse_matrix =
+        camera_transform.compute_matrix() * camera.projection_matrix().inverse();
+    let near = camera_inverse_matrix * Vec3::new(x, y, -1.0).extend(1.0);
+    let far = camera_inverse_matrix * Vec3::new(x, y, 1.0).extend(1.0);
+
+    let near = near.truncate() / near.w;
+    let far = far.truncate() / far.w;
+    let dir: Vec3 = far - near;
+    (near, dir)
+}
+
+fn ray_from_camera_center(
+    window: &Window,
+    camera: &Camera,
+    camera_transform: &GlobalTransform,
+) -> (Vec3, Vec3) {
+    let x = 0.0;
+    let y = 0.0;
+    println!("x{}, y{}", x, y);
     let camera_inverse_matrix =
         camera_transform.compute_matrix() * camera.projection_matrix().inverse();
     let near = camera_inverse_matrix * Vec3::new(x, y, -1.0).extend(1.0);

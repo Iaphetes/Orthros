@@ -18,7 +18,7 @@ fn main() {
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugin(Environment)
         .add_plugin(PlayerController)
-        //.add_plugin(RapierDebugRenderPlugin::default())
+        .add_plugin(RapierDebugRenderPlugin::default())
         .add_startup_system(setup)
         .run();
 }
@@ -39,9 +39,13 @@ fn setup(
 
     let parent_id = commands
         .spawn()
-        .insert(Transform::from_scale(Vec3::splat(0.2)))
+        // .insert(
+        //     //
+        //     Transform::from_xyz(0.0, f32::MAX, 0.0).with_scale(Vec3::splat(0.2)),
+        // )
         .insert_bundle(SceneBundle {
             scene: asset_server.load("../assets/3d_models/units/fighter_01.glb#Scene0"),
+            transform: Transform::from_xyz(0.0, 2.0, 0.0),
             ..default()
         })
         .insert(Selectable {})
@@ -61,4 +65,3 @@ fn setup(
         .id();
     commands.entity(parent_id).push_children(&[child_id]);
 }
-

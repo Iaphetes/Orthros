@@ -3,8 +3,10 @@ use bevy::{
     reflect::TypeUuid,
     render::render_resource::{AsBindGroup, ShaderRef},
 };
+use bevy_rapier3d::geometry::Collider;
 
 use crate::skybox::Skybox;
+use bevy_rapier3d::prelude::*;
 
 pub struct Environment;
 
@@ -15,7 +17,6 @@ impl Plugin for Environment {
             .add_startup_system(environment_setup);
     }
 }
-
 
 // This is the struct that will be passed to your shader
 #[derive(AsBindGroup, TypeUuid, Debug, Clone)]
@@ -55,14 +56,19 @@ pub fn environment_setup(
         },
         ..default()
     });
-    commands.spawn().insert_bundle(MaterialMeshBundle {
-        mesh: meshes.add(shape::Plane { size: 100. }.into()),
-        material: custom_materials.add(CustomMaterial {
-            color: Color::GREEN,
-            alpha_mode: AlphaMode::Blend,
-        }),
-        ..default()
-    });
+    commands
+        .spawn()
+        .insert_bundle(MaterialMeshBundle {
+            mesh: meshes.add(shape::Plane { size: 200. }.into()),
+            material: custom_materials.add(CustomMaterial {
+                color: Color::GREEN,
+                alpha_mode: AlphaMode::Blend,
+            }),
+            ..default()
+        })
+        .insert(Collider::cuboid(100.0, 0.0001, 100.0))
+        .insert(RigidBody::Dynamic)
+        .insert(GravityScale(0.0));
 
     // ambient light
     // NOTE: The ambient light is used to scale how bright the environment map is so with a bright

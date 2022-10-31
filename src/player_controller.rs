@@ -1,3 +1,4 @@
+use crate::movable::MoveTarget;
 use crate::ownable::SelectionCircle;
 use crate::ownable::{Selectable, Selected};
 use bevy::input::mouse::MouseScrollUnit;
@@ -35,6 +36,7 @@ pub struct CameraControllerSettings {
     pub rotation_speed: f32,
     pub key_run: KeyCode,
     pub mouse_key_enable_mouse: MouseButton,
+    pub mouse_unit_move_button: MouseButton,
     pub keyboard_key_enable_mouse: KeyCode,
     pub pan_speed: f32,
     pub friction: f32,
@@ -60,6 +62,7 @@ impl Default for CameraControllerSettings {
             rotation_speed: 0.005,
             key_run: KeyCode::LShift,
             mouse_key_enable_mouse: MouseButton::Left,
+            mouse_unit_move_button: MouseButton::Right,
             keyboard_key_enable_mouse: KeyCode::M,
             friction: 0.5,
             pitch: 0.0,
@@ -131,12 +134,7 @@ pub fn camera_controller(
                 axis_input.x -= 1.0;
             }
         }
-        // if key_input.pressed(options.key_up) {
-        //     axis_input.y += 1.0;
-        // }
-        // if key_input.pressed(options.key_down) {
-        //     axis_input.y -= 1.0;
-        // }
+
         if key_input.just_pressed(options.keyboard_key_enable_mouse) {
             *move_toggled = !*move_toggled;
         }
@@ -168,37 +166,37 @@ pub fn camera_controller(
             }
         }
         let right = transform.right();
-        if options.velocity != Vec3::ZERO {
-            println!("transforming by {}", options.velocity);
-        }
+
         transform.translation += options.velocity.x * dt * right
             + options.velocity.y * dt * Vec3::Y
             + options.velocity.z * dt * Vec3::Z;
-        for (camera, camera_transform) in cameras.iter() {
-            // First, compute a ray from the mouse position.
-            let (ray_pos, ray_dir) =
-                ray_from_camera_center(windows.get_primary().unwrap(), camera, camera_transform);
-            println!("{:?}", ray_pos);
-            let intersection: Option<(Entity, RayIntersection)> = rapier_context
-                .cast_ray_and_get_normal(
-                    ray_pos,
-                    ray_dir,
-                    f32::MAX,
-                    true,
-                    QueryFilter::only_dynamic(),
+        if key_input.pressed(options.rotate_key) {
+            for (camera, camera_transform) in cameras.iter() {
+                // First, compute a ray from the mouse position.
+                let (ray_pos, ray_dir) = ray_from_camera_center(
+                    windows.get_primary().unwrap(),
+                    camera,
+                    camera_transform,
                 );
-            match intersection {
-                Some((_, rayintersection)) => {
-                    let mut rot: Quat = Quat::from_rotation_x(pitch * options.rotation_speed)
-                        * Quat::from_rotation_y(yaw * options.rotation_speed);
-                    transform.rotate_around(rayintersection.point, rot);
-                }
-                None => {
-                    println!("Not rotating");
+                let intersection: Option<(Entity, RayIntersection)> = rapier_context
+                    .cast_ray_and_get_normal(
+                        ray_pos,
+                        ray_dir,
+                        f32::MAX,
+                        true,
+                        QueryFilter::exclude_solids(QueryFilter::new()),
+                    );
+                match intersection {
+                    Some((_, rayintersection)) => {
+                        let mut rot: Quat = Quat::from_rotation_x(pitch * options.rotation_speed)
+                            * Quat::from_rotation_y(yaw * options.rotation_speed);
+                        transform.rotate_around(rayintersection.point, rot);
+                    }
+                    None => {
+                        println!("Not rotating");
+                    }
                 }
             }
-
-            //transform.rotate_around(yaw * options.rotation_speed);
         }
     }
 }
@@ -222,11 +220,11 @@ fn mouse_controller(
     windows: Res<Windows>,
     mut selectable: Query<(Entity, &mut Selectable, &Children)>,
     mut selection_circle: Query<&mut Visibility, With<SelectionCircle>>,
-    mut selected_entities: Query<&Selected>,
+    mut selected_entities: Query<(Entity, &Selected)>,
     mut commands: Commands,
 ) {
     if let Ok(options) = camera_options.get_single_mut() {
-        if mouse_button_input.pressed(options.mouse_key_enable_mouse) {
+        if mouse_button_input.just_pressed(options.mouse_key_enable_mouse) {
             for (camera, camera_transform) in cameras.iter() {
                 // First, compute a ray from the mouse position.
                 let (ray_pos, ray_dir) = ray_from_mouse_position(
@@ -280,6 +278,43 @@ fn mouse_controller(
                             }
                         }
                     }
+                }
+            }
+        }
+        if mouse_button_input.just_pressed(options.mouse_unit_move_button) {
+            for (camera, camera_transform) in cameras.iter() {
+                let (ray_pos, ray_dir) = ray_from_mouse_position(
+                    windows.get_primary().unwrap(),
+                    camera,
+                    camera_transform,
+                );
+
+                // Then cast the ray.
+                let intersection: Option<(Entity, RayIntersection)> = rapier_context
+                    .cast_ray_and_get_normal(
+                        ray_pos,
+                        ray_dir,
+                        f32::MAX,
+                        true,
+                        QueryFilter::exclude_solids(QueryFilter::new()),
+                    );
+                let target: Vec3;
+                match intersection {
+                    Some((_, rayintersection)) => {
+                        target = Vec3 {
+                            x: rayintersection.point.x,
+                            y: 2.0,
+                            z: rayintersection.point.z,
+                        };
+                        println!("{:?}{:?}", rayintersection.point, target);
+                        for (entity, _) in selected_entities.iter_mut() {
+                            commands.entity(entity).remove::<MoveTarget>();
+                            commands.entity(entity).insert(MoveTarget {
+                                target: target.clone(),
+                            });
+                        }
+                    }
+                    None => {}
                 }
             }
         }

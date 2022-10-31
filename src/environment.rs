@@ -4,6 +4,7 @@ use bevy::{
     render::render_resource::{AsBindGroup, ShaderRef},
 };
 use bevy_rapier3d::geometry::Collider;
+use bevy_rapier3d::geometry::Sensor;
 
 use crate::skybox::Skybox;
 use bevy_rapier3d::prelude::*;
@@ -50,25 +51,25 @@ pub fn environment_setup(
             ..default()
         },
         transform: Transform {
-            translation: Vec3::new(0.0, 2.0, 0.0),
+            translation: Vec3::new(0.0, 20.0, 0.0),
             rotation: Quat::from_rotation_x(-std::f32::consts::FRAC_PI_4),
             ..default()
         },
         ..default()
     });
+    commands.spawn().insert_bundle(MaterialMeshBundle {
+        mesh: meshes.add(shape::Plane { size: 200. }.into()),
+        material: custom_materials.add(CustomMaterial {
+            color: Color::GREEN,
+            alpha_mode: AlphaMode::Blend,
+        }),
+        ..default()
+    });
     commands
         .spawn()
-        .insert_bundle(MaterialMeshBundle {
-            mesh: meshes.add(shape::Plane { size: 200. }.into()),
-            material: custom_materials.add(CustomMaterial {
-                color: Color::GREEN,
-                alpha_mode: AlphaMode::Blend,
-            }),
-            ..default()
-        })
-        .insert(Collider::cuboid(100.0, 0.0001, 100.0))
-        .insert(RigidBody::Dynamic)
-        .insert(GravityScale(0.0));
+        .insert(Transform::from_xyz(0.0, 2.0, 0.0))
+        .insert(Collider::cuboid(100.0, 2.0, 100.0))
+        .insert(Sensor);
 
     // ambient light
     // NOTE: The ambient light is used to scale how bright the environment map is so with a bright

@@ -1,5 +1,6 @@
 //! Load a cubemap texture onto a cube like a skybox and cycle through different compressed texture formats
 mod environment;
+mod movable;
 mod ownable;
 mod player_controller;
 mod skybox;
@@ -7,6 +8,7 @@ mod skybox;
 use bevy::prelude::*;
 //use bevy::render::render_resource::Texture;
 use crate::environment::Environment;
+use crate::movable::{move_units, MoveTarget};
 use crate::ownable::{Selectable, SelectionCircle};
 use crate::player_controller::PlayerController;
 use bevy_rapier3d::geometry::Collider;
@@ -19,6 +21,7 @@ fn main() {
         .add_plugin(Environment)
         .add_plugin(PlayerController)
         .add_plugin(RapierDebugRenderPlugin::default())
+        .add_system(move_units)
         .add_startup_system(setup)
         .run();
 }
@@ -45,7 +48,7 @@ fn setup(
         // )
         .insert_bundle(SceneBundle {
             scene: asset_server.load("../assets/3d_models/units/fighter_01.glb#Scene0"),
-            transform: Transform::from_xyz(0.0, 2.0, 0.0),
+            transform: Transform::from_xyz(0.0, 0.0, 0.0),
             ..default()
         })
         .insert(Selectable {})

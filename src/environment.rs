@@ -14,7 +14,7 @@ pub struct Environment;
 impl Plugin for Environment {
     fn build(&self, app: &mut App) {
         app.add_plugin(MaterialPlugin::<CustomMaterial>::default())
-            .add_plugin(Skybox)
+            // .add_plugin(Skybox)
             .add_startup_system(environment_setup);
     }
 }
@@ -57,19 +57,21 @@ pub fn environment_setup(
         },
         ..default()
     });
-    commands.spawn().insert_bundle(MaterialMeshBundle {
-        mesh: meshes.add(shape::Plane { size: 200. }.into()),
-        material: custom_materials.add(CustomMaterial {
-            color: Color::GREEN,
-            alpha_mode: AlphaMode::Blend,
+    commands.spawn(
+        (MaterialMeshBundle {
+            mesh: meshes.add(shape::Plane { size: 200. }.into()),
+            material: custom_materials.add(CustomMaterial {
+                color: Color::GREEN,
+                alpha_mode: AlphaMode::Blend,
+            }),
+            ..default()
         }),
-        ..default()
-    });
-    commands
-        .spawn()
-        .insert(Transform::from_xyz(0.0, 2.0, 0.0))
-        .insert(Collider::cuboid(100.0, 2.0, 100.0))
-        .insert(Sensor);
+    );
+    commands.spawn((
+        Transform::from_xyz(0.0, 2.0, 0.0),
+        Collider::cuboid(100.0, 2.0, 100.0),
+        Sensor,
+    ));
 
     // ambient light
     // NOTE: The ambient light is used to scale how bright the environment map is so with a bright

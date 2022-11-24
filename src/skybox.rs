@@ -42,6 +42,7 @@ const CUBEMAPS: &[(&str, CompressedImageFormats)] = &[
                                                                    //     CompressedImageFormats::ETC2,
                                                                    // ),
 ];
+#[derive(Resource)]
 struct Cubemap {
     pub is_loaded: bool,
     pub index: usize,
@@ -56,7 +57,7 @@ fn cycle_cubemap_asset(
     asset_server: Res<AssetServer>,
     render_device: Res<RenderDevice>,
 ) {
-    let now = time.seconds_since_startup();
+    let now = time.elapsed_seconds_f64();
     if *next_swap == 0.0 {
         *next_swap = now + CUBEMAP_SWAP_DELAY;
         return;

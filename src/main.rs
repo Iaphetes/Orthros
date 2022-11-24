@@ -18,7 +18,7 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
-        .add_plugin(Environment)
+        // .add_plugin(Environment)
         .add_plugin(PlayerController)
         .add_plugin(RapierDebugRenderPlugin::default())
         .add_system(move_units)
@@ -41,20 +41,21 @@ fn setup(
     });
 
     let parent_id = commands
-        .spawn()
-        .insert(
+        .spawn(
             //
-            Transform::from_xyz(0.0, f32::MAX, 0.0).with_scale(Vec3::splat(0.2)),
+            (
+                // Transform::from_xyz(0.0, f32::MAX, 0.0).with_scale(Vec3::splat(0.2)),
+                SceneBundle {
+                    scene: asset_server.load("../assets/3d_models/units/fighter_01.glb#Scene0"),
+                    transform: Transform::from_xyz(0.0, f32::MAX, 0.0).with_scale(Vec3::splat(0.2)),
+                    ..default()
+                },
+                Selectable {},
+                Collider::capsule_z(1.0, 1.5),
+                RigidBody::Dynamic,
+                GravityScale(0.0),
+            ),
         )
-        .insert_bundle(SceneBundle {
-            scene: asset_server.load("../assets/3d_models/units/fighter_01.glb#Scene0"),
-            transform: Transform::from_xyz(0.0, 0.0, 0.0),
-            ..default()
-        })
-        .insert(Selectable {})
-        .insert(Collider::capsule_z(1.0, 1.5))
-        .insert(RigidBody::Dynamic)
-        .insert(GravityScale(0.0))
         .id();
     let child_id = commands
         .spawn_bundle(MaterialMeshBundle {

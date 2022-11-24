@@ -18,7 +18,7 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
-        // .add_plugin(Environment)
+        .add_plugin(Environment)
         .add_plugin(PlayerController)
         .add_plugin(RapierDebugRenderPlugin::default())
         .add_system(move_units)

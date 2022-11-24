@@ -42,10 +42,10 @@ fn setup(
 
     let parent_id = commands
         .spawn()
-        // .insert(
-        //     //
-        //     Transform::from_xyz(0.0, f32::MAX, 0.0).with_scale(Vec3::splat(0.2)),
-        // )
+        .insert(
+            //
+            Transform::from_xyz(0.0, f32::MAX, 0.0).with_scale(Vec3::splat(0.2)),
+        )
         .insert_bundle(SceneBundle {
             scene: asset_server.load("../assets/3d_models/units/fighter_01.glb#Scene0"),
             transform: Transform::from_xyz(0.0, 0.0, 0.0),

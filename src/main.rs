@@ -47,12 +47,12 @@ fn setup(
                 // Transform::from_xyz(0.0, f32::MAX, 0.0).with_scale(Vec3::splat(0.2)),
                 SceneBundle {
                     scene: asset_server.load("../assets/3d_models/units/fighter_01.glb#Scene0"),
-                    transform: Transform::from_xyz(0.0, f32::MAX, 0.0).with_scale(Vec3::splat(0.2)),
+                    transform: Transform::from_xyz(0.0, 2.0, 0.0).with_scale(Vec3::splat(0.2)),
                     ..default()
                 },
                 Selectable {},
-                Collider::capsule_z(1.0, 1.5),
                 RigidBody::Dynamic,
+                Collider::capsule_z(1.0, 1.5),
                 GravityScale(0.0),
             ),
         )

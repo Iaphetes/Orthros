@@ -24,10 +24,10 @@ impl Plugin for Environment {
                 generate_obstacles.after(setup_movement_grid),
             )
             .insert_resource(GridSettings {
-                cell_size: 40.0,
-                grid_width: 26,
-                grid_height: 26,
-                x_y_offset: Vec2::new(500.0, 500.0),
+                cell_size: 0.2,
+                grid_width: 1000,
+                grid_height: 1000,
+                x_y_offset: Vec2::new(1.0, 1.0),
                 density: 0.2,
             });
     }
@@ -45,29 +45,8 @@ fn generate_obstacles(
         Ok(mut gridmap) => {
             for i in 0..grid_settings.grid_width as usize {
                 for j in 0..grid_settings.grid_height as usize {
-                    // println!("{}", noise_generator.get([i as f64, j as f64]));
                     if noise_generator.get([i as f64, j as f64]) > grid_settings.density {
                         gridmap.grid[i][j] = 1;
-                        commands.spawn_bundle(MaterialMesh2dBundle {
-                            mesh: meshes
-                                .add(
-                                    shape::Box::new(
-                                        grid_settings.cell_size,
-                                        grid_settings.cell_size,
-                                        grid_settings.cell_size,
-                                    )
-                                    .into(),
-                                )
-                                .into(),
-                            material: materials.add(ColorMaterial::from(Color::RED)),
-                            transform: Transform::from_scale(Vec3::new(1.0, 1.0, 1.0))
-                                .with_translation(Vec3::new(
-                                    i as f32 * grid_settings.cell_size - grid_settings.x_y_offset.x,
-                                    j as f32 * grid_settings.cell_size - grid_settings.x_y_offset.y,
-                                    1.0,
-                                )),
-                            ..default()
-                        });
                     }
                 }
             }
@@ -118,14 +97,6 @@ pub fn environment_setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut custom_materials: ResMut<Assets<CustomMaterial>>,
 ) {
-    commands.spawn(SpriteBundle {
-        sprite: Sprite {
-            color: Color::DARK_GREEN,
-            custom_size: Some(Vec2::new(1040.0, 1040.0)),
-            ..default()
-        },
-        ..default()
-    });
     // directional 'sun' light
     commands.spawn(DirectionalLightBundle {
         directional_light: DirectionalLight {
@@ -167,6 +138,8 @@ fn setup_movement_grid(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     grid_settings: Res<GridSettings>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut standard_materials: ResMut<Assets<StandardMaterial>>,
 ) {
     let mut gridmap: MovementGrid = MovementGrid { grid: Vec::new() };
     //    commands.spawn().insert(MovementGrid{
@@ -176,17 +149,29 @@ fn setup_movement_grid(
         gridmap.grid.push(Vec::new());
         for j in 0..grid_settings.grid_height as usize {
             gridmap.grid[i].push(0);
-            commands.spawn(SpriteBundle {
-                texture: asset_server.load("textures/bloody_rectangle.png"),
-                transform: Transform::from_scale(Vec3::new(0.5, 0.5, 0.5)).with_translation(
-                    Vec3::new(
-                        i as f32 * grid_settings.cell_size - grid_settings.x_y_offset.x,
-                        j as f32 * grid_settings.cell_size - grid_settings.x_y_offset.y,
-                        0.0,
-                    ),
-                ),
-                ..default()
-            });
+
+            // commands.spawn(MaterialMeshBundle {
+            //     mesh: meshes.add(
+            //         shape::Plane {
+            //             size: grid_settings.cell_size,
+            //         }
+            //         .into(),
+            //     ),
+
+            //     transform: Transform::from_scale(Vec3::new(1.0, 1.0, 1.0)).with_translation(
+            //         Vec3::new(
+            //             i as f32 * grid_settings.cell_size - grid_settings.x_y_offset.x,
+            //             0.0,
+            //             j as f32 * grid_settings.cell_size - grid_settings.x_y_offset.y,
+            //         ),
+            //     ),
+            //     material: standard_materials.add(StandardMaterial {
+            //         base_color_texture: Some(asset_server.load("textures/bloody_rectangle.png")),
+            //         alpha_mode: AlphaMode::Blend,
+            //         ..default()
+            //     }),
+            //     ..default()
+            // });
         }
     }
     commands.spawn(gridmap);

@@ -6,9 +6,11 @@ mod player_controller;
 mod skybox;
 
 use bevy::prelude::*;
+
 //use bevy::render::render_resource::Texture;
 use crate::environment::Environment;
-use crate::movable::{move_units, MoveTarget};
+use crate::movable::UnitMovement;
+// use crate::movable::{move_units, MoveTarget};
 use crate::ownable::{Selectable, SelectionCircle};
 use crate::player_controller::PlayerController;
 use bevy_rapier3d::geometry::Collider;
@@ -20,8 +22,9 @@ fn main() {
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugin(Environment)
         .add_plugin(PlayerController)
+        .add_plugin(UnitMovement)
         .add_plugin(RapierDebugRenderPlugin::default())
-        .add_system(move_units)
+        // .add_system(move_units)
         .add_startup_system(setup)
         .run();
 }

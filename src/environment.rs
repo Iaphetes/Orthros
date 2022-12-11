@@ -19,10 +19,10 @@ impl Plugin for Environment {
             .add_plugin(Skybox)
             .add_startup_system(environment_setup)
             .add_startup_system(setup_movement_grid)
-            .add_startup_system_to_stage(
-                bevy::app::StartupStage::PostStartup,
-                generate_obstacles.after(setup_movement_grid),
-            )
+            // .add_startup_system_to_stage(
+            //     bevy::app::StartupStage::PostStartup,
+            //     generate_obstacles.after(setup_movement_grid),
+            // )
             .insert_resource(GridSettings {
                 cell_size: 0.2,
                 grid_width: 1000,
@@ -32,31 +32,31 @@ impl Plugin for Environment {
             });
     }
 }
-fn generate_obstacles(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    grid_settings: Res<GridSettings>,
-    mut gridmap_q: Query<&mut MovementGrid>,
-) {
-    let noise_generator: SuperSimplex = SuperSimplex::new(SuperSimplex::DEFAULT_SEED);
-    //    let mut gridmap : &MovementGrid;
-    match gridmap_q.get_single_mut() {
-        Ok(mut gridmap) => {
-            for i in 0..grid_settings.grid_width as usize {
-                for j in 0..grid_settings.grid_height as usize {
-                    if noise_generator.get([i as f64, j as f64]) > grid_settings.density {
-                        gridmap.grid[i][j] = 1;
-                    }
-                }
-            }
-        }
-        Err(error) => {
-            println!("{:?}", error);
-            return;
-        }
-    }
-}
+// fn generate_obstacles(
+//     mut commands: Commands,
+//     mut meshes: ResMut<Assets<Mesh>>,
+//     mut materials: ResMut<Assets<ColorMaterial>>,
+//     grid_settings: Res<GridSettings>,
+//     mut gridmap_q: Query<&mut MovementGrid>,
+// ) {
+//     let noise_generator: SuperSimplex = SuperSimplex::new(SuperSimplex::DEFAULT_SEED);
+//     //    let mut gridmap : &MovementGrid;
+//     match gridmap_q.get_single_mut() {
+//         Ok(mut gridmap) => {
+//             for i in 0..grid_settings.grid_width as usize {
+//                 for j in 0..grid_settings.grid_height as usize {
+//                     if noise_generator.get([i as f64, j as f64]) > grid_settings.density {
+//                         gridmap.grid[i][j] = 1;
+//                     }
+//                 }
+//             }
+//         }
+//         Err(error) => {
+//             println!("{:?}", error);
+//             return;
+//         }
+//     }
+// }
 
 // This is the struct that will be passed to your shader
 #[derive(AsBindGroup, TypeUuid, Debug, Clone)]
@@ -68,16 +68,16 @@ pub struct CustomMaterial {
 }
 
 #[derive(Resource)]
-struct GridSettings {
-    cell_size: f32,
-    grid_width: u32,
-    grid_height: u32,
-    x_y_offset: Vec2,
-    density: f64, // TODO put into map generation
+pub struct GridSettings {
+    pub cell_size: f32,
+    pub grid_width: u32,
+    pub grid_height: u32,
+    pub x_y_offset: Vec2,
+    pub density: f64, // TODO put into map generation
 }
 #[derive(Component)]
-struct MovementGrid {
-    grid: Vec<Vec<u8>>,
+pub struct MovementGrid {
+    pub grid: Vec<Vec<u8>>,
 }
 
 /// The Material trait is very configurable, but comes with sensible defaults for all methods.
@@ -174,5 +174,6 @@ fn setup_movement_grid(
             // });
         }
     }
+    println!("spawning gridmap");
     commands.spawn(gridmap);
 }

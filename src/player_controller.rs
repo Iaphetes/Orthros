@@ -1,4 +1,4 @@
-use crate::movable::MoveTarget;
+use crate::movable::MoveCommand;
 use crate::ownable::SelectionCircle;
 use crate::ownable::{Selectable, Selected};
 use bevy::input::mouse::MouseScrollUnit;
@@ -204,7 +204,7 @@ pub fn camera_controller(
 fn camera_setup(mut commands: Commands) {
     // camera
     commands
-        .spawn_bundle(Camera3dBundle {
+        .spawn(Camera3dBundle {
             transform: Transform::from_xyz(0.0, 15.0, 0.0).looking_at(Vec3::ZERO, Vec3::Z),
             ..default()
         })
@@ -298,19 +298,20 @@ fn mouse_controller(
                         true,
                         QueryFilter::exclude_solids(QueryFilter::new()),
                     );
-                let target: Vec3;
+                let target: Vec2;
                 match intersection {
                     Some((_, rayintersection)) => {
-                        target = Vec3 {
+                        target = Vec2 {
                             x: rayintersection.point.x,
-                            y: 2.0,
-                            z: rayintersection.point.z,
+
+                            y: rayintersection.point.z,
                         };
                         println!("{:?}{:?}", rayintersection.point, target);
                         for (entity, _) in selected_entities.iter_mut() {
-                            commands.entity(entity).remove::<MoveTarget>();
-                            commands.entity(entity).insert(MoveTarget {
+                            commands.entity(entity).remove::<MoveCommand>();
+                            commands.entity(entity).insert(MoveCommand {
                                 target: target.clone(),
+                                path: Vec::new(),
                             });
                         }
                     }

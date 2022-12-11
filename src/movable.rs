@@ -41,16 +41,8 @@ struct MoveCommand {
 struct Movable {}
 
 #[derive(Resource)]
-struct GridSettings {
-    cell_size: f32,
-    grid_width: u32,
-    grid_height: u32,
-    x_y_offset: Vec2,
-    density: f64, // TODO put into map generation
-}
-
-#[derive(Resource)]
 struct MovementTimer(Timer);
+
 pub fn move_units(
     mut movable_units: Query<(Entity, &mut Transform, &MoveTarget)>,
     mut commands: Commands,

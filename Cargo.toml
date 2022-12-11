@@ -10,6 +10,7 @@ bevy = { version = "0.9.0", features = ["dynamic"] }
 bevy_rapier3d = { version = "0.19", features = [ "simd-stable", "debug-render" ] }
 strum = "*"
 strum_macros = "*"
+noise = "0.8"
 
 # Enable a small amount of optimization in debug mode
 [profile.dev]

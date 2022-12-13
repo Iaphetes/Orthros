@@ -61,7 +61,7 @@ fn setup(
         )
         .id();
     let child_id = commands
-        .spawn_bundle(MaterialMeshBundle {
+        .spawn(MaterialMeshBundle {
             mesh: meshes.add(shape::Plane { size: 5. }.into()),
             material: material_handle,
             transform: Transform::from_scale(Vec3::splat(1.0)),

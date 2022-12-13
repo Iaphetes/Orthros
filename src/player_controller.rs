@@ -310,7 +310,7 @@ fn mouse_controller(
                         for (entity, _) in selected_entities.iter_mut() {
                             commands.entity(entity).remove::<MoveCommand>();
                             commands.entity(entity).insert(MoveCommand {
-                                target: target.clone(),
+                                target: target.clone() * 5.0,
                                 path: Vec::new(),
                             });
                         }

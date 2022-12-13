@@ -3,7 +3,10 @@ use bevy::math::Vec3;
 use bevy::prelude::*;
 
 use bevy::transform::components::Transform;
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    time::Duration,
+};
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 
@@ -13,7 +16,12 @@ pub struct UnitMovement;
 
 impl Plugin for UnitMovement {
     fn build(&self, app: &mut App) {
-        app.add_system(calculate_a_star);
+        app.add_system(calculate_a_star)
+            .add_system(move_units)
+            .insert_resource(MovementTimer(Timer::new(
+                Duration::from_millis(1500),
+                TimerMode::Repeating,
+            )));
     }
 }
 // #[derive(Component)]
@@ -85,6 +93,9 @@ fn calculate_a_star(
             commands.entity(entity).remove::<MoveCommand>();
             continue;
         }
+        println!("Current position {}", transform.translation);
+        println!("Target position {}", movcmd.target);
+
         println!("{}", gridmap_q.into_iter().len());
         match gridmap_q.get_single_mut() {
             Ok(gridmap) => {
@@ -150,6 +161,7 @@ fn calculate_a_star(
                                 && node.xy != movcmd.target.as_uvec2()
                             {
                                 movcmd.path.push(node);
+                                println!("Node {:?}", node);
                             }
 
                             commands.entity(entity).insert(Movable {});
@@ -299,4 +311,32 @@ fn get_neighbours(current: UVec2, gridmap: &MovementGrid) -> Vec<NodeCoords> {
         }
     }
     return neighbours;
+}
+
+fn move_units(
+    mut movables: Query<(Entity, &mut Transform, &mut MoveCommand), With<Movable>>,
+    time: Res<Time>,
+    mut timer: ResMut<MovementTimer>,
+    mut commands: Commands,
+) {
+    timer.0.tick(time.delta());
+    if timer.0.finished() {
+        timer.0.set_duration(Duration::from_millis(150));
+        for (entity, mut transform, mut movcmd) in movables.iter_mut() {
+            let node: NodeCoords;
+            match movcmd.path.pop() {
+                Some(n) => node = n,
+                None => {
+                    commands.entity(entity).remove::<MoveCommand>();
+                    commands.entity(entity).remove::<Movable>();
+                    continue;
+                }
+            }
+            transform.translation = Vec3::new(
+                node.xy.x as f32 * 0.2,
+                transform.translation.y,
+                node.xy.y as f32 * 0.2,
+            );
+        }
+    }
 }

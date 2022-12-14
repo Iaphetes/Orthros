@@ -74,15 +74,15 @@ struct AStarNode {
 //     mut commands: Commands,
 // ) {
 //     for (mut entity, mut transform, movetarget) in movable_units.iter_mut() {
-//         if movetarget.target != transform.translation {
+//         if movetarget.target != start {
 //             let rotation_xz: f32 = Vec2 {
-//                 x: movetarget.target.x - transform.translation.x,
-//                 y: movetarget.target.z - transform.translation.z,
+//                 x: movetarget.target.x - start.x,
+//                 y: movetarget.target.z - start.z,
 //             }
 //             .angle_between(Vec2 { x: 0.0, y: 1.0 });
 //             println!("{:?}", rotation_xz);
 //             transform.rotation = Quat::from_rotation_y(rotation_xz);
-//             transform.translation = movetarget.target;
+//             start = movetarget.target;
 //         }
 //         commands.entity(entity).remove::<MoveTarget>();
 //     }
@@ -107,7 +107,10 @@ fn calculate_a_star(
         match gridmap_q.get_single_mut() {
             Ok(gridmap) => {
                 let target: UVec2 = movcmd.target.as_uvec2();
-
+                let start: UVec2 = UVec2 {
+                    x: (transform.translation.x * 5.0) as u32,
+                    y: (transform.translation.y * 5.0) as u32,
+                };
                 let mut movement_grid: Vec<Vec<HashMap<Heading, AStarNode>>> = vec![
                         vec![Heading::iter()
                             .map(|x| (
@@ -126,14 +129,10 @@ fn calculate_a_star(
                 // println!("X_Length: {}, Y_Length: {}, Headings: {}", gridmap.grid.len(), gridmap)
                 let mut came_from: HashMap<NodeCoords, NodeCoords> = HashMap::new();
                 let mut open_set: HashSet<NodeCoords> = HashSet::from([NodeCoords {
-                    xy: UVec2 {
-                        x: transform.translation.x.floor() as u32,
-                        y: transform.translation.y.floor() as u32,
-                    },
+                    xy: start,
                     h: Some(Heading::N),
                 }]);
-                movement_grid[transform.translation.x.floor() as usize]
-                    [transform.translation.y.floor() as usize]
+                movement_grid[start.x as usize][start.y as usize]
                     .get_mut(&Heading::N)
                     .unwrap()
                     .g_score = 0;
@@ -163,8 +162,7 @@ fn calculate_a_star(
                         .to_owned();
                     if current.xy == movcmd.target.as_uvec2() {
                         for node in reconstruct_path(&came_from, current) {
-                            if !(node.xy.x == transform.translation.x.floor() as u32
-                                && node.xy.y == transform.translation.y.floor() as u32)
+                            if !(node.xy.x == start.x as u32 && node.xy.y == start.y as u32)
                                 && node.xy != movcmd.target.as_uvec2()
                             {
                                 movcmd.path.push(node);

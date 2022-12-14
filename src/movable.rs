@@ -38,12 +38,19 @@ pub struct NodeCoords {
 #[derive(Eq, PartialEq, Hash, Clone, Copy, EnumIter, Debug)]
 enum Heading {
     N,
+    NNE,
     NE,
+    NEE,
     E,
+    SEE,
     SE,
+    SSE,
     S,
+    SSW,
     SW,
+    SWW,
     W,
+    NWW,
     NW,
 }
 #[derive(Component)]
@@ -230,7 +237,7 @@ fn calculate_base_inertia(heading_in: Heading, heading_out: Heading) -> u32 {
     let half_headings: i32 = (Heading::iter().len() as f32 / 2.0).ceil() as i32;
     // println!("difference {} half_headings {}", difference, half_headings);
     // if difference.abs() > half_headings {
-    penalty = (half_headings - (difference - half_headings).abs()) as u32;
+    penalty = (half_headings - (difference - half_headings).abs()) as u32 * 10;
     // }
     // println!("penalty {}", penalty);
     return penalty;

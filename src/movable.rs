@@ -109,7 +109,7 @@ fn calculate_a_star(
                 let target: UVec2 = movcmd.target.as_uvec2();
                 let start: UVec2 = UVec2 {
                     x: (transform.translation.x * 5.0) as u32,
-                    y: (transform.translation.y * 5.0) as u32,
+                    y: (transform.translation.z * 5.0) as u32,
                 };
                 let mut movement_grid: Vec<Vec<HashMap<Heading, AStarNode>>> = vec![
                         vec![Heading::iter()

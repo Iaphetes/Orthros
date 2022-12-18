@@ -234,22 +234,10 @@ fn calculate_base_inertia(start: &NodeCoords, end: &NodeCoords) -> u32 {
         (start.h.unwrap_or(Heading::N) as i32 - end.h.unwrap_or(Heading::N) as i32).abs();
     let off_course: i32 =
         (calculate_heading(&start.xy, &end.xy) as i32 - start.h.unwrap_or(Heading::N) as i32).abs();
-    println!("{:?}", off_course);
     let half_headings: i32 = (Heading::iter().len() as f32 / 2.0).ceil() as i32;
-    // println!("difference {} half_headings {}", difference, half_headings);
-    // if difference.abs() > half_headings {
-    println!("start node: {:?}\nend node: {:?}", start, end);
-    println!(
-        "Calculated heading: {:?}",
-        calculate_heading(&start.xy, &end.xy)
-    );
-    penalty += (half_headings - (off_course - half_headings).abs()) as u32 * 1;
-    println!("Penalty after off_course correction {}", penalty);
+    // penalty += (half_headings - (off_course - half_headings).abs()) as u32 * 1;
     penalty += (half_headings - (difference - half_headings).abs()) as u32;
-    println!("Penalty after heading difference correction {}", penalty);
     penalty *= 10;
-    // }
-    // println!("penalty {}", penalty);
     return penalty;
 }
 fn inertia_based_inter_cell_movement(from: NodeCoords, to: NodeCoords) -> f32 {

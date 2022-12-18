@@ -1,7 +1,6 @@
 use bevy::ecs::component::Component;
 use bevy::math::Vec3;
 use bevy::prelude::*;
-
 use bevy::transform::components::Transform;
 use std::{
     collections::{HashMap, HashSet},
@@ -38,19 +37,19 @@ pub struct NodeCoords {
 #[derive(Eq, PartialEq, Hash, Clone, Copy, EnumIter, Debug)]
 enum Heading {
     N,
-    NNE,
+    // NNE,
     NE,
-    NEE,
+    // NEE,
     E,
-    SEE,
+    // SEE,
     SE,
-    SSE,
+    // SSE,
     S,
-    SSW,
+    // SSW,
     SW,
-    SWW,
+    // SWW,
     W,
-    NWW,
+    // NWW,
     NW,
 }
 #[derive(Component)]
@@ -228,22 +227,34 @@ fn reconstruct_path(
     println!("{:?}", total_path);
     return total_path;
 }
-fn calculate_base_inertia(heading_in: Heading, heading_out: Heading) -> u32 {
+fn calculate_base_inertia(start: &NodeCoords, end: &NodeCoords) -> u32 {
     // println!("Heading in {:?}, Heading out {:?}", heading_in, heading_out);
     let mut penalty: u32 = 0;
-    let difference: i32 = (heading_out as i32 - heading_in as i32).abs();
+    let difference: i32 =
+        (start.h.unwrap_or(Heading::N) as i32 - end.h.unwrap_or(Heading::N) as i32).abs();
+    let off_course: i32 =
+        (calculate_heading(&start.xy, &end.xy) as i32 - start.h.unwrap_or(Heading::N) as i32).abs();
+    println!("{:?}", off_course);
     let half_headings: i32 = (Heading::iter().len() as f32 / 2.0).ceil() as i32;
     // println!("difference {} half_headings {}", difference, half_headings);
     // if difference.abs() > half_headings {
-    penalty = (half_headings - (difference - half_headings).abs()) as u32 * 10;
+    println!("start node: {:?}\nend node: {:?}", start, end);
+    println!(
+        "Calculated heading: {:?}",
+        calculate_heading(&start.xy, &end.xy)
+    );
+    penalty += (half_headings - (off_course - half_headings).abs()) as u32 * 1;
+    println!("Penalty after off_course correction {}", penalty);
+    penalty += (half_headings - (difference - half_headings).abs()) as u32;
+    println!("Penalty after heading difference correction {}", penalty);
+    penalty *= 10;
     // }
     // println!("penalty {}", penalty);
     return penalty;
 }
 fn inertia_based_inter_cell_movement(from: NodeCoords, to: NodeCoords) -> f32 {
     let inertia: f32 = 0.0;
-    let penalty: f32 =
-        calculate_base_inertia(from.h.unwrap_or(Heading::N), to.h.unwrap_or(Heading::N)) as f32;
+    let penalty: f32 = calculate_base_inertia(&from, &to) as f32;
 
     let cost: f32 = from.xy.as_vec2().distance(to.xy.as_vec2()).abs() + penalty;
     // println!(
@@ -256,24 +267,24 @@ fn heuristical_distance(from: NodeCoords, to: NodeCoords) -> f32 {
     return from.xy.as_vec2().distance(to.xy.as_vec2());
 }
 fn calculate_heading(from: &UVec2, to: &UVec2) -> Heading {
-    let diff: IVec2 = from.as_ivec2() - to.as_ivec2();
+    let diff: IVec2 = to.as_ivec2() - from.as_ivec2();
     let heading: Heading;
     if diff.x == 1 && diff.y == 0 {
-        heading = Heading::N
+        heading = Heading::E
     } else if diff.x == 1 && diff.y == 1 {
         heading = Heading::NE
     } else if diff.x == 0 && diff.y == 1 {
-        heading = Heading::E
+        heading = Heading::N
     } else if diff.x == -1 && diff.y == 1 {
-        heading = Heading::SE
+        heading = Heading::NW
     } else if diff.x == -1 && diff.y == 0 {
-        heading = Heading::S
+        heading = Heading::W
     } else if diff.x == -1 && diff.y == -1 {
         heading = Heading::SW
     } else if diff.x == 0 && diff.y == -1 {
-        heading = Heading::W
+        heading = Heading::S
     } else {
-        heading = Heading::NW
+        heading = Heading::SE
     }
     return heading;
 }
@@ -342,6 +353,12 @@ fn move_units(
                 transform.translation.y,
                 node.xy.y as f32 * 0.2,
             );
+            transform.rotation = Quat::from_rotation_y(
+                (std::f64::consts::PI
+                    * 2.0
+                    * (node.h.unwrap_or(Heading::N) as u32 as f64 / Heading::iter().len() as f64))
+                    as f32,
+            )
         }
     }
 }

@@ -232,8 +232,8 @@ fn calculate_base_inertia(start: &NodeCoords, end: &NodeCoords) -> u32 {
     let mut penalty: u32 = 0;
     let difference: i32 =
         (start.h.unwrap_or(Heading::N) as i32 - end.h.unwrap_or(Heading::N) as i32).abs();
-    let off_course: i32 =
-        (calculate_heading(&start.xy, &end.xy) as i32 - start.h.unwrap_or(Heading::N) as i32).abs();
+    // let off_course: i32 =
+    //     (calculate_heading(&start.xy, &end.xy) as i32 - start.h.unwrap_or(Heading::N) as i32).abs();
     let half_headings: i32 = (Heading::iter().len() as f32 / 2.0).ceil() as i32;
     // penalty += (half_headings - (off_course - half_headings).abs()) as u32 * 1;
     penalty += (half_headings - (difference - half_headings).abs()) as u32;

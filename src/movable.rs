@@ -222,9 +222,9 @@ fn reconstruct_path(
     while came_from.contains_key(&current) {
         current = came_from[&current];
         total_path.push(current.clone());
-        println!("{:?}", current);
+        // println!("{:?}", current);
     }
-    println!("{:?}", total_path);
+    // println!("{:?}", total_path);
     return total_path;
 }
 fn calculate_base_inertia(start: &NodeCoords, end: &NodeCoords) -> u32 {
@@ -317,36 +317,72 @@ fn get_neighbours(current: UVec2, gridmap: &MovementGrid) -> Vec<NodeCoords> {
     return neighbours;
 }
 
+fn move_towards(
+    mut transform: &mut Transform,
+    speed: f64,
+    rotation_speed: f64,
+    delta: f64,
+    target: &NodeCoords,
+) -> bool {
+    let mut target_reached: bool = false;
+    let target_scaled: Vec3 = Vec3 {
+        x: target.xy.x as f32 * 0.2,
+        y: transform.translation.y,
+        z: target.xy.y as f32 * 0.2,
+    }; // TODO make this dynamic or calculate in the reconstruct_path
+
+    let translation_direction: Vec3 = target_scaled - transform.translation;
+    // let rotation_direction: i32 =
+    transform.rotation = Quat::from_rotation_y(
+        (std::f64::consts::PI
+            * 2.0
+            * (target.h.unwrap_or(Heading::N) as u32 as f64 / Heading::iter().len() as f64))
+            as f32,
+    );
+    let translation_vector: Vec3 = translation_direction.normalize() * (speed * delta) as f32;
+    println!(
+        "translation {:?}\ntarget {:?}",
+        transform.translation, target.xy
+    );
+    if translation_vector.length() >= translation_direction.length() {
+        transform.translation = target_scaled;
+        target_reached = true;
+    } else {
+        transform.translation += translation_vector;
+    }
+    return target_reached;
+}
 fn move_units(
     mut movables: Query<(Entity, &mut Transform, &mut MoveCommand), With<Movable>>,
     time: Res<Time>,
     mut timer: ResMut<MovementTimer>,
     mut commands: Commands,
 ) {
-    timer.0.tick(time.delta());
-    if timer.0.finished() {
-        timer.0.set_duration(Duration::from_millis(150));
-        for (entity, mut transform, mut movcmd) in movables.iter_mut() {
-            let node: NodeCoords;
-            match movcmd.path.pop() {
-                Some(n) => node = n,
-                None => {
-                    commands.entity(entity).remove::<MoveCommand>();
-                    commands.entity(entity).remove::<Movable>();
-                    continue;
-                }
+    // timer.0.tick(time.delta());
+    // if timer.0.finished() {
+    //     timer.0.set_duration(Duration::from_millis(150));
+    let speed: f64 = 1.0;
+    let rotation_speed: f64 = 1.0;
+    for (entity, mut transform, mut movcmd) in movables.iter_mut() {
+        let node: &NodeCoords;
+
+        match movcmd.path.last() {
+            Some(n) => node = n,
+            None => {
+                commands.entity(entity).remove::<MoveCommand>();
+                commands.entity(entity).remove::<Movable>();
+                continue;
             }
-            transform.translation = Vec3::new(
-                node.xy.x as f32 * 0.2,
-                transform.translation.y,
-                node.xy.y as f32 * 0.2,
-            );
-            transform.rotation = Quat::from_rotation_y(
-                (std::f64::consts::PI
-                    * 2.0
-                    * (node.h.unwrap_or(Heading::N) as u32 as f64 / Heading::iter().len() as f64))
-                    as f32,
-            )
+        }
+        if move_towards(
+            &mut transform,
+            speed,
+            rotation_speed,
+            time.delta().as_secs_f64(),
+            node,
+        ) {
+            movcmd.path.pop();
         }
     }
+    // }
 }

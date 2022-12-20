@@ -25,7 +25,7 @@ impl Plugin for Environment {
                     cell_size: 0.2,
                     grid_width: 1000,
                     grid_height: 1000,
-                    x_y_offset: Vec2::new(1.0, 1.0),
+                    x_y_offset: Vec2::new(-500.0, 500.0),
                     density: 0.2,
                 },
                 grid: Vec::new(),

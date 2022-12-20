@@ -33,7 +33,10 @@ pub struct NodeCoords {
     xy: UVec2,
     h: Option<Heading>,
 }
-
+pub struct PathNode {
+    xy: Vec2,
+    h: Heading,
+}
 #[derive(Eq, PartialEq, Hash, Clone, Copy, EnumIter, Debug)]
 enum Heading {
     N,
@@ -55,7 +58,7 @@ enum Heading {
 #[derive(Component)]
 pub struct MoveCommand {
     pub target: Vec2,
-    pub path: Vec<NodeCoords>,
+    pub path: Vec<PathNode>,
 }
 #[derive(Component)]
 struct Movable {}
@@ -68,6 +71,7 @@ struct AStarNode {
     g_score: i32,
     came_from: Option<UVec2>,
 }
+
 // pub fn move_units(
 //     mut movable_units: Query<(Entity, &mut Transform, &MoveTarget)>,
 //     mut commands: Commands,
@@ -163,7 +167,11 @@ fn calculate_a_star(
                     if !(node.xy.x == start.x as u32 && node.xy.y == start.y as u32)
                         && node.xy != movcmd.target.as_uvec2()
                     {
-                        movcmd.path.push(node);
+                        movcmd.path.push(PathNode {
+                            xy: node.xy.as_vec2() * gridmap.settings.cell_size
+                                + gridmap.settings.x_y_offset,
+                            h: node.h.unwrap_or(Heading::N),
+                        });
                         // println!("Node {:?}", node);
                     }
 
@@ -313,7 +321,7 @@ fn move_towards(
     speed: f64,
     rotation_speed: f64,
     delta: f64,
-    target: &NodeCoords,
+    target: &PathNode,
 ) -> bool {
     let mut target_reached: bool = false;
     let target_scaled: Vec3 = Vec3 {
@@ -325,9 +333,7 @@ fn move_towards(
     let translation_direction: Vec3 = target_scaled - transform.translation;
     // let rotation_direction: i32 =
     transform.rotation = Quat::from_rotation_y(
-        (std::f64::consts::PI
-            * -2.0
-            * (target.h.unwrap_or(Heading::N) as u32 as f64 / Heading::iter().len() as f64))
+        (std::f64::consts::PI * -2.0 * (target.h as u32 as f64 / Heading::iter().len() as f64))
             as f32,
     );
     let translation_vector: Vec3 = translation_direction.normalize() * (speed * delta) as f32;
@@ -354,7 +360,7 @@ fn move_units(
     let speed: f64 = 1.0;
     let rotation_speed: f64 = 1.0;
     for (entity, mut transform, mut movcmd) in movables.iter_mut() {
-        let node: &NodeCoords;
+        let node: &PathNode;
 
         match movcmd.path.last() {
             Some(n) => node = n,
@@ -371,7 +377,7 @@ fn move_units(
             time.delta().as_secs_f64(),
             node,
         ) {
-            println!("{:?}", movcmd.path.pop());
+            movcmd.path.pop();
         }
     }
     // }

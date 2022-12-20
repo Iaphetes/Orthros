@@ -88,125 +88,115 @@ struct AStarNode {
 // }
 fn calculate_a_star(
     mut movables: Query<(Entity, &mut Transform, &mut MoveCommand), Without<Movable>>,
-    mut gridmap_q: Query<&mut MovementGrid>,
+    mut gridmap: Res<MovementGrid>,
     mut commands: Commands,
 ) //-> Option<Vec<UVec2>>
 {
     for (entity, transform, mut movcmd) in movables.iter_mut() {
-        println!("calculating a*");
+        // println!("calculating a*");
         if transform.translation.x == movcmd.target.x && transform.translation.y == movcmd.target.y
         {
             commands.entity(entity).remove::<MoveCommand>();
             continue;
         }
-        println!("Current position {}", transform.translation);
-        println!("Target position {}", movcmd.target);
+        // println!("Current position {}", transform.translation);
+        // println!("Target position {}", movcmd.target);
 
-        println!("{}", gridmap_q.into_iter().len());
-        match gridmap_q.get_single_mut() {
-            Ok(gridmap) => {
-                let target: UVec2 = movcmd.target.as_uvec2();
-                let start: UVec2 = UVec2 {
-                    x: (transform.translation.x * 5.0) as u32,
-                    y: (transform.translation.z * 5.0) as u32,
-                };
-                let mut movement_grid: Vec<Vec<HashMap<Heading, AStarNode>>> = vec![
-                        vec![Heading::iter()
-                            .map(|x| (
-                                x.clone(),
-                                AStarNode {
-                                    f_score: -1,
-                                    g_score: -1,
-                                    came_from: None
-                                }
-                            ))
-                            .into_iter()
-                            .collect();
-                        gridmap.grid.len()];
-                gridmap.grid[0].len()
-                    ];
-                // println!("X_Length: {}, Y_Length: {}, Headings: {}", gridmap.grid.len(), gridmap)
-                let mut came_from: HashMap<NodeCoords, NodeCoords> = HashMap::new();
-                let mut open_set: HashSet<NodeCoords> = HashSet::from([NodeCoords {
-                    xy: start,
-                    h: Some(Heading::N),
-                }]);
-                movement_grid[start.x as usize][start.y as usize]
-                    .get_mut(&Heading::N)
-                    .unwrap()
-                    .g_score = 0;
-                while !open_set.is_empty() {
-                    let mut current: NodeCoords = NodeCoords {
-                        xy: UVec2::ZERO,
-                        h: Some(Heading::N),
-                    };
-
-                    let mut current_cost = 0;
-                    for open_cell in open_set.clone() {
-                        let cell: &AStarNode = movement_grid[open_cell.xy.x as usize]
-                            [open_cell.xy.y as usize]
-                            .get_mut(&open_cell.h.unwrap_or(Heading::N))
-                            .unwrap();
-                        let cell_f_score: i32 = cell.f_score;
-                        if current_cost == 0 || cell_f_score < current_cost {
-                            current = open_cell.clone();
-                            current_cost = cell_f_score;
+        let target: UVec2 = movcmd.target.as_uvec2();
+        let start: UVec2 = UVec2 {
+            x: (transform.translation.x * 5.0) as u32,
+            y: (transform.translation.z * 5.0) as u32,
+        };
+        let mut movement_grid: Vec<Vec<HashMap<Heading, AStarNode>>> = vec![
+            vec![
+                Heading::iter()
+                    .map(|x| (
+                        x.clone(),
+                        AStarNode {
+                            f_score: -1,
+                            g_score: -1,
+                            came_from: None
                         }
-                    }
+                    ))
+                    .into_iter()
+                    .collect();
+                gridmap.grid.len()
+            ];
+            gridmap.grid[0].len()
+        ];
+        // println!("X_Length: {}, Y_Length: {}, Headings: {}", gridmap.grid.len(), gridmap)
+        let mut came_from: HashMap<NodeCoords, NodeCoords> = HashMap::new();
+        let mut open_set: HashSet<NodeCoords> = HashSet::from([NodeCoords {
+            xy: start,
+            h: Some(Heading::N),
+        }]);
+        movement_grid[start.x as usize][start.y as usize]
+            .get_mut(&Heading::N)
+            .unwrap()
+            .g_score = 0;
+        while !open_set.is_empty() {
+            let mut current: NodeCoords = NodeCoords {
+                xy: UVec2::ZERO,
+                h: Some(Heading::N),
+            };
 
-                    let current_node: AStarNode = movement_grid[current.xy.x as usize]
-                        [current.xy.y as usize]
-                        .get(&current.h.unwrap_or(Heading::N))
-                        .unwrap()
-                        .to_owned();
-                    if current.xy == movcmd.target.as_uvec2() {
-                        for node in reconstruct_path(&came_from, current) {
-                            if !(node.xy.x == start.x as u32 && node.xy.y == start.y as u32)
-                                && node.xy != movcmd.target.as_uvec2()
-                            {
-                                movcmd.path.push(node);
-                                println!("Node {:?}", node);
-                            }
-
-                            commands.entity(entity).insert(Movable {});
-                        }
-                        return;
-                    }
-                    open_set.remove(&current);
-                    let neighbours = get_neighbours(current.xy, &gridmap);
-                    // println!("Current: {:?}", current);
-                    for neighbour in neighbours {
-                        // println!("{:?}", neighbour);
-                        let mut neighbour_node: &mut AStarNode = movement_grid
-                            [neighbour.xy.x as usize][neighbour.xy.y as usize]
-                            .get_mut(&neighbour.h.unwrap_or(Heading::N))
-                            .unwrap();
-                        let tentative_g_score: i32 = current_node.g_score
-                            + (inertia_based_inter_cell_movement(
-                                current.clone(),
-                                neighbour.clone(),
-                            ) * DISTANCE_FACTOR) as i32;
-
-                        if tentative_g_score < neighbour_node.g_score
-                            || neighbour_node.g_score == -1
-                        {
-                            neighbour_node.g_score = tentative_g_score;
-                            neighbour_node.f_score = tentative_g_score
-                                + (heuristical_distance(
-                                    neighbour,
-                                    NodeCoords {
-                                        xy: target,
-                                        h: None,
-                                    },
-                                ) * DISTANCE_FACTOR) as i32;
-                            came_from.insert(neighbour, current);
-                            open_set.insert(neighbour);
-                        }
-                    }
+            let mut current_cost = 0;
+            for open_cell in open_set.clone() {
+                let cell: &AStarNode = movement_grid[open_cell.xy.x as usize]
+                    [open_cell.xy.y as usize]
+                    .get_mut(&open_cell.h.unwrap_or(Heading::N))
+                    .unwrap();
+                let cell_f_score: i32 = cell.f_score;
+                if current_cost == 0 || cell_f_score < current_cost {
+                    current = open_cell.clone();
+                    current_cost = cell_f_score;
                 }
             }
-            Err(error) => {
-                println!("Cannot comply{:?}", error);
+
+            let current_node: AStarNode = movement_grid[current.xy.x as usize]
+                [current.xy.y as usize]
+                .get(&current.h.unwrap_or(Heading::N))
+                .unwrap()
+                .to_owned();
+            if current.xy == movcmd.target.as_uvec2() {
+                for node in reconstruct_path(&came_from, current) {
+                    if !(node.xy.x == start.x as u32 && node.xy.y == start.y as u32)
+                        && node.xy != movcmd.target.as_uvec2()
+                    {
+                        movcmd.path.push(node);
+                        // println!("Node {:?}", node);
+                    }
+
+                    commands.entity(entity).insert(Movable {});
+                }
+                return;
+            }
+            open_set.remove(&current);
+            let neighbours = get_neighbours(current.xy, &gridmap);
+            // println!("Current: {:?}", current);
+            for neighbour in neighbours {
+                // println!("{:?}", neighbour);
+                let mut neighbour_node: &mut AStarNode = movement_grid[neighbour.xy.x as usize]
+                    [neighbour.xy.y as usize]
+                    .get_mut(&neighbour.h.unwrap_or(Heading::N))
+                    .unwrap();
+                let tentative_g_score: i32 = current_node.g_score
+                    + (inertia_based_inter_cell_movement(current.clone(), neighbour.clone())
+                        * DISTANCE_FACTOR) as i32;
+
+                if tentative_g_score < neighbour_node.g_score || neighbour_node.g_score == -1 {
+                    neighbour_node.g_score = tentative_g_score;
+                    neighbour_node.f_score = tentative_g_score
+                        + (heuristical_distance(
+                            neighbour,
+                            NodeCoords {
+                                xy: target,
+                                h: None,
+                            },
+                        ) * DISTANCE_FACTOR) as i32;
+                    came_from.insert(neighbour, current);
+                    open_set.insert(neighbour);
+                }
             }
         }
     }
@@ -237,7 +227,8 @@ fn calculate_base_inertia(start: &NodeCoords, end: &NodeCoords) -> u32 {
     let half_headings: i32 = (Heading::iter().len() as f32 / 2.0).ceil() as i32;
     // penalty += (half_headings - (off_course - half_headings).abs()) as u32 * 1;
     penalty += (half_headings - (difference - half_headings).abs()) as u32;
-    penalty *= 10;
+    penalty *= 20;
+    // println!("penalty {}", penalty);
     return penalty;
 }
 fn inertia_based_inter_cell_movement(from: NodeCoords, to: NodeCoords) -> f32 {
@@ -340,10 +331,10 @@ fn move_towards(
             as f32,
     );
     let translation_vector: Vec3 = translation_direction.normalize() * (speed * delta) as f32;
-    println!(
-        "translation {:?}\ntarget {:?}",
-        transform.translation, target.xy
-    );
+    // println!(
+    //     "translation {:?}\ntarget {:?}",
+    //     transform.translation, target.xy
+    // );
     if translation_vector.length() >= translation_direction.length() {
         transform.translation = target_scaled;
         target_reached = true;
@@ -381,7 +372,7 @@ fn move_units(
             time.delta().as_secs_f64(),
             node,
         ) {
-            movcmd.path.pop();
+            println!("{:?}", movcmd.path.pop());
         }
     }
     // }

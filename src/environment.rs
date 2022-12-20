@@ -23,41 +23,18 @@ impl Plugin for Environment {
             //     bevy::app::StartupStage::PostStartup,
             //     generate_obstacles.after(setup_movement_grid),
             // )
-            .insert_resource(GridSettings {
-                cell_size: 0.2,
-                grid_width: 1000,
-                grid_height: 1000,
-                x_y_offset: Vec2::new(1.0, 1.0),
-                density: 0.2,
+            .insert_resource(MovementGrid {
+                settings: GridSettings {
+                    cell_size: 0.2,
+                    grid_width: 1000,
+                    grid_height: 1000,
+                    x_y_offset: Vec2::new(1.0, 1.0),
+                    density: 0.2,
+                },
+                grid: Vec::new(),
             });
     }
 }
-// fn generate_obstacles(
-//     mut commands: Commands,
-//     mut meshes: ResMut<Assets<Mesh>>,
-//     mut materials: ResMut<Assets<ColorMaterial>>,
-//     grid_settings: Res<GridSettings>,
-//     mut gridmap_q: Query<&mut MovementGrid>,
-// ) {
-//     let noise_generator: SuperSimplex = SuperSimplex::new(SuperSimplex::DEFAULT_SEED);
-//     //    let mut gridmap : &MovementGrid;
-//     match gridmap_q.get_single_mut() {
-//         Ok(mut gridmap) => {
-//             for i in 0..grid_settings.grid_width as usize {
-//                 for j in 0..grid_settings.grid_height as usize {
-//                     if noise_generator.get([i as f64, j as f64]) > grid_settings.density {
-//                         gridmap.grid[i][j] = 1;
-//                     }
-//                 }
-//             }
-//         }
-//         Err(error) => {
-//             println!("{:?}", error);
-//             return;
-//         }
-//     }
-// }
-
 // This is the struct that will be passed to your shader
 #[derive(AsBindGroup, TypeUuid, Debug, Clone)]
 #[uuid = "f690fdae-d598-45ab-8225-97e2a3f056e0"]
@@ -75,8 +52,9 @@ pub struct GridSettings {
     pub x_y_offset: Vec2,
     pub density: f64, // TODO put into map generation
 }
-#[derive(Component)]
+#[derive(Resource)]
 pub struct MovementGrid {
+    pub settings: GridSettings,
     pub grid: Vec<Vec<u8>>,
 }
 
@@ -137,43 +115,18 @@ pub fn environment_setup(
 fn setup_movement_grid(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    grid_settings: Res<GridSettings>,
+    mut movement_grid: ResMut<MovementGrid>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut standard_materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let mut gridmap: MovementGrid = MovementGrid { grid: Vec::new() };
+    // let mut gridmap: &MovementGrid = movement_grid;
     //    commands.spawn().insert(MovementGrid{
     //        grid: Vec::new()
     //    });
-    for i in 0..grid_settings.grid_width as usize {
-        gridmap.grid.push(Vec::new());
-        for j in 0..grid_settings.grid_height as usize {
-            gridmap.grid[i].push(0);
-
-            // commands.spawn(MaterialMeshBundle {
-            //     mesh: meshes.add(
-            //         shape::Plane {
-            //             size: grid_settings.cell_size,
-            //         }
-            //         .into(),
-            //     ),
-
-            //     transform: Transform::from_scale(Vec3::new(1.0, 1.0, 1.0)).with_translation(
-            //         Vec3::new(
-            //             i as f32 * grid_settings.cell_size - grid_settings.x_y_offset.x,
-            //             0.0,
-            //             j as f32 * grid_settings.cell_size - grid_settings.x_y_offset.y,
-            //         ),
-            //     ),
-            //     material: standard_materials.add(StandardMaterial {
-            //         base_color_texture: Some(asset_server.load("textures/bloody_rectangle.png")),
-            //         alpha_mode: AlphaMode::Blend,
-            //         ..default()
-            //     }),
-            //     ..default()
-            // });
+    for i in 0..movement_grid.settings.grid_width as usize {
+        movement_grid.grid.push(Vec::new());
+        for j in 0..movement_grid.settings.grid_height as usize {
+            movement_grid.grid[i].push(0);
         }
     }
-    println!("spawning gridmap");
-    commands.spawn(gridmap);
 }

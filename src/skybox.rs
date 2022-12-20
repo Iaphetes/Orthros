@@ -124,7 +124,7 @@ fn asset_loaded(
             }
         }
         if !updated {
-            commands.spawn_bundle(MaterialMeshBundle::<CubemapMaterial> {
+            commands.spawn(MaterialMeshBundle::<CubemapMaterial> {
                 mesh: meshes.add(Mesh::from(shape::Cube { size: 10000.0 })),
                 material: cubemap_materials.add(CubemapMaterial {
                     base_color_texture: Some(cubemap.image_handle.clone_weak()),

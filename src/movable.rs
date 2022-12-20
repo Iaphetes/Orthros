@@ -9,7 +9,7 @@ use std::{
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 
-use crate::environment::{GridSettings, MovementGrid};
+use crate::environment::MovementGrid;
 
 pub struct UnitMovement;
 
@@ -88,7 +88,7 @@ struct AStarNode {
 // }
 fn calculate_a_star(
     mut movables: Query<(Entity, &mut Transform, &mut MoveCommand), Without<Movable>>,
-    mut gridmap: Res<MovementGrid>,
+    gridmap: Res<MovementGrid>,
     mut commands: Commands,
 ) //-> Option<Vec<UVec2>>
 {
@@ -232,7 +232,7 @@ fn calculate_base_inertia(start: &NodeCoords, end: &NodeCoords) -> u32 {
     return penalty;
 }
 fn inertia_based_inter_cell_movement(from: NodeCoords, to: NodeCoords) -> f32 {
-    let inertia: f32 = 0.0;
+    // let inertia: f32 = 0.0;
     let penalty: f32 = calculate_base_inertia(&from, &to) as f32;
 
     let cost: f32 = from.xy.as_vec2().distance(to.xy.as_vec2()).abs() + penalty;
@@ -346,7 +346,6 @@ fn move_towards(
 fn move_units(
     mut movables: Query<(Entity, &mut Transform, &mut MoveCommand), With<Movable>>,
     time: Res<Time>,
-    mut timer: ResMut<MovementTimer>,
     mut commands: Commands,
 ) {
     // timer.0.tick(time.delta());

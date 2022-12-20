@@ -2,14 +2,11 @@ use bevy::{
     prelude::*,
     reflect::TypeUuid,
     render::render_resource::{AsBindGroup, ShaderRef},
-    sprite::MaterialMesh2dBundle,
 };
 use bevy_rapier3d::geometry::Collider;
 use bevy_rapier3d::geometry::Sensor;
-use noise::{NoiseFn, SuperSimplex};
 
 use crate::skybox::Skybox;
-use bevy_rapier3d::prelude::*;
 
 pub struct Environment;
 
@@ -88,16 +85,14 @@ pub fn environment_setup(
         },
         ..default()
     });
-    commands.spawn(
-        (MaterialMeshBundle {
-            mesh: meshes.add(shape::Plane { size: 200. }.into()),
-            material: custom_materials.add(CustomMaterial {
-                color: Color::GREEN,
-                alpha_mode: AlphaMode::Blend,
-            }),
-            ..default()
+    commands.spawn(MaterialMeshBundle {
+        mesh: meshes.add(shape::Plane { size: 200. }.into()),
+        material: custom_materials.add(CustomMaterial {
+            color: Color::GREEN,
+            alpha_mode: AlphaMode::Blend,
         }),
-    );
+        ..default()
+    });
     commands.spawn((
         Transform::from_xyz(0.0, 2.0, 0.0),
         Collider::cuboid(100.0, 2.0, 100.0),
@@ -112,20 +107,10 @@ pub fn environment_setup(
         brightness: 1.0,
     });
 }
-fn setup_movement_grid(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut movement_grid: ResMut<MovementGrid>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut standard_materials: ResMut<Assets<StandardMaterial>>,
-) {
-    // let mut gridmap: &MovementGrid = movement_grid;
-    //    commands.spawn().insert(MovementGrid{
-    //        grid: Vec::new()
-    //    });
+fn setup_movement_grid(mut movement_grid: ResMut<MovementGrid>) {
     for i in 0..movement_grid.settings.grid_width as usize {
         movement_grid.grid.push(Vec::new());
-        for j in 0..movement_grid.settings.grid_height as usize {
+        for _ in 0..movement_grid.settings.grid_height as usize {
             movement_grid.grid[i].push(0);
         }
     }

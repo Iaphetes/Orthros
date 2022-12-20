@@ -4,7 +4,7 @@ use crate::ownable::{Selectable, Selected};
 use bevy::input::mouse::MouseScrollUnit;
 use bevy::input::mouse::MouseWheel;
 use bevy::math::Quat;
-use bevy::{input::mouse::MouseMotion, prelude::*};
+use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 
 pub struct PlayerController;
@@ -78,12 +78,9 @@ impl Default for CameraControllerSettings {
 
 pub fn camera_controller(
     time: Res<Time>,
-    mut mouse_events: EventReader<MouseMotion>,
-    mouse_button_input: Res<Input<MouseButton>>,
     key_input: Res<Input<KeyCode>>,
     mut mouse_wheel: EventReader<MouseWheel>,
     mut move_toggled: Local<bool>,
-    windows: Res<Windows>,
     cameras: Query<(&Camera, &GlobalTransform)>,
     mut query: Query<(&mut Transform, &mut CameraControllerSettings), With<Camera>>,
     rapier_context: Res<RapierContext>,
@@ -105,7 +102,7 @@ pub fn camera_controller(
         let mut axis_input = Vec3::ZERO;
         let mut yaw: f32 = 0.0;
         let mut pitch: f32 = 0.0;
-        let mut roll: f32 = 0.0;
+        // let mut roll: f32 = 0.0;
 
         if key_input.pressed(options.rotate_key) {
             if key_input.pressed(options.key_forward) {
@@ -173,11 +170,7 @@ pub fn camera_controller(
         if key_input.pressed(options.rotate_key) {
             for (camera, camera_transform) in cameras.iter() {
                 // First, compute a ray from the mouse position.
-                let (ray_pos, ray_dir) = ray_from_camera_center(
-                    windows.get_primary().unwrap(),
-                    camera,
-                    camera_transform,
-                );
+                let (ray_pos, ray_dir) = ray_from_camera_center(camera, camera_transform);
                 let intersection: Option<(Entity, RayIntersection)> = rapier_context
                     .cast_ray_and_get_normal(
                         ray_pos,
@@ -188,7 +181,7 @@ pub fn camera_controller(
                     );
                 match intersection {
                     Some((_, rayintersection)) => {
-                        let mut rot: Quat = Quat::from_rotation_x(pitch * options.rotation_speed)
+                        let rot: Quat = Quat::from_rotation_x(pitch * options.rotation_speed)
                             * Quat::from_rotation_y(yaw * options.rotation_speed);
                         transform.rotate_around(rayintersection.point, rot);
                     }
@@ -343,11 +336,7 @@ fn ray_from_mouse_position(
     (near, dir)
 }
 
-fn ray_from_camera_center(
-    window: &Window,
-    camera: &Camera,
-    camera_transform: &GlobalTransform,
-) -> (Vec3, Vec3) {
+fn ray_from_camera_center(camera: &Camera, camera_transform: &GlobalTransform) -> (Vec3, Vec3) {
     let x = 0.0;
     let y = 0.0;
     println!("x{}, y{}", x, y);

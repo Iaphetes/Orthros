@@ -248,17 +248,17 @@ fn heuristical_distance(from: NodeCoords, to: NodeCoords) -> f32 {
 fn calculate_heading(from: &UVec2, to: &UVec2) -> Heading {
     let diff: IVec2 = to.as_ivec2() - from.as_ivec2();
     let heading: Heading;
-    if diff.x == 1 && diff.y == 0 {
+    if diff.x == -1 && diff.y == 0 {
         heading = Heading::E
-    } else if diff.x == 1 && diff.y == 1 {
+    } else if diff.x == -1 && diff.y == 1 {
         heading = Heading::NE
     } else if diff.x == 0 && diff.y == 1 {
         heading = Heading::N
-    } else if diff.x == -1 && diff.y == 1 {
+    } else if diff.x == 1 && diff.y == 1 {
         heading = Heading::NW
-    } else if diff.x == -1 && diff.y == 0 {
+    } else if diff.x == 1 && diff.y == 0 {
         heading = Heading::W
-    } else if diff.x == -1 && diff.y == -1 {
+    } else if diff.x == 1 && diff.y == -1 {
         heading = Heading::SW
     } else if diff.x == 0 && diff.y == -1 {
         heading = Heading::S
@@ -326,7 +326,7 @@ fn move_towards(
     // let rotation_direction: i32 =
     transform.rotation = Quat::from_rotation_y(
         (std::f64::consts::PI
-            * 2.0
+            * -2.0
             * (target.h.unwrap_or(Heading::N) as u32 as f64 / Heading::iter().len() as f64))
             as f32,
     );

@@ -108,8 +108,8 @@ fn calculate_a_star(
 
         let target: UVec2 = movcmd.target.as_uvec2();
         let start: UVec2 = UVec2 {
-            x: (transform.translation.x * 5.0) as u32,
-            y: (transform.translation.z * 5.0) as u32,
+            x: (transform.translation.x / gridmap.settings.cell_size) as u32,
+            y: (transform.translation.z / gridmap.settings.cell_size) as u32,
         };
         let mut movement_grid: Vec<Vec<HashMap<Heading, AStarNode>>> = vec![
             vec![
@@ -325,9 +325,9 @@ fn move_towards(
 ) -> bool {
     let mut target_reached: bool = false;
     let target_scaled: Vec3 = Vec3 {
-        x: target.xy.x as f32 * 0.2,
+        x: target.xy.x as f32,
         y: transform.translation.y,
-        z: target.xy.y as f32 * 0.2,
+        z: target.xy.y as f32,
     }; // TODO make this dynamic or calculate in the reconstruct_path
 
     let translation_direction: Vec3 = target_scaled - transform.translation;

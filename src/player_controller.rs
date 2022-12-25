@@ -1,3 +1,4 @@
+use crate::environment::MovementGrid;
 use crate::movable::MoveCommand;
 use crate::ownable::SelectionCircle;
 use crate::ownable::{Selectable, Selected};
@@ -215,6 +216,7 @@ fn mouse_controller(
     mut selection_circle: Query<&mut Visibility, With<SelectionCircle>>,
     mut selected_entities: Query<(Entity, &Selected)>,
     mut commands: Commands,
+    gridmap: Res<MovementGrid>,
 ) {
     if let Ok(options) = camera_options.get_single_mut() {
         if mouse_button_input.just_pressed(options.mouse_key_enable_mouse) {
@@ -303,7 +305,7 @@ fn mouse_controller(
                         for (entity, _) in selected_entities.iter_mut() {
                             commands.entity(entity).remove::<MoveCommand>();
                             commands.entity(entity).insert(MoveCommand {
-                                target: target.clone() * 5.0,
+                                target: target.clone(),
                                 path: Vec::new(),
                             });
                         }

@@ -106,11 +106,15 @@ fn calculate_a_star(
         // println!("Current position {}", transform.translation);
         // println!("Target position {}", movcmd.target);
 
-        let target: UVec2 = movcmd.target.as_uvec2();
+        let target: UVec2 =
+            (movcmd.target / gridmap.settings.cell_size + gridmap.settings.x_y_offset).as_uvec2();
         let start: UVec2 = UVec2 {
-            x: (transform.translation.x / gridmap.settings.cell_size) as u32,
-            y: (transform.translation.z / gridmap.settings.cell_size) as u32,
+            x: (transform.translation.x / gridmap.settings.cell_size
+                + gridmap.settings.x_y_offset.x) as u32,
+            y: (transform.translation.z / gridmap.settings.cell_size
+                + gridmap.settings.x_y_offset.y) as u32,
         };
+        println!("start {:?}\ntarget {:?}", start, target);
         let mut movement_grid: Vec<Vec<HashMap<Heading, AStarNode>>> = vec![
             vec![
                 Heading::iter()
@@ -143,13 +147,13 @@ fn calculate_a_star(
                 xy: UVec2::ZERO,
                 h: Some(Heading::N),
             };
-
             let mut current_cost = 0;
             for open_cell in open_set.clone() {
                 let cell: &AStarNode = movement_grid[open_cell.xy.x as usize]
                     [open_cell.xy.y as usize]
                     .get_mut(&open_cell.h.unwrap_or(Heading::N))
                     .unwrap();
+                // println!("{:?}", open_cell);
                 let cell_f_score: i32 = cell.f_score;
                 if current_cost == 0 || cell_f_score < current_cost {
                     current = open_cell.clone();
@@ -157,12 +161,14 @@ fn calculate_a_star(
                 }
             }
 
+            println!("{:?}", current);
             let current_node: AStarNode = movement_grid[current.xy.x as usize]
                 [current.xy.y as usize]
                 .get(&current.h.unwrap_or(Heading::N))
                 .unwrap()
                 .to_owned();
             if current.xy == movcmd.target.as_uvec2() {
+                let target_vec2: Vec2 = movcmd.target.clone();
                 for node in reconstruct_path(&came_from, current) {
                     if !(node.xy.x == start.x as u32 && node.xy.y == start.y as u32)
                         && node.xy != movcmd.target.as_uvec2()
@@ -172,7 +178,14 @@ fn calculate_a_star(
                                 + gridmap.settings.x_y_offset,
                             h: node.h.unwrap_or(Heading::N),
                         });
-                        // println!("Node {:?}", node);
+                        println!("Node {:?}", node);
+                    } else if node.xy == movcmd.target.as_uvec2() {
+                        println!("Last node");
+                        movcmd.path.push(PathNode {
+                            xy: target_vec2.clone() * gridmap.settings.cell_size
+                                + gridmap.settings.x_y_offset,
+                            h: node.h.unwrap_or(Heading::N),
+                        });
                     }
 
                     commands.entity(entity).insert(Movable {});
@@ -220,7 +233,7 @@ fn reconstruct_path(
     while came_from.contains_key(&current) {
         current = came_from[&current];
         total_path.push(current.clone());
-        // println!("{:?}", current);
+        println!("{:?}", current);
     }
     // println!("{:?}", total_path);
     return total_path;

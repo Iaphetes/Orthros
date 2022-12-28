@@ -25,7 +25,7 @@ impl Plugin for Environment {
                     cell_size: 0.2,
                     grid_width: 1000,
                     grid_height: 1000,
-                    x_y_offset: Vec2::new(500.0, 500.0),
+                    xy_offset: Vec2::new(500.0, 500.0),
                     density: 0.2,
                 },
                 grid: Vec::new(),
@@ -46,7 +46,7 @@ pub struct GridSettings {
     pub cell_size: f32,
     pub grid_width: u32,
     pub grid_height: u32,
-    pub x_y_offset: Vec2,
+    pub xy_offset: Vec2,
     pub density: f64, // TODO put into map generation
 }
 #[derive(Resource)]

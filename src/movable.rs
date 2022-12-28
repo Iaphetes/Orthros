@@ -1,15 +1,16 @@
+use crate::environment::MovementGrid;
 use bevy::ecs::component::Component;
 use bevy::math::Vec3;
 use bevy::prelude::*;
 use bevy::transform::components::Transform;
+use std::fs::File;
+use std::io::prelude::*;
 use std::{
     collections::{HashMap, HashSet},
     time::Duration,
 };
-use strum::IntoEnumIterator;
+use strum::{AsStaticRef, IntoEnumIterator};
 use strum_macros::EnumIter;
-
-use crate::environment::MovementGrid;
 
 pub struct UnitMovement;
 
@@ -33,12 +34,14 @@ pub struct NodeCoords {
     xy: UVec2,
     h: Option<Heading>,
 }
+#[derive(Debug, Clone, Copy)]
 pub struct PathNode {
     xy: Vec2,
     h: Heading,
 }
-#[derive(Eq, PartialEq, Hash, Clone, Copy, EnumIter, Debug)]
+#[derive(Eq, PartialEq, Hash, Clone, Copy, EnumIter, Debug, Default)]
 enum Heading {
+    #[default]
     N,
     // NNE,
     NE,
@@ -65,7 +68,7 @@ struct Movable {}
 
 #[derive(Resource)]
 struct MovementTimer(Timer);
-#[derive(Hash, Eq, PartialEq, Clone, Copy)]
+#[derive(Hash, Eq, PartialEq, Clone, Copy, Debug)]
 struct AStarNode {
     f_score: i32,
     g_score: i32,
@@ -107,12 +110,12 @@ fn calculate_a_star(
         // println!("Target position {}", movcmd.target);
 
         let target: UVec2 =
-            (movcmd.target / gridmap.settings.cell_size + gridmap.settings.x_y_offset).as_uvec2();
+            (movcmd.target / gridmap.settings.cell_size + gridmap.settings.xy_offset).as_uvec2();
         let start: UVec2 = UVec2 {
-            x: (transform.translation.x / gridmap.settings.cell_size
-                + gridmap.settings.x_y_offset.x) as u32,
-            y: (transform.translation.z / gridmap.settings.cell_size
-                + gridmap.settings.x_y_offset.y) as u32,
+            x: (transform.translation.x / gridmap.settings.cell_size + gridmap.settings.xy_offset.x)
+                as u32,
+            y: (transform.translation.z / gridmap.settings.cell_size + gridmap.settings.xy_offset.y)
+                as u32,
         };
         println!("start {:?}\ntarget {:?}", start, target);
         let mut movement_grid: Vec<Vec<HashMap<Heading, AStarNode>>> = vec![
@@ -151,7 +154,7 @@ fn calculate_a_star(
             for open_cell in open_set.clone() {
                 let cell: &AStarNode = movement_grid[open_cell.xy.x as usize]
                     [open_cell.xy.y as usize]
-                    .get_mut(&open_cell.h.unwrap_or(Heading::N))
+                    .get_mut(&open_cell.h.unwrap_or_default())
                     .unwrap();
                 // println!("{:?}", open_cell);
                 let cell_f_score: i32 = cell.f_score;
@@ -160,36 +163,46 @@ fn calculate_a_star(
                     current_cost = cell_f_score;
                 }
             }
+            // let mut f = File::options().append(true).open("example.log").unwrap();
 
-            println!("{:?}", current);
+            // f.write_all(format!("{:?}", current).as_bytes());
             let current_node: AStarNode = movement_grid[current.xy.x as usize]
                 [current.xy.y as usize]
-                .get(&current.h.unwrap_or(Heading::N))
+                .get(&current.h.unwrap_or_default())
                 .unwrap()
                 .to_owned();
-            if current.xy == movcmd.target.as_uvec2() {
-                let target_vec2: Vec2 = movcmd.target.clone();
-                for node in reconstruct_path(&came_from, current) {
-                    if !(node.xy.x == start.x as u32 && node.xy.y == start.y as u32)
-                        && node.xy != movcmd.target.as_uvec2()
-                    {
-                        movcmd.path.push(PathNode {
-                            xy: node.xy.as_vec2() * gridmap.settings.cell_size
-                                + gridmap.settings.x_y_offset,
-                            h: node.h.unwrap_or(Heading::N),
-                        });
-                        println!("Node {:?}", node);
-                    } else if node.xy == movcmd.target.as_uvec2() {
-                        println!("Last node");
-                        movcmd.path.push(PathNode {
-                            xy: target_vec2.clone() * gridmap.settings.cell_size
-                                + gridmap.settings.x_y_offset,
-                            h: node.h.unwrap_or(Heading::N),
-                        });
-                    }
 
-                    commands.entity(entity).insert(Movable {});
-                }
+            // println!("current {:?}, target {:?}", current, movcmd.target);
+            if current.xy == target {
+                let target_vec2: Vec2 = movcmd.target.clone();
+                reconstruct_path(&came_from, current, &gridmap)
+                    .iter()
+                    .enumerate()
+                    .for_each(|(i, x)| {
+                        if i != 0 {
+                            movcmd.path.push(x.clone());
+                        }
+                    });
+                // for node in reconstruct_path(&came_from, current, &gridmap) {
+                //     println!("Node {:?}", node);
+                //     if node.xy + gridmap.settings.xy_offset.as_uvec2()
+                //         != (start - gridmap.settings.xy_offset.as_uvec2())
+                //         && node.xy != movcmd.target.as_uvec2()
+                //     {
+                //         movcmd.path.push(PathNode {
+                //             xy: node.xy.as_vec2(),
+                //             h: node.h.unwrap_or_default(),
+                //         });
+                //     } else if node.xy == movcmd.target.as_uvec2() {
+                //         println!("Last node");
+                //         movcmd.path.push(PathNode {
+                //             xy: target_vec2.clone() * gridmap.settings.cell_size
+                //                 + gridmap.settings.xy_offset,
+                //             h: node.h.unwrap_or_default(),
+                //         });
+                //     }
+                // }
+                commands.entity(entity).insert(Movable {});
                 return;
             }
             open_set.remove(&current);
@@ -199,7 +212,7 @@ fn calculate_a_star(
                 // println!("{:?}", neighbour);
                 let mut neighbour_node: &mut AStarNode = movement_grid[neighbour.xy.x as usize]
                     [neighbour.xy.y as usize]
-                    .get_mut(&neighbour.h.unwrap_or(Heading::N))
+                    .get_mut(&neighbour.h.unwrap_or_default())
                     .unwrap();
                 let tentative_g_score: i32 = current_node.g_score
                     + (inertia_based_inter_cell_movement(current.clone(), neighbour.clone())
@@ -215,6 +228,7 @@ fn calculate_a_star(
                                 h: None,
                             },
                         ) * DISTANCE_FACTOR) as i32;
+                    // println!("neighbour: {:?}", neighbour_node);
                     came_from.insert(neighbour, current);
                     open_set.insert(neighbour);
                 }
@@ -226,14 +240,29 @@ fn calculate_a_star(
 fn reconstruct_path(
     came_from: &HashMap<NodeCoords, NodeCoords>,
     end: NodeCoords,
-) -> Vec<NodeCoords> {
-    let mut total_path: Vec<NodeCoords> = vec![end.clone()];
+    gridmap: &MovementGrid,
+) -> Vec<PathNode> {
+    let mut total_path: Vec<PathNode> = vec![];
 
     let mut current: NodeCoords = end;
+    current = came_from[&current];
+    let endnode: PathNode = PathNode {
+        xy: current.xy.as_vec2() - gridmap.settings.xy_offset,
+        h: end.h.unwrap_or_default(),
+    };
+
+    total_path.push(endnode);
     while came_from.contains_key(&current) {
         current = came_from[&current];
-        total_path.push(current.clone());
-        println!("{:?}", current);
+        total_path.push(PathNode {
+            xy: (current.xy.as_vec2() - gridmap.settings.xy_offset) * gridmap.settings.cell_size,
+            h: current.h.unwrap_or_default(),
+        });
+        println!(
+            "Current xy: {:?}",
+            (current.xy.as_vec2() - gridmap.settings.xy_offset) * gridmap.settings.cell_size
+        );
+        // println!("{:?}", current);
     }
     // println!("{:?}", total_path);
     return total_path;
@@ -242,23 +271,22 @@ fn calculate_base_inertia(start: &NodeCoords, end: &NodeCoords) -> u32 {
     // println!("Heading in {:?}, Heading out {:?}", heading_in, heading_out);
     let mut penalty: u32 = 0;
     let difference: i32 =
-        (start.h.unwrap_or(Heading::N) as i32 - end.h.unwrap_or(Heading::N) as i32).abs();
+        (start.h.unwrap_or_default() as i32 - end.h.unwrap_or(Heading::N) as i32).abs();
     // let off_course: i32 =
-    //     (calculate_heading(&start.xy, &end.xy) as i32 - start.h.unwrap_or(Heading::N) as i32).abs();
+    //     (calculate_heading(&start.xy, &end.xy) as i32 - start.h.unwrap_or_default() as i32).abs();
     let half_headings: i32 = (Heading::iter().len() as f32 / 2.0).ceil() as i32;
     // penalty += (half_headings - (off_course - half_headings).abs()) as u32 * 1;
     penalty += (half_headings - (difference - half_headings).abs()) as u32;
-    penalty *= 20;
+    // penalty *= 20;
     // println!("penalty {}", penalty);
     return penalty;
 }
 fn inertia_based_inter_cell_movement(from: NodeCoords, to: NodeCoords) -> f32 {
-    // let inertia: f32 = 0.0;
+    let inertia: f32 = 20.0;
     let penalty: f32 = calculate_base_inertia(&from, &to) as f32;
-
-    let cost: f32 = from.xy.as_vec2().distance(to.xy.as_vec2()).abs() + penalty;
+    let cost: f32 = from.xy.as_vec2().distance(to.xy.as_vec2()).abs() + (penalty * inertia);
     // println!(
-    //     "from {:?} to {:?} penalty {:?}, cost {:?}",
+    //     "From: {:?}, to: {:?}, penalty: {:?}, cost: {:?}",
     //     from, to, penalty, cost
     // );
     return cost;
@@ -344,17 +372,20 @@ fn move_towards(
     }; // TODO make this dynamic or calculate in the reconstruct_path
 
     let translation_direction: Vec3 = target_scaled - transform.translation;
+
     // let rotation_direction: i32 =
     transform.rotation = Quat::from_rotation_y(
         (std::f64::consts::PI * -2.0 * (target.h as u32 as f64 / Heading::iter().len() as f64))
             as f32,
     );
     let translation_vector: Vec3 = translation_direction.normalize() * (speed * delta) as f32;
-    // println!(
-    //     "translation {:?}\ntarget {:?}",
-    //     transform.translation, target.xy
-    // );
-    if translation_vector.length() >= translation_direction.length() {
+    println!(
+        "translation {:?}\ntarget {:?}",
+        transform.translation, target.xy
+    );
+    if translation_vector.length() >= translation_direction.length()
+        || translation_direction == Vec3::ZERO
+    {
         transform.translation = target_scaled;
         target_reached = true;
     } else {

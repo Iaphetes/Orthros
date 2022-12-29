@@ -372,17 +372,50 @@ fn move_towards(
     }; // TODO make this dynamic or calculate in the reconstruct_path
 
     let translation_direction: Vec3 = target_scaled - transform.translation;
+    let euler_rotation: (f32, f32, f32) = transform.rotation.to_euler(EulerRot::XYZ);
+    let target_rotation: Vec3 = Vec3 {
+        x: 0.0,
+        y: (std::f64::consts::PI * -2.0 * (target.h as u32 as f64 / Heading::iter().len() as f64)
+            % (2.0 * std::f64::consts::PI)
+            + 2.0 * std::f64::consts::PI) as f32,
+        z: 0.0,
+    };
+    // let rotation_direction: f32 = euler_rotation.1
+    //     - (std::f64::consts::PI * -2.0 * (target.h as u32 as f64 / Heading::iter().len() as f64)
+    //         % (2.0 * std::f64::consts::PI)
+    //         + 2.0 * std::f64::consts::PI) as f32
+    //         ;
+    let rotation_direction: Vec3 = (target_rotation
+        - Vec3 {
+            x: euler_rotation.0,
+            y: euler_rotation.1,
+            z: euler_rotation.2,
+        })
+    .normalize_or_zero()
+        * rotation_speed as f32
+        * 1.
+        * delta as f32;
+    if rotation_direction != Vec3::ZERO {
+        println!(
+            "initial rotation {}, {}, {}",
+            euler_rotation.0, euler_rotation.1, euler_rotation.2
+        );
+        println!("target rotation {} ", target_rotation);
+        println!("rotation direction {} \n", rotation_direction);
+        transform.rotate(Quat::from_euler(
+            EulerRot::YXZ,
+            rotation_direction.y,
+            rotation_direction.x,
+            rotation_direction.z,
+        ));
+    }
+    // transform.rotation = Quat::from_rotation_y(
+    //     (std::f64::consts::PI * -2.0 * (target.h as u32 as f64 / Heading::iter().len() as f64)
+    //         % (2.0 * std::f64::consts::PI)) as f32,
+    // );
 
-    // let rotation_direction: i32 =
-    transform.rotation = Quat::from_rotation_y(
-        (std::f64::consts::PI * -2.0 * (target.h as u32 as f64 / Heading::iter().len() as f64))
-            as f32,
-    );
     let translation_vector: Vec3 = translation_direction.normalize() * (speed * delta) as f32;
-    println!(
-        "translation {:?}\ntarget {:?}",
-        transform.translation, target.xy
-    );
+
     if translation_vector.length() >= translation_direction.length()
         || translation_direction == Vec3::ZERO
     {

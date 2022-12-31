@@ -3,6 +3,7 @@ use bevy::ecs::component::Component;
 use bevy::math::Vec3;
 use bevy::prelude::*;
 use bevy::transform::components::Transform;
+use std::f32::consts::PI;
 use std::fs::File;
 use std::io::prelude::*;
 use std::{
@@ -372,12 +373,22 @@ fn move_towards(
     }; // TODO make this dynamic or calculate in the reconstruct_path
 
     let translation_direction: Vec3 = target_scaled - transform.translation;
-    let euler_rotation: (f32, f32, f32) = transform.rotation.to_euler(EulerRot::XYZ);
+    let euler_rotation: (f32, f32, f32) = transform.rotation.to_euler(EulerRot::YXZ);
+    let mut directional_euler_fraction: f32 = ((Heading::iter().len() as u32 - target.h as u32)
+        as f32
+        / (Heading::iter().len() as f32) as f32);
+    println!("{}", directional_euler_fraction);
+    directional_euler_fraction *= 2.0 * PI;
+    println!("{}", directional_euler_fraction);
+    directional_euler_fraction = (directional_euler_fraction + 2.0 * PI) % (2.0 * PI);
+    if directional_euler_fraction > PI {
+        directional_euler_fraction -= 2.0 * PI;
+    }
+
+    println!("{}\n", directional_euler_fraction);
     let target_rotation: Vec3 = Vec3 {
         x: 0.0,
-        y: (std::f64::consts::PI * -2.0 * (target.h as u32 as f64 / Heading::iter().len() as f64)
-            % (2.0 * std::f64::consts::PI)
-            + 2.0 * std::f64::consts::PI) as f32,
+        y: directional_euler_fraction,
         z: 0.0,
     };
     // let rotation_direction: f32 = euler_rotation.1
@@ -387,8 +398,8 @@ fn move_towards(
     //         ;
     let rotation_direction: Vec3 = (target_rotation
         - Vec3 {
-            x: euler_rotation.0,
-            y: euler_rotation.1,
+            x: euler_rotation.1,
+            y: euler_rotation.0,
             z: euler_rotation.2,
         })
     .normalize_or_zero()

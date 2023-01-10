@@ -103,7 +103,7 @@ pub fn environment_setup(
     // NOTE: The ambient light is used to scale how bright the environment map is so with a bright
     // environment map, use an appropriate colour and brightness to match
     commands.insert_resource(AmbientLight {
-        color: Color::rgb_u8(210, 220, 240),
+        color: Color::rgba(1.0, 1.0, 1.0, 1.0),
         brightness: 1.0,
     });
 }

@@ -20,11 +20,10 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
-        .add_plugin(Environment)
         .add_plugin(PlayerController)
+        .add_plugin(Environment)
         .add_plugin(UnitMovement)
-        .add_plugin(RapierDebugRenderPlugin::default())
-        // .add_system(move_units)
+        // .add_plugin(RapierDebugRenderPlugin::default())
         .add_startup_system(setup)
         .run();
 }
@@ -39,7 +38,6 @@ fn setup(
     let material_handle = materials.add(StandardMaterial {
         base_color_texture: Some(texture_handle),
         alpha_mode: AlphaMode::Blend,
-        unlit: true,
         ..default()
     });
 

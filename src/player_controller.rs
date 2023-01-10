@@ -71,7 +71,7 @@ impl Default for CameraControllerSettings {
             velocity: Vec3::ZERO,
             pan_speed: 4.0,
             zoom_speed: 50.0,
-            zoom_min: 10.0,
+            zoom_min: 5.0,
             zoom_max: 100.0,
         }
     }

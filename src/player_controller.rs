@@ -211,7 +211,7 @@ fn camera_setup(mut commands: Commands) {
                 threshold: 1.0,
                 scale: 1.0,
                 knee: 0.1,
-                intensity: 20.0,
+                intensity: 200.0,
 
             }
         ))

@@ -77,8 +77,8 @@ fn setup(
 fn update_emissiveness(mut commands: Commands, loaded_units : Query<(Entity, &Handle<Mesh>, &Name)>) {
     for (entity, mesh_handle, name) in loaded_units.into_iter() {
         if name.as_str() == "Cube.002" {
-            
+            println!("Name: {}", name.as_str());    
         }
-        println!("Name: {}", name.as_str());
+        
     }
 }

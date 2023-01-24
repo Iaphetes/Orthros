@@ -25,6 +25,7 @@ fn main() {
         .add_plugin(UnitMovement)
         // .add_plugin(RapierDebugRenderPlugin::default())
         .add_startup_system(setup)
+        .add_system(update_emissiveness)
         .run();
 }
 
@@ -40,7 +41,8 @@ fn setup(
         alpha_mode: AlphaMode::Blend,
         ..default()
     });
-
+    let scene_handle : Handle<Scene> = asset_server.load("../assets/3d_models/units/fighter_01.glb#Scene0");
+    // let mut scene : Scene = scene_handle.get_field_mut("Scene").unwrap();
     let parent_id = commands
         .spawn(
             //
@@ -70,4 +72,13 @@ fn setup(
         .insert(SelectionCircle {})
         .id();
     commands.entity(parent_id).push_children(&[child_id]);
+}
+
+fn update_emissiveness(mut commands: Commands, loaded_units : Query<(Entity, &Handle<Mesh>, &Name)>) {
+    for (entity, mesh_handle, name) in loaded_units.into_iter() {
+        if name.as_str() == "Cube.002" {
+            
+        }
+        println!("Name: {}", name.as_str());
+    }
 }

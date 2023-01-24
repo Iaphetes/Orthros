@@ -207,13 +207,12 @@ fn camera_setup(mut commands: Commands) {
                 transform: Transform::from_xyz(0.0, 15.0, 0.0).looking_at(Vec3::ZERO, Vec3::Z),
                 ..default()
             },
-            BloomSettings{
+            BloomSettings {
                 threshold: 1.0,
                 scale: 1.0,
                 knee: 0.1,
-                intensity: 200.0,
-
-            }
+                intensity: 0.2,
+            },
         ))
         .insert(CameraControllerSettings::default());
 }

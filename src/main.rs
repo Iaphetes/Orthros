@@ -41,7 +41,8 @@ fn setup(
         alpha_mode: AlphaMode::Blend,
         ..default()
     });
-    let scene_handle : Handle<Scene> = asset_server.load("../assets/3d_models/units/fighter_01.glb#Scene0");
+    let scene_handle: Handle<Scene> =
+        asset_server.load("../assets/3d_models/units/fighter_01.glb#Scene0");
     // let mut scene : Scene = scene_handle.get_field_mut("Scene").unwrap();
     let parent_id = commands
         .spawn(
@@ -50,7 +51,7 @@ fn setup(
                 // Transform::from_xyz(0.0, f32::MAX, 0.0).with_scale(Vec3::splat(0.2)),
                 SceneBundle {
                     transform: Transform::from_xyz(0.0, 2.0, 0.0).with_scale(Vec3::splat(0.2)),
-                    scene: asset_server.load("../assets/3d_models/units/fighter_01.glb#Scene0"),
+                    scene: asset_server.load("../assets/3d_models/units/fighter_01.gltf#Scene0"),
                     //scene: asset_server.load("../assets/3d_models/units/untitled.glb#Scene0"),
                     ..default()
                 },
@@ -74,11 +75,20 @@ fn setup(
     commands.entity(parent_id).push_children(&[child_id]);
 }
 
-fn update_emissiveness(mut commands: Commands, loaded_units : Query<(Entity, &Handle<Mesh>, &Name)>) {
+fn update_emissiveness(
+    mut commands: Commands,
+    loaded_units: Query<(Entity, &Handle<StandardMaterial>, &Name)>,
+    mut mesh_assets: ResMut<Assets<StandardMaterial>>,
+) {
     for (entity, mesh_handle, name) in loaded_units.into_iter() {
         if name.as_str() == "Cube.002" {
-            println!("Name: {}", name.as_str());    
+            let mut glow_material: &mut StandardMaterial =
+                mesh_assets.get_mut(mesh_handle).unwrap();
+            glow_material.emissive = Color::rgb(0.0, 20.0, 0.0);
+
+            // println!("{:?}", glow_material.);
+            println!("Name: {}", name.as_str());
         }
-        
     }
 }
+

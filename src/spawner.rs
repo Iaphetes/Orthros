@@ -2,9 +2,24 @@ use bevy::prelude::*;
 
 // Create some sort of unit map with regards to civ
 
+pub enum Civilisation {
+    GREEK,
+    ROMAN,
+    JAPANESE,
+}
+pub enum UnitType {
+    CRUISER
+}
+
+pub struct UnitSpecifications{
+
+}
 pub struct Instance_Spawner;
 
-pub struct InstanceSpawnRequest {}
+pub struct InstanceSpawnRequest {
+    location: Vec3,
+    type
+}
 
 pub struct Custom_Material_Information {
     emissiveness: f32,

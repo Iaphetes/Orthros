@@ -4,6 +4,7 @@ mod movable;
 mod ownable;
 mod player_controller;
 mod skybox;
+mod spawner;
 
 use bevy::prelude::*;
 
@@ -13,9 +14,9 @@ use crate::movable::UnitMovement;
 // use crate::movable::{move_units, MoveTarget};
 use crate::ownable::{Selectable, SelectionCircle};
 use crate::player_controller::PlayerController;
+use crate::spawner::Instance_Spawner;
 use bevy_rapier3d::geometry::Collider;
 use bevy_rapier3d::prelude::*;
-
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
@@ -23,6 +24,7 @@ fn main() {
         .add_plugin(PlayerController)
         .add_plugin(Environment)
         .add_plugin(UnitMovement)
+        .add_plugin(Instance_Spawner)
         // .add_plugin(RapierDebugRenderPlugin::default())
         .add_startup_system(setup)
         .add_system(update_emissiveness)

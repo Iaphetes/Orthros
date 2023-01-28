@@ -27,7 +27,9 @@ fn main() {
         .add_plugin(Instance_Spawner)
         // .add_plugin(RapierDebugRenderPlugin::default())
         .add_startup_system(setup)
-        .add_system(update_emissiveness)
+        .add_startup_system(game_overlay)
+        .add_system(button_system)
+        // .add_system(update_emissiveness)
         .run();
 }
 
@@ -76,4 +78,62 @@ fn setup(
         .insert(SelectionCircle {})
         .id();
     commands.entity(parent_id).push_children(&[child_id]);
+}
+
+const NORMAL_BUTTON: Color = Color::rgb(0.15, 0.15, 0.15);
+const HOVERED_BUTTON: Color = Color::rgb(0.25, 0.25, 0.25);
+const PRESSED_BUTTON: Color = Color::rgb(0.35, 0.75, 0.35);
+
+fn game_overlay(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands
+        .spawn(ButtonBundle {
+            style: Style {
+                size: Size::new(Val::Px(150.0), Val::Px(65.0)),
+                // center button
+                margin: UiRect::bottom(Val::Percent(1.5)),
+                // horizontally center child text
+                justify_content: JustifyContent::Center,
+                // vertically center child text
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            background_color: NORMAL_BUTTON.into(),
+            ..default()
+        })
+        .with_children(|parent| {
+            parent.spawn(TextBundle::from_section(
+                "Button",
+                TextStyle {
+                    font: asset_server
+                        .load("fonts/android-insomnia-font/AndroidInsomniaRegular.ttf"),
+                    font_size: 40.0,
+                    color: Color::rgb(0.9, 0.9, 0.9),
+                },
+            ));
+        });
+}
+fn button_system(
+    mut interaction_query: Query<
+        (&Interaction, &mut BackgroundColor, &Children),
+        (Changed<Interaction>, With<Button>),
+    >,
+    mut text_query: Query<&mut Text>,
+) {
+    for (interaction, mut color, children) in &mut interaction_query {
+        let mut text = text_query.get_mut(children[0]).unwrap();
+        match *interaction {
+            Interaction::Clicked => {
+                text.sections[0].value = "Press".to_string();
+                *color = PRESSED_BUTTON.into();
+            }
+            Interaction::Hovered => {
+                text.sections[0].value = "Hover".to_string();
+                *color = HOVERED_BUTTON.into();
+            }
+            Interaction::None => {
+                text.sections[0].value = "Button".to_string();
+                *color = NORMAL_BUTTON.into();
+            }
+        }
+    }
 }

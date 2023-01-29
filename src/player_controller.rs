@@ -1,3 +1,4 @@
+#![feature(let_chains)]
 use crate::environment::MovementGrid;
 use crate::movable::MoveCommand;
 use crate::ownable::SelectionCircle;
@@ -12,7 +13,10 @@ pub struct PlayerController;
 impl Plugin for PlayerController {
     fn build(&self, app: &mut App) {
         app.add_plugin(CameraController)
-            .add_system(mouse_controller);
+            .add_event::<RayHit>()
+            .add_startup_system(game_overlay)
+            .add_system(process_mouse)
+            .add_system(mouse_controller.after(process_mouse));
     }
 }
 
@@ -223,107 +227,55 @@ fn mouse_controller(
     rapier_context: Res<RapierContext>,
     cameras: Query<(&Camera, &GlobalTransform)>,
     mut camera_options: Query<&mut CameraControllerSettings, With<Camera>>,
-    windows: Res<Windows>,
     mut selectable: Query<(Entity, &mut Selectable, &Children)>,
     mut selection_circle: Query<&mut Visibility, With<SelectionCircle>>,
     mut selected_entities: Query<(Entity, &Selected)>,
     mut commands: Commands,
     gridmap: Res<MovementGrid>,
+    mut ray_hit_event: EventReader<RayHit>,
 ) {
-    if let Ok(options) = camera_options.get_single_mut() {
-        if mouse_button_input.just_pressed(options.mouse_key_enable_mouse) {
-            for (camera, camera_transform) in cameras.iter() {
-                // First, compute a ray from the mouse position.
-                let (ray_pos, ray_dir) = ray_from_mouse_position(
-                    windows.get_primary().unwrap(),
-                    camera,
-                    camera_transform,
-                );
-
-                // Then cast the ray.
-                let hit = rapier_context.cast_ray(
-                    ray_pos,
-                    ray_dir,
-                    f32::MAX,
-                    true,
-                    QueryFilter::only_dynamic(),
-                );
-                let mut hit_entity: Option<Entity> = None;
-                if let Some((entity, _toi)) = hit {
-                    hit_entity = Some(entity);
-                    if selected_entities.get_mut(entity).is_err() {
-                        if let Ok((_, _select, children)) = selectable.get_mut(entity) {
-                            for child in children.iter() {
-                                if let Ok(mut selection_visibility) =
-                                    selection_circle.get_mut(*child)
-                                {
-                                    selection_visibility.is_visible = true;
-                                    commands.entity(entity).insert(Selected {});
-                                }
-                            }
-                        }
-                    }
-                }
-
-                for (sel_entity, _, children) in selectable.iter() {
-                    let mut deselect: bool = true;
-                    match hit_entity {
-                        Some(unwrapped) => {
-                            if sel_entity == unwrapped {
-                                deselect = false;
-                            }
-                        }
-                        None => {
-                            println! {"No assignment"}
-                        }
-                    }
-                    if deselect {
-                        for child in children.iter() {
-                            if let Ok(mut selection_visibility) = selection_circle.get_mut(*child) {
-                                selection_visibility.is_visible = false;
-                                commands.entity(sel_entity).remove::<Selected>();
-                            }
-                        }
+    for hit in ray_hit_event.iter() {
+        if hit.mouse_key_enable_mouse && selected_entities.get_mut(hit.hit_entity).is_err() {
+            if let Ok((_, _select, children)) = selectable.get_mut(hit.hit_entity) {
+                for child in children.iter() {
+                    if let Ok(mut selection_visibility) = selection_circle.get_mut(*child) {
+                        selection_visibility.is_visible = true;
+                        commands.entity(hit.hit_entity).insert(Selected {});
                     }
                 }
             }
         }
-        if mouse_button_input.just_pressed(options.mouse_unit_move_button) {
-            for (camera, camera_transform) in cameras.iter() {
-                let (ray_pos, ray_dir) = ray_from_mouse_position(
-                    windows.get_primary().unwrap(),
-                    camera,
-                    camera_transform,
-                );
+        // }
 
-                // Then cast the ray.
-                let intersection: Option<(Entity, RayIntersection)> = rapier_context
-                    .cast_ray_and_get_normal(
-                        ray_pos,
-                        ray_dir,
-                        f32::MAX,
-                        true,
-                        QueryFilter::exclude_solids(QueryFilter::new()),
-                    );
-                let target: Vec2;
-                match intersection {
-                    Some((_, rayintersection)) => {
-                        target = Vec2 {
-                            x: rayintersection.point.x,
+        for (sel_entity, _, children) in selectable.iter() {
+            let mut deselect: bool = true;
 
-                            y: rayintersection.point.z,
-                        };
-                        println!("{:?}{:?}", rayintersection.point, target);
-                        for (entity, _) in selected_entities.iter_mut() {
-                            commands.entity(entity).remove::<MoveCommand>();
-                            commands.entity(entity).insert(MoveCommand {
-                                target: target.clone(),
-                                path: Vec::new(),
-                            });
-                        }
+            if sel_entity == hit.hit_entity {
+                deselect = false;
+            }
+            if deselect {
+                for child in children.iter() {
+                    if let Ok(mut selection_visibility) = selection_circle.get_mut(*child) {
+                        selection_visibility.is_visible = false;
+                        commands.entity(sel_entity).remove::<Selected>();
                     }
-                    None => {}
                 }
+            }
+        }
+
+        if hit.mouse_unit_move_button {
+            println!("Move");
+            let target: Vec2 = Vec2 {
+                x: hit.ray_intersection.point.x,
+                y: hit.ray_intersection.point.y,
+            };
+
+            for (entity, _) in selected_entities.iter_mut() {
+                commands.entity(entity).remove::<MoveCommand>();
+                commands.entity(entity).insert(MoveCommand {
+                    target: target.clone(),
+                    path: Vec::new(),
+                });
             }
         }
     }
@@ -363,4 +315,107 @@ fn ray_from_camera_center(camera: &Camera, camera_transform: &GlobalTransform) -
     let far = far.truncate() / far.w;
     let dir: Vec3 = far - near;
     (near, dir)
+}
+
+struct RayHit {
+    hit_entity: Entity,
+    mouse_key_enable_mouse: bool,
+    mouse_unit_move_button: bool,
+    ray_intersection: RayIntersection,
+}
+
+fn process_mouse(
+    mut interaction_query: Query<
+        (&Interaction, &mut BackgroundColor, &Children),
+        (Changed<Interaction>, With<Button>),
+    >,
+    mut text_query: Query<&mut Text>,
+    mut ray_hit_event: EventWriter<RayHit>,
+    mouse_button_input: Res<Input<MouseButton>>,
+    mut camera_options: Query<(&CameraControllerSettings, &Camera, &GlobalTransform)>,
+    windows: Res<Windows>,
+    rapier_context: Res<RapierContext>,
+) {
+    let mut mouse_over_ui: bool = false;
+    for (interaction, mut color, children) in &mut interaction_query {
+        let mut text = text_query.get_mut(children[0]).unwrap();
+        match *interaction {
+            Interaction::Clicked => {
+                text.sections[0].value = "Press".to_string();
+                *color = PRESSED_BUTTON.into();
+                mouse_over_ui = true;
+            }
+            Interaction::Hovered => {
+                text.sections[0].value = "Hover".to_string();
+                *color = HOVERED_BUTTON.into();
+                mouse_over_ui = true;
+            }
+            Interaction::None => {
+                text.sections[0].value = "Button".to_string();
+                *color = NORMAL_BUTTON.into();
+            }
+        }
+    }
+    if let Ok((options, camera, camera_transform)) = camera_options.get_single() {
+        let mouse_key_enable_mouse =
+            mouse_button_input.just_pressed(options.mouse_key_enable_mouse);
+        let mouse_unit_move_button =
+            mouse_button_input.just_pressed(options.mouse_unit_move_button);
+        if !mouse_over_ui && (mouse_key_enable_mouse || mouse_unit_move_button) {
+            let (ray_pos, ray_dir) =
+                ray_from_mouse_position(windows.get_primary().unwrap(), camera, camera_transform);
+            println!("{:?}", mouse_unit_move_button);
+            // Then cast the ray.
+            let hit = rapier_context.cast_ray_and_get_normal(
+                ray_pos,
+                ray_dir,
+                f32::MAX,
+                true,
+                QueryFilter::only_dynamic(),
+            );
+            //Make also sensor cast...
+            let mut hit_entity: Option<Entity> = None;
+            if let Some((hit_entity, ray_intersection)) = hit {
+                println!("Send event");
+                ray_hit_event.send(RayHit {
+                    hit_entity,
+                    mouse_unit_move_button,
+                    mouse_key_enable_mouse,
+                    ray_intersection,
+                })
+            }
+        }
+    }
+}
+const NORMAL_BUTTON: Color = Color::rgb(0.15, 0.15, 0.15);
+const HOVERED_BUTTON: Color = Color::rgb(0.25, 0.25, 0.25);
+const PRESSED_BUTTON: Color = Color::rgb(0.35, 0.75, 0.35);
+
+fn game_overlay(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands
+        .spawn(ButtonBundle {
+            style: Style {
+                size: Size::new(Val::Px(150.0), Val::Px(65.0)),
+                // center button
+                margin: UiRect::bottom(Val::Percent(1.5)),
+                // horizontally center child text
+                justify_content: JustifyContent::Center,
+                // vertically center child text
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            background_color: NORMAL_BUTTON.into(),
+            ..default()
+        })
+        .with_children(|parent| {
+            parent.spawn(TextBundle::from_section(
+                "Button",
+                TextStyle {
+                    font: asset_server
+                        .load("fonts/android-insomnia-font/AndroidInsomniaRegular.ttf"),
+                    font_size: 40.0,
+                    color: Color::rgb(0.9, 0.9, 0.9),
+                },
+            ));
+        });
 }

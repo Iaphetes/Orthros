@@ -267,7 +267,7 @@ fn mouse_controller(
             println!("Move");
             let target: Vec2 = Vec2 {
                 x: hit.ray_intersection.point.x,
-                y: hit.ray_intersection.point.y,
+                y: hit.ray_intersection.point.z,
             };
 
             for (entity, _) in selected_entities.iter_mut() {

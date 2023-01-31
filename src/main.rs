@@ -55,7 +55,6 @@ fn setup(
                 SceneBundle {
                     transform: Transform::from_xyz(0.0, 2.0, 0.0).with_scale(Vec3::splat(0.2)),
                     scene: asset_server.load("../assets/3d_models/units/fighter_01.gltf#Scene0"),
-                    //scene: asset_server.load("../assets/3d_models/units/untitled.glb#Scene0"),
                     ..default()
                 },
                 Selectable {},

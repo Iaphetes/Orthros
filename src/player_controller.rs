@@ -244,24 +244,24 @@ fn mouse_controller(
                     }
                 }
             }
-        }
-        // }
+            for (sel_entity, _, children) in selectable.iter() {
+                let mut deselect: bool = true;
 
-        for (sel_entity, _, children) in selectable.iter() {
-            let mut deselect: bool = true;
-
-            if sel_entity == hit.hit_entity {
-                deselect = false;
-            }
-            if deselect {
-                for child in children.iter() {
-                    if let Ok(mut selection_visibility) = selection_circle.get_mut(*child) {
-                        selection_visibility.is_visible = false;
-                        commands.entity(sel_entity).remove::<Selected>();
+                if sel_entity == hit.hit_entity {
+                    deselect = false;
+                }
+                if deselect {
+                    for child in children.iter() {
+                        if let Ok(mut selection_visibility) = selection_circle.get_mut(*child) {
+                            selection_visibility.is_visible = false;
+                            commands.entity(sel_entity).remove::<Selected>();
+                        }
                     }
                 }
             }
         }
+
+        // }
 
         if hit.mouse_unit_move_button {
             println!("Move");
@@ -361,7 +361,10 @@ fn process_mouse(
             mouse_button_input.just_pressed(options.mouse_key_enable_mouse);
         let mouse_unit_move_button =
             mouse_button_input.just_pressed(options.mouse_unit_move_button);
-        if !mouse_over_ui && (mouse_key_enable_mouse || mouse_unit_move_button) {
+        if mouse_over_ui {
+            return;
+        }
+        if mouse_key_enable_mouse {
             let (ray_pos, ray_dir) =
                 ray_from_mouse_position(windows.get_primary().unwrap(), camera, camera_transform);
             println!("{:?}", mouse_unit_move_button);
@@ -374,6 +377,28 @@ fn process_mouse(
                 QueryFilter::only_dynamic(),
             );
             //Make also sensor cast...
+            let mut hit_entity: Option<Entity> = None;
+            if let Some((hit_entity, ray_intersection)) = hit {
+                println!("Send event");
+                ray_hit_event.send(RayHit {
+                    hit_entity,
+                    mouse_unit_move_button,
+                    mouse_key_enable_mouse,
+                    ray_intersection,
+                })
+            }
+        }
+        if mouse_unit_move_button {
+            let (ray_pos, ray_dir) =
+                ray_from_mouse_position(windows.get_primary().unwrap(), camera, camera_transform);
+
+            let hit = rapier_context.cast_ray_and_get_normal(
+                ray_pos,
+                ray_dir,
+                f32::MAX,
+                true,
+                QueryFilter::exclude_solids(QueryFilter::new()),
+            ); //Make also sensor cast...
             let mut hit_entity: Option<Entity> = None;
             if let Some((hit_entity, ray_intersection)) = hit {
                 println!("Send event");

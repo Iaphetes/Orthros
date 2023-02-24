@@ -42,7 +42,7 @@ fn update_emissiveness(
                 mesh_assets.get_mut(material_handle).unwrap();
             // println!("{:?}", glow_material.emissive);
             // Can multiply by factor to reach correct emmisiveness
-            glow_material.emissive = Color::rgb(0.0, 20.0, 0.0);
+            glow_material.emissive = Color::rgb(0.0, 50.0, 0.0);
 
             // if let Some(image_handle) = glow_material.emissive_texture.clone() {
             //     image_assets.get_mut(&image_handle).unwrap().data;

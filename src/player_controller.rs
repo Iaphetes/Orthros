@@ -344,7 +344,7 @@ fn handle_select(
         QueryFilter::only_dynamic(),
     );
     //Make also sensor cast...
-    let mut hit_entity: Option<Entity> = None;
+    // let mut hit_entity: Option<Entity> = None;
     if let Some((hit_entity, ray_intersection)) = hit {
         println!("Send event");
         ray_hit_event.send(RayHit {

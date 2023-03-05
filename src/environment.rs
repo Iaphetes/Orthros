@@ -73,18 +73,18 @@ pub fn environment_setup(
     mut custom_materials: ResMut<Assets<CustomMaterial>>,
 ) {
     // directional 'sun' light
-   commands.spawn(DirectionalLightBundle {
-       directional_light: DirectionalLight {
-           illuminance: 32000.0,
-           ..default()
-       },
-       transform: Transform {
-           translation: Vec3::new(0.0, 20.0, 0.0),
-           rotation: Quat::from_rotation_x(-std::f32::consts::FRAC_PI_4),
-           ..default()
-       },
-       ..default()
-   });
+    commands.spawn(DirectionalLightBundle {
+        directional_light: DirectionalLight {
+            illuminance: 32000.0,
+            ..default()
+        },
+        transform: Transform {
+            translation: Vec3::new(0.0, 20.0, 0.0),
+            rotation: Quat::from_rotation_x(-std::f32::consts::FRAC_PI_4),
+            ..default()
+        },
+        ..default()
+    });
     commands.spawn(MaterialMeshBundle {
         mesh: meshes.add(shape::Plane { size: 200. }.into()),
         material: custom_materials.add(CustomMaterial {

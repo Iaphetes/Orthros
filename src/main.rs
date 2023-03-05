@@ -39,7 +39,7 @@ fn setup(
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
-    loaded_units: Query<(Entity, &Handle<StandardMaterial>, &Name)>,
+    // loaded_units: Query<(Entity, &Handle<StandardMaterial>, &Name)>,
 ) {
     let texture_handle = asset_server.load("textures/selection_texture.png");
     let material_handle = materials.add(StandardMaterial {
@@ -47,25 +47,18 @@ fn setup(
         alpha_mode: AlphaMode::Blend,
         ..default()
     });
-    let scene_handle: Handle<Scene> =
-        asset_server.load("../assets/3d_models/units/fighter_01.glb#Scene0");
-    // let mut scene : Scene = scene_handle.get_field_mut("Scene").unwrap();
     let parent_id = commands
-        .spawn(
-            //
-            (
-                // Transform::from_xyz(0.0, f32::MAX, 0.0).with_scale(Vec3::splat(0.2)),
-                SceneBundle {
-                    transform: Transform::from_xyz(0.0, 2.0, 0.0).with_scale(Vec3::splat(0.2)),
-                    scene: asset_server.load("../assets/3d_models/units/fighter_01.gltf#Scene0"),
-                    ..default()
-                },
-                Selectable {},
-                RigidBody::Dynamic,
-                Collider::capsule_z(1.0, 1.5),
-                GravityScale(0.0),
-            ),
-        )
+        .spawn((
+            SceneBundle {
+                transform: Transform::from_xyz(0.0, 2.0, 0.0).with_scale(Vec3::splat(0.2)),
+                scene: asset_server.load("../assets/3d_models/units/fighter_01.gltf#Scene0"),
+                ..default()
+            },
+            Selectable {},
+            RigidBody::Dynamic,
+            Collider::capsule_z(1.0, 1.5),
+            GravityScale(0.0),
+        ))
         .id();
     let child_id = commands
         .spawn(MaterialMeshBundle {

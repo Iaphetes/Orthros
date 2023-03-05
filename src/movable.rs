@@ -139,7 +139,6 @@ fn calculate_a_star(
                 .to_owned();
 
             if current.xy == target {
-                let target_vec2: Vec2 = movcmd.target.clone();
                 reconstruct_path(&came_from, current, &gridmap)
                     .iter()
                     .enumerate()
@@ -300,9 +299,9 @@ fn move_towards(
 
     let translation_direction: Vec3 = target_scaled - transform.translation;
     let euler_rotation: (f32, f32, f32) = transform.rotation.to_euler(EulerRot::YXZ);
-    let mut directional_euler_fraction: f32 = ((Heading::iter().len() as u32 - target.h as u32)
+    let mut directional_euler_fraction: f32 = (Heading::iter().len() as u32 - target.h as u32)
         as f32
-        / (Heading::iter().len() as f32) as f32);
+        / (Heading::iter().len() as f32) as f32;
     // println!("{}", directional_euler_fraction);
     directional_euler_fraction *= 2.0 * PI;
     // println!("{}", directional_euler_fraction);

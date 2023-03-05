@@ -323,16 +323,74 @@ struct RayHit {
     mouse_unit_move_button: bool,
     ray_intersection: RayIntersection,
 }
+fn handle_select(
+    windows: &Res<Windows>,
+    rapier_context: &Res<RapierContext>,
+    camera: &Camera,
+    camera_transform: &GlobalTransform,
+    ray_hit_event: &mut EventWriter<RayHit>,
+    mouse_unit_move_button: bool,
+    mouse_key_enable_mouse: bool,
+) {
+    let (ray_pos, ray_dir) =
+        ray_from_mouse_position(windows.get_primary().unwrap(), camera, camera_transform);
+    // println!("{:?}", mouse_unit_move_button);
+    // Then cast the ray.
+    let hit = rapier_context.cast_ray_and_get_normal(
+        ray_pos,
+        ray_dir,
+        f32::MAX,
+        true,
+        QueryFilter::only_dynamic(),
+    );
+    //Make also sensor cast...
+    let mut hit_entity: Option<Entity> = None;
+    if let Some((hit_entity, ray_intersection)) = hit {
+        println!("Send event");
+        ray_hit_event.send(RayHit {
+            hit_entity,
+            mouse_unit_move_button,
+            mouse_key_enable_mouse,
+            ray_intersection,
+        })
+    }
+}
+fn handle_unit_move_cmd(
+    windows: &Res<Windows>,
+    rapier_context: &Res<RapierContext>,
+    camera: &Camera,
+    camera_transform: &GlobalTransform,
+    ray_hit_event: &mut EventWriter<RayHit>,
+    mouse_unit_move_button: bool,
+    mouse_key_enable_mouse: bool,
+) {
+    let (ray_pos, ray_dir) =
+        ray_from_mouse_position(windows.get_primary().unwrap(), camera, camera_transform);
 
+    let hit = rapier_context.cast_ray_and_get_normal(
+        ray_pos,
+        ray_dir,
+        f32::MAX,
+        true,
+        QueryFilter::exclude_solids(QueryFilter::new()),
+    ); //Make also sensor cast...
+    let mut hit_entity: Option<Entity> = None;
+    if let Some((hit_entity, ray_intersection)) = hit {
+        println!("Send event");
+        ray_hit_event.send(RayHit {
+            hit_entity,
+            mouse_unit_move_button,
+            mouse_key_enable_mouse,
+            ray_intersection,
+        })
+    }
+}
 fn process_mouse(
-    mut interaction_query: Query<
-        (&Interaction, &mut BackgroundColor, &Children),
-        (Changed<Interaction>, With<Button>),
-    >,
+    mut interaction_query: Query<(&Interaction, &mut BackgroundColor, &Children)>,
     mut text_query: Query<&mut Text>,
     mut ray_hit_event: EventWriter<RayHit>,
     mouse_button_input: Res<Input<MouseButton>>,
-    mut camera_options: Query<(&CameraControllerSettings, &Camera, &GlobalTransform)>,
+    camera_options: Query<(&CameraControllerSettings, &Camera, &GlobalTransform)>,
     windows: Res<Windows>,
     rapier_context: Res<RapierContext>,
 ) {
@@ -365,50 +423,26 @@ fn process_mouse(
             return;
         }
         if mouse_key_enable_mouse {
-            let (ray_pos, ray_dir) =
-                ray_from_mouse_position(windows.get_primary().unwrap(), camera, camera_transform);
-            println!("{:?}", mouse_unit_move_button);
-            // Then cast the ray.
-            let hit = rapier_context.cast_ray_and_get_normal(
-                ray_pos,
-                ray_dir,
-                f32::MAX,
-                true,
-                QueryFilter::only_dynamic(),
-            );
-            //Make also sensor cast...
-            let mut hit_entity: Option<Entity> = None;
-            if let Some((hit_entity, ray_intersection)) = hit {
-                println!("Send event");
-                ray_hit_event.send(RayHit {
-                    hit_entity,
-                    mouse_unit_move_button,
-                    mouse_key_enable_mouse,
-                    ray_intersection,
-                })
-            }
+            handle_select(
+                &windows,
+                &rapier_context,
+                camera,
+                camera_transform,
+                &mut ray_hit_event,
+                mouse_unit_move_button,
+                mouse_key_enable_mouse,
+            )
         }
         if mouse_unit_move_button {
-            let (ray_pos, ray_dir) =
-                ray_from_mouse_position(windows.get_primary().unwrap(), camera, camera_transform);
-
-            let hit = rapier_context.cast_ray_and_get_normal(
-                ray_pos,
-                ray_dir,
-                f32::MAX,
-                true,
-                QueryFilter::exclude_solids(QueryFilter::new()),
-            ); //Make also sensor cast...
-            let mut hit_entity: Option<Entity> = None;
-            if let Some((hit_entity, ray_intersection)) = hit {
-                println!("Send event");
-                ray_hit_event.send(RayHit {
-                    hit_entity,
-                    mouse_unit_move_button,
-                    mouse_key_enable_mouse,
-                    ray_intersection,
-                })
-            }
+            handle_unit_move_cmd(
+                &windows,
+                &rapier_context,
+                camera,
+                camera_transform,
+                &mut ray_hit_event,
+                mouse_unit_move_button,
+                mouse_key_enable_mouse,
+            )
         }
     }
 }

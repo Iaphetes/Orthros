@@ -21,6 +21,7 @@ use bevy_rapier3d::prelude::*;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
+        .insert_resource(Msaa { samples: 4 })
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugin(PlayerController)
         .add_plugin(Environment)

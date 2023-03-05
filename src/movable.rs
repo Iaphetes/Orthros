@@ -4,13 +4,11 @@ use bevy::math::Vec3;
 use bevy::prelude::*;
 use bevy::transform::components::Transform;
 use std::f32::consts::PI;
-use std::fs::File;
-use std::io::prelude::*;
 use std::{
     collections::{HashMap, HashSet},
     time::Duration,
 };
-use strum::{AsStaticRef, IntoEnumIterator};
+use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 
 pub struct UnitMovement;
@@ -25,10 +23,6 @@ impl Plugin for UnitMovement {
             )));
     }
 }
-// #[derive(Component)]
-// pub struct MoveTarget {
-//     pub target: Vec3,
-// }
 const DISTANCE_FACTOR: f32 = 100.0;
 #[derive(Debug, Eq, PartialEq, Hash, Clone, Copy)]
 pub struct NodeCoords {
@@ -76,40 +70,17 @@ struct AStarNode {
     came_from: Option<UVec2>,
 }
 
-// pub fn move_units(
-//     mut movable_units: Query<(Entity, &mut Transform, &MoveTarget)>,
-//     mut commands: Commands,
-// ) {
-//     for (mut entity, mut transform, movetarget) in movable_units.iter_mut() {
-//         if movetarget.target != start {
-//             let rotation_xz: f32 = Vec2 {
-//                 x: movetarget.target.x - start.x,
-//                 y: movetarget.target.z - start.z,
-//             }
-//             .angle_between(Vec2 { x: 0.0, y: 1.0 });
-//             println!("{:?}", rotation_xz);
-//             transform.rotation = Quat::from_rotation_y(rotation_xz);
-//             start = movetarget.target;
-//         }
-//         commands.entity(entity).remove::<MoveTarget>();
-//     }
-// }
 fn calculate_a_star(
     mut movables: Query<(Entity, &mut Transform, &mut MoveCommand), Without<Movable>>,
     gridmap: Res<MovementGrid>,
     mut commands: Commands,
-) //-> Option<Vec<UVec2>>
-{
+) {
     for (entity, transform, mut movcmd) in movables.iter_mut() {
-        // println!("calculating a*");
         if transform.translation.x == movcmd.target.x && transform.translation.y == movcmd.target.y
         {
             commands.entity(entity).remove::<MoveCommand>();
             continue;
         }
-        // println!("Current position {}", transform.translation);
-        // println!("Target position {}", movcmd.target);
-
         let target: UVec2 =
             (movcmd.target / gridmap.settings.cell_size + gridmap.settings.xy_offset).as_uvec2();
         let start: UVec2 = UVec2 {
@@ -118,7 +89,6 @@ fn calculate_a_star(
             y: (transform.translation.z / gridmap.settings.cell_size + gridmap.settings.xy_offset.y)
                 as u32,
         };
-        println!("start {:?}\ntarget {:?}", start, target);
         let mut movement_grid: Vec<Vec<HashMap<Heading, AStarNode>>> = vec![
             vec![
                 Heading::iter()
@@ -136,7 +106,6 @@ fn calculate_a_star(
             ];
             gridmap.grid[0].len()
         ];
-        // println!("X_Length: {}, Y_Length: {}, Headings: {}", gridmap.grid.len(), gridmap)
         let mut came_from: HashMap<NodeCoords, NodeCoords> = HashMap::new();
         let mut open_set: HashSet<NodeCoords> = HashSet::from([NodeCoords {
             xy: start,
@@ -157,23 +126,18 @@ fn calculate_a_star(
                     [open_cell.xy.y as usize]
                     .get_mut(&open_cell.h.unwrap_or_default())
                     .unwrap();
-                // println!("{:?}", open_cell);
                 let cell_f_score: i32 = cell.f_score;
                 if current_cost == 0 || cell_f_score < current_cost {
                     current = open_cell.clone();
                     current_cost = cell_f_score;
                 }
             }
-            // let mut f = File::options().append(true).open("example.log").unwrap();
-
-            // f.write_all(format!("{:?}", current).as_bytes());
             let current_node: AStarNode = movement_grid[current.xy.x as usize]
                 [current.xy.y as usize]
                 .get(&current.h.unwrap_or_default())
                 .unwrap()
                 .to_owned();
 
-            // println!("current {:?}, target {:?}", current, movcmd.target);
             if current.xy == target {
                 let target_vec2: Vec2 = movcmd.target.clone();
                 reconstruct_path(&came_from, current, &gridmap)
@@ -184,33 +148,12 @@ fn calculate_a_star(
                             movcmd.path.push(x.clone());
                         }
                     });
-                // for node in reconstruct_path(&came_from, current, &gridmap) {
-                //     println!("Node {:?}", node);
-                //     if node.xy + gridmap.settings.xy_offset.as_uvec2()
-                //         != (start - gridmap.settings.xy_offset.as_uvec2())
-                //         && node.xy != movcmd.target.as_uvec2()
-                //     {
-                //         movcmd.path.push(PathNode {
-                //             xy: node.xy.as_vec2(),
-                //             h: node.h.unwrap_or_default(),
-                //         });
-                //     } else if node.xy == movcmd.target.as_uvec2() {
-                //         println!("Last node");
-                //         movcmd.path.push(PathNode {
-                //             xy: target_vec2.clone() * gridmap.settings.cell_size
-                //                 + gridmap.settings.xy_offset,
-                //             h: node.h.unwrap_or_default(),
-                //         });
-                //     }
-                // }
                 commands.entity(entity).insert(Movable {});
                 return;
             }
             open_set.remove(&current);
             let neighbours = get_neighbours(current.xy, &gridmap);
-            // println!("Current: {:?}", current);
             for neighbour in neighbours {
-                // println!("{:?}", neighbour);
                 let mut neighbour_node: &mut AStarNode = movement_grid[neighbour.xy.x as usize]
                     [neighbour.xy.y as usize]
                     .get_mut(&neighbour.h.unwrap_or_default())
@@ -229,14 +172,13 @@ fn calculate_a_star(
                                 h: None,
                             },
                         ) * DISTANCE_FACTOR) as i32;
-                    // println!("neighbour: {:?}", neighbour_node);
                     came_from.insert(neighbour, current);
                     open_set.insert(neighbour);
                 }
             }
         }
     }
-    return; // None;
+    return;
 }
 fn reconstruct_path(
     came_from: &HashMap<NodeCoords, NodeCoords>,
@@ -259,13 +201,7 @@ fn reconstruct_path(
             xy: (current.xy.as_vec2() - gridmap.settings.xy_offset) * gridmap.settings.cell_size,
             h: current.h.unwrap_or_default(),
         });
-        println!(
-            "Current xy: {:?}",
-            (current.xy.as_vec2() - gridmap.settings.xy_offset) * gridmap.settings.cell_size
-        );
-        // println!("{:?}", current);
     }
-    // println!("{:?}", total_path);
     return total_path;
 }
 fn calculate_base_inertia(start: &NodeCoords, end: &NodeCoords) -> u32 {
@@ -273,23 +209,14 @@ fn calculate_base_inertia(start: &NodeCoords, end: &NodeCoords) -> u32 {
     let mut penalty: u32 = 0;
     let difference: i32 =
         (start.h.unwrap_or_default() as i32 - end.h.unwrap_or(Heading::N) as i32).abs();
-    // let off_course: i32 =
-    //     (calculate_heading(&start.xy, &end.xy) as i32 - start.h.unwrap_or_default() as i32).abs();
     let half_headings: i32 = (Heading::iter().len() as f32 / 2.0).ceil() as i32;
-    // penalty += (half_headings - (off_course - half_headings).abs()) as u32 * 1;
     penalty += (half_headings - (difference - half_headings).abs()) as u32;
-    // penalty *= 20;
-    // println!("penalty {}", penalty);
     return penalty;
 }
 fn inertia_based_inter_cell_movement(from: NodeCoords, to: NodeCoords) -> f32 {
     let inertia: f32 = 20.0;
     let penalty: f32 = calculate_base_inertia(&from, &to) as f32;
     let cost: f32 = from.xy.as_vec2().distance(to.xy.as_vec2()).abs() + (penalty * inertia);
-    // println!(
-    //     "From: {:?}, to: {:?}, penalty: {:?}, cost: {:?}",
-    //     from, to, penalty, cost
-    // );
     return cost;
 }
 fn heuristical_distance(from: NodeCoords, to: NodeCoords) -> f32 {
@@ -322,7 +249,6 @@ fn check_path_width(current: UVec2, target: UVec2, gridmap: &MovementGrid) -> bo
         if gridmap.grid[current.x as usize][target.y as usize] != 0
             && gridmap.grid[target.x as usize][current.y as usize] != 0
         {
-            println!("current {} neighbour {}", current, target);
             return false;
         }
     }
@@ -377,25 +303,19 @@ fn move_towards(
     let mut directional_euler_fraction: f32 = ((Heading::iter().len() as u32 - target.h as u32)
         as f32
         / (Heading::iter().len() as f32) as f32);
-    println!("{}", directional_euler_fraction);
+    // println!("{}", directional_euler_fraction);
     directional_euler_fraction *= 2.0 * PI;
-    println!("{}", directional_euler_fraction);
+    // println!("{}", directional_euler_fraction);
     directional_euler_fraction = (directional_euler_fraction + 2.0 * PI) % (2.0 * PI);
     if directional_euler_fraction > PI {
         directional_euler_fraction -= 2.0 * PI;
     }
 
-    println!("{}\n", directional_euler_fraction);
     let target_rotation: Vec3 = Vec3 {
         x: 0.0,
         y: directional_euler_fraction,
         z: 0.0,
     };
-    // let rotation_direction: f32 = euler_rotation.1
-    //     - (std::f64::consts::PI * -2.0 * (target.h as u32 as f64 / Heading::iter().len() as f64)
-    //         % (2.0 * std::f64::consts::PI)
-    //         + 2.0 * std::f64::consts::PI) as f32
-    //         ;
     let rotation_direction: Vec3 = (target_rotation
         - Vec3 {
             x: euler_rotation.1,
@@ -407,12 +327,6 @@ fn move_towards(
         * 1.
         * delta as f32;
     if rotation_direction != Vec3::ZERO {
-        println!(
-            "initial rotation {}, {}, {}",
-            euler_rotation.0, euler_rotation.1, euler_rotation.2
-        );
-        println!("target rotation {} ", target_rotation);
-        println!("rotation direction {} \n", rotation_direction);
         transform.rotate(Quat::from_euler(
             EulerRot::YXZ,
             rotation_direction.y,
@@ -420,11 +334,6 @@ fn move_towards(
             rotation_direction.z,
         ));
     }
-    // transform.rotation = Quat::from_rotation_y(
-    //     (std::f64::consts::PI * -2.0 * (target.h as u32 as f64 / Heading::iter().len() as f64)
-    //         % (2.0 * std::f64::consts::PI)) as f32,
-    // );
-
     let translation_vector: Vec3 = translation_direction.normalize() * (speed * delta) as f32;
 
     if translation_vector.length() >= translation_direction.length()
@@ -442,9 +351,6 @@ fn move_units(
     time: Res<Time>,
     mut commands: Commands,
 ) {
-    // timer.0.tick(time.delta());
-    // if timer.0.finished() {
-    //     timer.0.set_duration(Duration::from_millis(150));
     let speed: f64 = 1.0;
     let rotation_speed: f64 = 1.0;
     for (entity, mut transform, mut movcmd) in movables.iter_mut() {
@@ -468,5 +374,4 @@ fn move_units(
             movcmd.path.pop();
         }
     }
-    // }
 }

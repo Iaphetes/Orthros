@@ -14,7 +14,7 @@ use crate::movable::UnitMovement;
 // use crate::movable::{move_units, MoveTarget};
 use crate::ownable::{Selectable, SelectionCircle};
 use crate::player_controller::PlayerController;
-use crate::spawner::Instance_Spawner;
+use crate::spawner::InstanceSpawner;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_rapier3d::geometry::Collider;
 use bevy_rapier3d::prelude::*;
@@ -26,7 +26,7 @@ fn main() {
         .add_plugin(PlayerController)
         .add_plugin(Environment)
         .add_plugin(UnitMovement)
-        .add_plugin(Instance_Spawner)
+        .add_plugin(InstanceSpawner)
         .add_plugin(WorldInspectorPlugin)
         // .add_plugin(RapierDebugRenderPlugin::default())
         .add_startup_system(setup)

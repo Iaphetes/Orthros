@@ -1,19 +1,27 @@
-use bevy::prelude::*;
+use bevy::{ecs::query::WorldQuery, prelude::*};
+use std::collections::HashMap;
 
 // Create some sort of unit map with regards to civ
-
+#[derive(Eq, Hash, PartialEq)]
 pub enum Civilisation {
     GREEK,
     ROMAN,
     JAPANESE,
 }
+#[derive(Eq, Hash, PartialEq)]
 pub enum UnitType {
     CRUISER,
 }
-
-pub struct UnitSpecifications {}
-pub struct Instance_Spawner;
-
+#[derive(Resource)]
+pub struct UnitSpecifications {
+    unit_specifications: HashMap<(Civilisation, UnitType), UnitSpecification>,
+}
+//TODO specify modifications to model (e.g #update_emissiveness)
+pub struct UnitSpecification {
+    file_path: String,
+}
+pub struct InstanceSpawner;
+#[derive(Component)]
 pub struct InstanceSpawnRequest {
     location: Vec3,
     unit_type: UnitType,
@@ -24,11 +32,25 @@ pub struct Custom_Material_Information {
     emissiveness: f32,
 }
 
-impl Plugin for Instance_Spawner {
+impl Plugin for InstanceSpawner {
     fn build(&self, app: &mut App) {
         app.add_system(update_emissiveness);
+        populate_units(app);
     }
 }
+fn populate_units(app: &mut App) {
+    let mut unit_specifications: UnitSpecifications = UnitSpecifications {
+        unit_specifications: HashMap::new(),
+    };
+    unit_specifications.unit_specifications.insert(
+        (Civilisation::GREEK, UnitType::CRUISER),
+        UnitSpecification {
+            file_path: "../assets/3d_models/units/fighter_01.gltf#Scene0".into(),
+        },
+    );
+    app.insert_resource(unit_specifications);
+}
+fn spawn(spawn_requests: Query<&InstanceSpawnRequest>, mut commands: Commands) {}
 
 fn update_emissiveness(
     mut commands: Commands,

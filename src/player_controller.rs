@@ -255,7 +255,7 @@ fn mouse_controller(
                 if deselect {
                     for child in children.iter() {
                         if let Ok(mut selection_visibility) = selection_circle.get_mut(*child) {
-                            *selection_visibility = Visibility::Visible;
+                            *selection_visibility = Visibility::Hidden;
                             commands.entity(sel_entity).remove::<Selected>();
                         }
                     }

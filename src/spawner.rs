@@ -92,10 +92,16 @@ fn spawn(
                     .id();
                 let child_id = commands
                     .spawn(MaterialMeshBundle {
-                        mesh: meshes.add(shape::Plane { size: 5. }.into()),
+                        mesh: meshes.add(
+                            shape::Plane {
+                                size: 5.,
+                                subdivisions: 1,
+                            }
+                            .into(),
+                        ),
                         material: material_handle,
                         transform: Transform::from_scale(Vec3::splat(1.0)),
-                        visibility: Visibility { is_visible: false },
+                        visibility: Visibility::Hidden,
                         ..default()
                     })
                     .insert(SelectionCircle {})

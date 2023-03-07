@@ -86,7 +86,13 @@ pub fn environment_setup(
         ..default()
     });
     commands.spawn(MaterialMeshBundle {
-        mesh: meshes.add(shape::Plane { size: 200. }.into()),
+        mesh: meshes.add(
+            shape::Plane {
+                size: 200.,
+                subdivisions: 1,
+            }
+            .into(),
+        ),
         material: custom_materials.add(CustomMaterial {
             color: Color::GREEN,
             alpha_mode: AlphaMode::Blend,

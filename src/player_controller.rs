@@ -8,6 +8,9 @@ use bevy::input::mouse::MouseScrollUnit;
 use bevy::input::mouse::MouseWheel;
 use bevy::math::Quat;
 use bevy::prelude::*;
+use bevy::reflect::erased_serde::__private::serde::de;
+use bevy::utils::tracing::field::Visit;
+use bevy::window::PrimaryWindow;
 use bevy_rapier3d::prelude::*;
 pub struct PlayerController;
 impl Plugin for PlayerController {
@@ -202,22 +205,14 @@ pub fn camera_controller(
 fn camera_setup(mut commands: Commands) {
     // camera
     commands
-        .spawn((
-            Camera3dBundle {
-                camera: Camera {
-                    hdr: true,
-                    ..default()
-                },
-                transform: Transform::from_xyz(0.0, 15.0, 0.0).looking_at(Vec3::ZERO, Vec3::Z),
+        .spawn(Camera3dBundle {
+            camera: Camera {
+                hdr: true,
                 ..default()
             },
-            BloomSettings {
-                threshold: 1.0,
-                scale: 1.0,
-                knee: 0.1,
-                intensity: 0.2,
-            },
-        ))
+            transform: Transform::from_xyz(0.0, 15.0, 0.0).looking_at(Vec3::ZERO, Vec3::Z),
+            ..default()
+        })
         .insert(CameraControllerSettings::default());
 }
 
@@ -239,7 +234,7 @@ fn mouse_controller(
             if let Ok((_, _select, children)) = selectable.get_mut(hit.hit_entity) {
                 for child in children.iter() {
                     if let Ok(mut selection_visibility) = selection_circle.get_mut(*child) {
-                        selection_visibility.is_visible = true;
+                        *selection_visibility = Visibility::Visible;
                         commands.entity(hit.hit_entity).insert(Selected {});
                     }
                 }
@@ -253,7 +248,7 @@ fn mouse_controller(
                 if deselect {
                     for child in children.iter() {
                         if let Ok(mut selection_visibility) = selection_circle.get_mut(*child) {
-                            selection_visibility.is_visible = false;
+                            *selection_visibility = Visibility::Visible;
                             commands.entity(sel_entity).remove::<Selected>();
                         }
                     }
@@ -324,7 +319,7 @@ struct RayHit {
     ray_intersection: RayIntersection,
 }
 fn handle_select(
-    windows: &Res<Windows>,
+    primary: &Window,
     rapier_context: &Res<RapierContext>,
     camera: &Camera,
     camera_transform: &GlobalTransform,
@@ -332,8 +327,7 @@ fn handle_select(
     mouse_unit_move_button: bool,
     mouse_key_enable_mouse: bool,
 ) {
-    let (ray_pos, ray_dir) =
-        ray_from_mouse_position(windows.get_primary().unwrap(), camera, camera_transform);
+    let (ray_pos, ray_dir) = ray_from_mouse_position(primary, camera, camera_transform);
     // println!("{:?}", mouse_unit_move_button);
     // Then cast the ray.
     let hit = rapier_context.cast_ray_and_get_normal(
@@ -356,7 +350,7 @@ fn handle_select(
     }
 }
 fn handle_unit_move_cmd(
-    windows: &Res<Windows>,
+    primary: &Window,
     rapier_context: &Res<RapierContext>,
     camera: &Camera,
     camera_transform: &GlobalTransform,
@@ -364,8 +358,7 @@ fn handle_unit_move_cmd(
     mouse_unit_move_button: bool,
     mouse_key_enable_mouse: bool,
 ) {
-    let (ray_pos, ray_dir) =
-        ray_from_mouse_position(windows.get_primary().unwrap(), camera, camera_transform);
+    let (ray_pos, ray_dir) = ray_from_mouse_position(primary, camera, camera_transform);
 
     let hit = rapier_context.cast_ray_and_get_normal(
         ray_pos,
@@ -391,9 +384,13 @@ fn process_mouse(
     mut ray_hit_event: EventWriter<RayHit>,
     mouse_button_input: Res<Input<MouseButton>>,
     camera_options: Query<(&CameraControllerSettings, &Camera, &GlobalTransform)>,
-    windows: Res<Windows>,
+    primary_query: Query<&Window, With<PrimaryWindow>>,
     rapier_context: Res<RapierContext>,
 ) {
+    let Ok(primary) = primary_query.get_single() else {
+        return;
+    };
+
     let mut mouse_over_ui: bool = false;
     for (interaction, mut color, children) in &mut interaction_query {
         let mut text = text_query.get_mut(children[0]).unwrap();
@@ -424,7 +421,7 @@ fn process_mouse(
         }
         if mouse_key_enable_mouse {
             handle_select(
-                &windows,
+                &primary,
                 &rapier_context,
                 camera,
                 camera_transform,
@@ -435,7 +432,7 @@ fn process_mouse(
         }
         if mouse_unit_move_button {
             handle_unit_move_cmd(
-                &windows,
+                &primary,
                 &rapier_context,
                 camera,
                 camera_transform,

@@ -34,13 +34,7 @@ fn main() {
         .run();
 }
 
-fn setup(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    // loaded_units: Query<(Entity, &Handle<StandardMaterial>, &Name)>,
-) {
+fn setup(mut commands: Commands) {
     for x in 0..10 {
         for y in 0..10 {
             commands.spawn(InstanceSpawnRequest {
@@ -54,4 +48,13 @@ fn setup(
             });
         }
     }
+    commands.spawn(InstanceSpawnRequest {
+        location: Vec3 {
+            x: -3.0,
+            y: 2.0,
+            z: -3.0,
+        },
+        unit_type: UnitType::SPACESTATION,
+        civilisation: Civilisation::GREEK,
+    });
 }

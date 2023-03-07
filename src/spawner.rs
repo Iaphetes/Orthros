@@ -13,6 +13,7 @@ pub enum Civilisation {
 #[derive(Eq, Hash, PartialEq, Clone, Copy)]
 pub enum UnitType {
     CRUISER,
+    SPACESTATION,
 }
 #[derive(Resource)]
 pub struct UnitSpecifications {
@@ -47,9 +48,16 @@ fn populate_units(app: &mut App) {
     unit_specifications.unit_specifications.insert(
         (Civilisation::GREEK, UnitType::CRUISER),
         UnitSpecification {
-            file_path: "../assets/3d_models/units/fighter_01.gltf#Scene0".into(),
+            file_path: "../assets/3d_models/units/greek/fighter_01.gltf#Scene0".into(),
         },
     );
+    unit_specifications.unit_specifications.insert(
+        (Civilisation::GREEK, UnitType::SPACESTATION),
+        UnitSpecification {
+            file_path: "../assets/3d_models/buildings/greek/spacestation.gltf#Scene0".into(),
+        },
+    );
+
     app.insert_resource(unit_specifications);
 }
 fn spawn(

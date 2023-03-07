@@ -3,14 +3,17 @@ use crate::environment::MovementGrid;
 use crate::movable::MoveCommand;
 use crate::ownable::SelectionCircle;
 use crate::ownable::{Selectable, Selected};
-use bevy::core_pipeline::bloom::BloomSettings;
 use bevy::input::mouse::MouseScrollUnit;
 use bevy::input::mouse::MouseWheel;
 use bevy::math::Quat;
-use bevy::prelude::*;
-use bevy::reflect::erased_serde::__private::serde::de;
-use bevy::utils::tracing::field::Visit;
 use bevy::window::PrimaryWindow;
+use bevy::{
+    core_pipeline::{
+        bloom::{BloomCompositeMode, BloomSettings},
+        tonemapping::Tonemapping,
+    },
+    prelude::*,
+};
 use bevy_rapier3d::prelude::*;
 pub struct PlayerController;
 impl Plugin for PlayerController {
@@ -205,14 +208,18 @@ pub fn camera_controller(
 fn camera_setup(mut commands: Commands) {
     // camera
     commands
-        .spawn(Camera3dBundle {
-            camera: Camera {
-                hdr: true,
+        .spawn((
+            Camera3dBundle {
+                camera: Camera {
+                    hdr: true,
+                    ..default()
+                },
+                transform: Transform::from_xyz(0.0, 15.0, 0.0).looking_at(Vec3::ZERO, Vec3::Z),
+                tonemapping: Tonemapping::TonyMcMapface,
                 ..default()
             },
-            transform: Transform::from_xyz(0.0, 15.0, 0.0).looking_at(Vec3::ZERO, Vec3::Z),
-            ..default()
-        })
+            BloomSettings::default(),
+        ))
         .insert(CameraControllerSettings::default());
 }
 

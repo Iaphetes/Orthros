@@ -124,14 +124,16 @@ fn update_emissiveness(
         if name.as_str() == "Cube.002" {
             let mut glow_material: &mut StandardMaterial =
                 mesh_assets.get_mut(material_handle).unwrap();
-            // println!("{:?}", glow_material.emissive);
+            println!("{:?}", glow_material.emissive);
             // Can multiply by factor to reach correct emmisiveness
-            glow_material.emissive = Color::rgb(0.0, 50.0, 0.0);
+            glow_material.emissive = Color::rgb_linear(0.0, 250.0, 0.0);
 
             // if let Some(image_handle) = glow_material.emissive_texture.clone() {
             //     image_assets.get_mut(&image_handle).unwrap().data;
             // }
             // println!("Name: {}", name.as_str());
+        } else {
+            println!("Name {}", name);
         }
     }
 }

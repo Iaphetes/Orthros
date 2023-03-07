@@ -1,14 +1,16 @@
 use bevy::{ecs::query::WorldQuery, prelude::*};
 use std::collections::HashMap;
 
+use crate::ownable::{Selectable, SelectionCircle};
+use bevy_rapier3d::prelude::*;
 // Create some sort of unit map with regards to civ
-#[derive(Eq, Hash, PartialEq)]
+#[derive(Eq, Hash, PartialEq, Clone, Copy)]
 pub enum Civilisation {
     GREEK,
-    ROMAN,
-    JAPANESE,
+    // ROMAN,
+    // JAPANESE,
 }
-#[derive(Eq, Hash, PartialEq)]
+#[derive(Eq, Hash, PartialEq, Clone, Copy)]
 pub enum UnitType {
     CRUISER,
 }
@@ -23,18 +25,18 @@ pub struct UnitSpecification {
 pub struct InstanceSpawner;
 #[derive(Component)]
 pub struct InstanceSpawnRequest {
-    location: Vec3,
-    unit_type: UnitType,
-    civilisation: Civilisation,
+    pub location: Vec3,
+    pub unit_type: UnitType,
+    pub civilisation: Civilisation,
 }
 
-pub struct Custom_Material_Information {
+pub struct CustomMaterialInformation {
     emissiveness: f32,
 }
 
 impl Plugin for InstanceSpawner {
     fn build(&self, app: &mut App) {
-        app.add_system(update_emissiveness);
+        app.add_system(spawn).add_system(update_emissiveness);
         populate_units(app);
     }
 }
@@ -50,7 +52,61 @@ fn populate_units(app: &mut App) {
     );
     app.insert_resource(unit_specifications);
 }
-fn spawn(spawn_requests: Query<&InstanceSpawnRequest>, mut commands: Commands) {}
+fn spawn(
+    spawn_requests: Query<(Entity, &InstanceSpawnRequest)>,
+    mut commands: Commands,
+    unit_specifications: Res<UnitSpecifications>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    asset_server: Res<AssetServer>,
+) {
+    for (entity, spawn_request) in spawn_requests.iter() {
+        match unit_specifications
+            .unit_specifications
+            .get(&(spawn_request.civilisation, spawn_request.unit_type))
+        {
+            Some(unit_specification) => {
+                let texture_handle = asset_server.load("textures/selection_texture.png");
+                let material_handle = materials.add(StandardMaterial {
+                    base_color_texture: Some(texture_handle),
+                    alpha_mode: AlphaMode::Blend,
+                    ..default()
+                });
+                let parent_id = commands
+                    .spawn((
+                        SceneBundle {
+                            transform: Transform::from_xyz(
+                                spawn_request.location.x,
+                                spawn_request.location.y,
+                                spawn_request.location.z,
+                            )
+                            .with_scale(Vec3::splat(0.2)),
+                            scene: asset_server.load(&unit_specification.file_path),
+                            ..default()
+                        },
+                        Selectable {},
+                        RigidBody::Dynamic,
+                        Collider::capsule_z(1.0, 1.5),
+                        GravityScale(0.0),
+                    ))
+                    .id();
+                let child_id = commands
+                    .spawn(MaterialMeshBundle {
+                        mesh: meshes.add(shape::Plane { size: 5. }.into()),
+                        material: material_handle,
+                        transform: Transform::from_scale(Vec3::splat(1.0)),
+                        visibility: Visibility { is_visible: false },
+                        ..default()
+                    })
+                    .insert(SelectionCircle {})
+                    .id();
+                commands.entity(parent_id).push_children(&[child_id]);
+            }
+            None => {}
+        }
+        commands.entity(entity).remove::<InstanceSpawnRequest>();
+    }
+}
 
 fn update_emissiveness(
     mut commands: Commands,

@@ -1,7 +1,10 @@
 use bevy::{ecs::query::WorldQuery, prelude::*};
 use std::collections::HashMap;
 
-use crate::ownable::{Selectable, SelectionCircle};
+use crate::{
+    movable::Movable,
+    ownable::{Selectable, SelectionCircle},
+};
 use bevy_rapier3d::prelude::*;
 // Create some sort of unit map with regards to civ
 #[derive(Eq, Hash, PartialEq, Clone, Copy)]
@@ -22,6 +25,7 @@ pub struct UnitSpecifications {
 //TODO specify modifications to model (e.g #update_emissiveness)
 pub struct UnitSpecification {
     file_path: String,
+    movable: bool,
 }
 pub struct InstanceSpawner;
 #[derive(Component)]
@@ -49,12 +53,14 @@ fn populate_units(app: &mut App) {
         (Civilisation::GREEK, UnitType::CRUISER),
         UnitSpecification {
             file_path: "../assets/3d_models/units/greek/fighter_01.gltf#Scene0".into(),
+            movable: true,
         },
     );
     unit_specifications.unit_specifications.insert(
         (Civilisation::GREEK, UnitType::SPACESTATION),
         UnitSpecification {
             file_path: "../assets/3d_models/buildings/greek/spacestation.gltf#Scene0".into(),
+            movable: false,
         },
     );
 
@@ -98,6 +104,9 @@ fn spawn(
                         GravityScale(0.0),
                     ))
                     .id();
+                if unit_specification.movable {
+                    commands.entity(parent_id).insert(Movable {});
+                }
                 let child_id = commands
                     .spawn(MaterialMeshBundle {
                         mesh: meshes.add(

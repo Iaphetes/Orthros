@@ -1,6 +1,6 @@
 #![feature(let_chains)]
 use crate::environment::MovementGrid;
-use crate::movable::MoveCommand;
+use crate::movable::{Movable, MoveCommand};
 use crate::ownable::SelectionCircle;
 use crate::ownable::{Selectable, Selected};
 use bevy::input::mouse::MouseScrollUnit;
@@ -232,6 +232,7 @@ fn mouse_controller(
     mut selectable: Query<(Entity, &mut Selectable, &Children)>,
     mut selection_circle: Query<&mut Visibility, With<SelectionCircle>>,
     mut selected_entities: Query<(Entity, &Selected)>,
+    mut movables: Query<Entity, (With<Selected>, With<Movable>)>,
     mut commands: Commands,
     gridmap: Res<MovementGrid>,
     mut ray_hit_event: EventReader<RayHit>,
@@ -272,11 +273,10 @@ fn mouse_controller(
                 y: hit.ray_intersection.point.z,
             };
 
-            for (entity, _) in selected_entities.iter_mut() {
+            for entity in movables.iter_mut() {
                 commands.entity(entity).remove::<MoveCommand>();
                 commands.entity(entity).insert(MoveCommand {
                     target: target.clone(),
-                    path: Vec::new(),
                 });
             }
         }

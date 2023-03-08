@@ -56,10 +56,9 @@ enum Heading {
 #[derive(Component)]
 pub struct MoveCommand {
     pub target: Vec2,
-    pub path: Vec<PathNode>,
 }
 #[derive(Component)]
-struct Movable {}
+pub struct Movable {}
 
 #[derive(Resource)]
 struct MovementTimer(Timer);
@@ -69,9 +68,12 @@ struct AStarNode {
     g_score: i32,
     came_from: Option<UVec2>,
 }
-
+#[derive(Component)]
+struct MovementPath {
+    pub path: Vec<PathNode>,
+}
 fn calculate_a_star(
-    mut movables: Query<(Entity, &mut Transform, &mut MoveCommand), Without<Movable>>,
+    mut movables: Query<(Entity, &mut Transform, &mut MoveCommand), Without<MovementPath>>,
     gridmap: Res<MovementGrid>,
     mut commands: Commands,
 ) {
@@ -139,15 +141,18 @@ fn calculate_a_star(
                 .to_owned();
 
             if current.xy == target {
+                let mut movementpath: MovementPath = MovementPath { path: Vec::new() };
+
                 reconstruct_path(&came_from, current, &gridmap)
                     .iter()
                     .enumerate()
                     .for_each(|(i, x)| {
                         if i != 0 {
-                            movcmd.path.push(x.clone());
+                            movementpath.path.push(x.clone());
                         }
                     });
-                commands.entity(entity).insert(Movable {});
+                commands.entity(entity).insert(movementpath);
+
                 return;
             }
             open_set.remove(&current);
@@ -346,16 +351,16 @@ fn move_towards(
     return target_reached;
 }
 fn move_units(
-    mut movables: Query<(Entity, &mut Transform, &mut MoveCommand), With<Movable>>,
+    mut movables: Query<(Entity, &mut Transform, &mut MovementPath), With<MovementPath>>,
     time: Res<Time>,
     mut commands: Commands,
 ) {
     let speed: f64 = 1.0;
     let rotation_speed: f64 = 1.0;
-    for (entity, mut transform, mut movcmd) in movables.iter_mut() {
+    for (entity, mut transform, mut movementpath) in movables.iter_mut() {
         let node: &PathNode;
 
-        match movcmd.path.last() {
+        match movementpath.path.last() {
             Some(n) => node = n,
             None => {
                 commands.entity(entity).remove::<MoveCommand>();
@@ -370,7 +375,7 @@ fn move_units(
             time.delta().as_secs_f64(),
             node,
         ) {
-            movcmd.path.pop();
+            movementpath.path.pop();
         }
     }
 }

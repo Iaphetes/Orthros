@@ -13,11 +13,8 @@ use spawner::{Civilisation, InstanceSpawnRequest, UnitType};
 use crate::environment::Environment;
 use crate::movable::UnitMovement;
 // use crate::movable::{move_units, MoveTarget};
-use crate::ownable::{Selectable, SelectionCircle};
 use crate::player_controller::PlayerController;
 use crate::spawner::InstanceSpawner;
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use bevy_rapier3d::geometry::Collider;
 use bevy_rapier3d::prelude::*;
 fn main() {
     App::new()

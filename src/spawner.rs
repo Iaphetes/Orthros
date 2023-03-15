@@ -5,7 +5,10 @@ use crate::{
     movable::Movable,
     ownable::{Selectable, SelectionCircle},
 };
-use bevy_rapier3d::prelude::*;
+use bevy_rapier3d::{
+    prelude::*,
+    rapier::prelude::{ShapeType, SharedShape},
+};
 // Create some sort of unit map with regards to civ
 #[derive(Eq, Hash, PartialEq, Clone, Copy)]
 pub enum Civilisation {
@@ -18,6 +21,7 @@ pub enum UnitType {
     CRUISER,
     SPACESTATION,
 }
+
 #[derive(Resource)]
 pub struct UnitSpecifications {
     unit_specifications: HashMap<(Civilisation, UnitType), UnitSpecification>,
@@ -26,6 +30,9 @@ pub struct UnitSpecifications {
 pub struct UnitSpecification {
     file_path: String,
     movable: bool,
+    shape: ShapeType,
+    dimensions: Vec3,
+    prescaling: f32,
 }
 pub struct InstanceSpawner;
 #[derive(Component)]
@@ -54,6 +61,13 @@ fn populate_units(app: &mut App) {
         UnitSpecification {
             file_path: "../assets/3d_models/units/greek/fighter_01.gltf#Scene0".into(),
             movable: true,
+            shape: ShapeType::Capsule,
+            dimensions: Vec3 {
+                x: 1.0,
+                y: 1.0,
+                z: 1.0,
+            },
+            prescaling: 0.2,
         },
     );
     unit_specifications.unit_specifications.insert(
@@ -61,6 +75,13 @@ fn populate_units(app: &mut App) {
         UnitSpecification {
             file_path: "../assets/3d_models/buildings/greek/spacestation.gltf#Scene0".into(),
             movable: false,
+            shape: ShapeType::Ball,
+            dimensions: Vec3 {
+                x: 1.0,
+                y: 3.0,
+                z: 2.0,
+            },
+            prescaling: 0.2,
         },
     );
 
@@ -86,6 +107,22 @@ fn spawn(
                     alpha_mode: AlphaMode::Blend,
                     ..default()
                 });
+                let collider: Collider;
+                match unit_specification.shape {
+                    ShapeType::Ball => {
+                        collider = Collider::ball(unit_specification.dimensions.max_element());
+                    }
+                    ShapeType::Capsule => {
+                        collider = Collider::capsule_z(
+                            unit_specification.dimensions.max_element() / 2.0,
+                            unit_specification.dimensions.min_element(),
+                        );
+                    }
+                    shape => {
+                        println!("Shape {:?} not supported", shape);
+                        continue;
+                    }
+                }
                 let parent_id = commands
                     .spawn((
                         SceneBundle {

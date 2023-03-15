@@ -211,14 +211,14 @@ fn camera_setup(mut commands: Commands) {
         .spawn((
             Camera3dBundle {
                 camera: Camera {
-                    hdr: true,
+                    // hdr: true,
                     ..default()
                 },
                 transform: Transform::from_xyz(0.0, 15.0, 0.0).looking_at(Vec3::ZERO, Vec3::Z),
-                tonemapping: Tonemapping::TonyMcMapface,
+                // tonemapping: Tonemapping::TonyMcMapface,
                 ..default()
             },
-            BloomSettings::default(),
+            // BloomSettings::default(),
         ))
         .insert(CameraControllerSettings::default());
 }

@@ -468,6 +468,10 @@ fn game_overlay(mut commands: Commands, asset_server: Res<AssetServer>) {
                 ..default()
             },
             background_color: NORMAL_BUTTON.into(),
+            // image: UiImage {
+            //     texture: asset_server.load("textures/selection_texture.png"),
+            //     ..default()
+            // },
             ..default()
         })
         .with_children(|parent| {

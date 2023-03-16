@@ -148,7 +148,7 @@ fn spawn(
                     .spawn(MaterialMeshBundle {
                         mesh: meshes.add(
                             shape::Plane {
-                                size: 5.,
+                                size: 2.5 * unit_specification.dimensions.max_element(),
                                 subdivisions: 1,
                             }
                             .into(),

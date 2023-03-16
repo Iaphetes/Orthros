@@ -65,7 +65,7 @@ fn populate_units(app: &mut App) {
             dimensions: Vec3 {
                 x: 1.0,
                 y: 1.0,
-                z: 1.0,
+                z: 2.0,
             },
             prescaling: 0.2,
         },
@@ -75,11 +75,11 @@ fn populate_units(app: &mut App) {
         UnitSpecification {
             file_path: "../assets/3d_models/buildings/greek/spacestation.gltf#Scene0".into(),
             movable: false,
-            shape: ShapeType::Ball,
+            shape: ShapeType::Capsule,
             dimensions: Vec3 {
-                x: 1.0,
-                y: 3.0,
-                z: 2.0,
+                x: 10.0,
+                y: 10.0,
+                z: 10.0,
             },
             prescaling: 0.2,
         },
@@ -137,7 +137,7 @@ fn spawn(
                         },
                         Selectable {},
                         RigidBody::Dynamic,
-                        Collider::capsule_z(1.0, 1.5),
+                        collider,
                         GravityScale(0.0),
                     ))
                     .id();

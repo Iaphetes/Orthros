@@ -3634,7 +3634,6 @@ dependencies = [
  "parry3d",
  "rustc-hash",
  "simba",
- "vec_map",
 ]
 
 [[package]]

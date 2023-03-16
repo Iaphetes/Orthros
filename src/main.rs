@@ -19,25 +19,21 @@ use bevy_rapier3d::prelude::*;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        // .insert_resource(Msaa::Sample4)
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
+        .add_plugin(RapierDebugRenderPlugin::default())
+        .insert_resource(Msaa::Sample4)
         .add_plugin(PlayerController)
         .add_plugin(Environment)
-        // .add_plugin(UnitMovement)
+        .add_plugin(UnitMovement)
         .add_plugin(InstanceSpawner)
         // .add_plugin(WorldInspectorPlugin/* ) */
         .add_startup_system(setup)
-        .add_plugin(RapierDebugRenderPlugin {
-            always_on_top: true,
-
-            ..default()
-        })
         .run();
 }
 
 fn setup(mut commands: Commands) {
-    for x in 0..10 {
-        for y in 0..10 {
+    for x in 0..2 {
+        for y in 0..2 {
             commands.spawn(InstanceSpawnRequest {
                 location: Vec3 {
                     x: x as f32,

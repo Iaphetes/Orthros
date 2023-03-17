@@ -458,9 +458,20 @@ fn game_overlay(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands
         .spawn(ButtonBundle {
             style: Style {
-                size: Size::new(Val::Px(150.0), Val::Px(65.0)),
+                size: Size::new(Val::Percent(10.0), Val::Percent(5.0)),
+                // margin: UiRect {
+                //     bottom: Val::Px(65.0),
+                //     left: Val::Px(0.0),
+                //     ..default()
+                // },
                 // center button
-                margin: UiRect::bottom(Val::Percent(1.5)),
+                position: UiRect {
+                    top: Val::Percent(95.0),
+                    left: Val::Px(0.0),
+                    // bottom: Val::Px(150.0),
+                    // right: Val::Px(150.0),
+                    ..default()
+                },
                 // horizontally center child text
                 justify_content: JustifyContent::Center,
                 // vertically center child text

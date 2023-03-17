@@ -13,7 +13,7 @@ pub struct Environment;
 impl Plugin for Environment {
     fn build(&self, app: &mut App) {
         app.add_plugin(MaterialPlugin::<CustomMaterial>::default())
-            // .add_plugin(Skybox)
+            .add_plugin(Skybox)
             .add_startup_system(environment_setup)
             .add_startup_system(setup_movement_grid)
             // .add_startup_system_to_stage(

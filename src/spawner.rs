@@ -78,7 +78,7 @@ fn populate_units(app: &mut App) {
             shape: ShapeType::Capsule,
             dimensions: Vec3 {
                 x: 10.0,
-                y: 10.0,
+                y: 15.0,
                 z: 10.0,
             },
             prescaling: 0.2,

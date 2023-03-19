@@ -1,14 +1,12 @@
-use bevy::{ecs::query::WorldQuery, prelude::*};
+use bevy::prelude::*;
 use std::collections::HashMap;
+use std::fmt;
 
 use crate::{
     movable::Movable,
     ownable::{Selectable, SelectionCircle},
 };
-use bevy_rapier3d::{
-    prelude::*,
-    rapier::prelude::{ShapeType, SharedShape},
-};
+use bevy_rapier3d::{prelude::*, rapier::prelude::ShapeType};
 // Create some sort of unit map with regards to civ
 #[derive(Eq, Hash, PartialEq, Clone, Copy)]
 pub enum Civilisation {
@@ -16,10 +14,26 @@ pub enum Civilisation {
     // ROMAN,
     // JAPANESE,
 }
+impl fmt::Display for Civilisation {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Civilisation::GREEK => write!(f, "Greek"),
+        }
+    }
+}
 #[derive(Eq, Hash, PartialEq, Clone, Copy)]
 pub enum UnitType {
     CRUISER,
     SPACESTATION,
+}
+impl fmt::Display for UnitType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            UnitType::CRUISER => write!(f, "Cruiser"),
+
+            UnitType::SPACESTATION => write!(f, "Space Station"),
+        }
+    }
 }
 
 #[derive(Resource)]
@@ -29,6 +43,7 @@ pub struct UnitSpecifications {
 //TODO specify modifications to model (e.g #update_emissiveness)
 pub struct UnitSpecification {
     file_path: String,
+    unit_name: String,
     movable: bool,
     shape: ShapeType,
     dimensions: Vec3,
@@ -45,7 +60,12 @@ pub struct InstanceSpawnRequest {
 pub struct CustomMaterialInformation {
     emissiveness: f32,
 }
-
+#[derive(Component)]
+pub struct UnitInformation {
+    pub unit_name: String,
+    pub unit_type: UnitType,
+    pub civilisation: Civilisation,
+}
 impl Plugin for InstanceSpawner {
     fn build(&self, app: &mut App) {
         app.add_system(spawn).add_system(update_emissiveness);
@@ -60,6 +80,7 @@ fn populate_units(app: &mut App) {
         (Civilisation::GREEK, UnitType::CRUISER),
         UnitSpecification {
             file_path: "../assets/3d_models/units/greek/fighter_01.gltf#Scene0".into(),
+            unit_name: "Andreia Class Cruiser".into(),
             movable: true,
             shape: ShapeType::Capsule,
             dimensions: Vec3 {
@@ -74,6 +95,7 @@ fn populate_units(app: &mut App) {
         (Civilisation::GREEK, UnitType::SPACESTATION),
         UnitSpecification {
             file_path: "../assets/3d_models/buildings/greek/spacestation.gltf#Scene0".into(),
+            unit_name: "Akinetos Space Station".into(),
             movable: false,
             shape: ShapeType::Capsule,
             dimensions: Vec3 {
@@ -136,6 +158,11 @@ fn spawn(
                             ..default()
                         },
                         Selectable {},
+                        UnitInformation {
+                            unit_name: unit_specification.unit_name.clone(),
+                            unit_type: spawn_request.unit_type,
+                            civilisation: spawn_request.civilisation,
+                        },
                         RigidBody::Dynamic,
                         collider,
                         GravityScale(0.0),
@@ -178,7 +205,6 @@ fn update_emissiveness(
         if name.as_str() == "Cube.002" {
             let mut glow_material: &mut StandardMaterial =
                 mesh_assets.get_mut(material_handle).unwrap();
-            println!("{:?}", glow_material.emissive);
             // Can multiply by factor to reach correct emmisiveness
             glow_material.emissive = Color::rgb_linear(0.0, 250.0, 0.0);
 
@@ -186,8 +212,5 @@ fn update_emissiveness(
             //     image_assets.get_mut(&image_handle).unwrap().data;
             // }
             // println!("Name: {}", name.as_str());
-        } else {
-            println!("Name {}", name);
-        }
-    }
+        }     }
 }

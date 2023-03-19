@@ -3,6 +3,7 @@ use crate::environment::MovementGrid;
 use crate::movable::{Movable, MoveCommand};
 use crate::ownable::SelectionCircle;
 use crate::ownable::{Selectable, Selected};
+use crate::spawner::{UnitInformation, UnitType};
 use bevy::input::mouse::MouseScrollUnit;
 use bevy::input::mouse::MouseWheel;
 use bevy::math::Quat;
@@ -22,6 +23,7 @@ impl Plugin for PlayerController {
             .add_event::<RayHit>()
             .add_startup_system(game_overlay)
             .add_system(process_mouse)
+            .add_system(lower_ui_population)
             .add_system(mouse_controller.after(process_mouse));
     }
 }
@@ -454,72 +456,157 @@ const NORMAL_BUTTON: Color = Color::rgb(0.15, 0.15, 0.15);
 const HOVERED_BUTTON: Color = Color::rgb(0.25, 0.25, 0.25);
 const PRESSED_BUTTON: Color = Color::rgb(0.35, 0.75, 0.35);
 
+#[derive(Component)]
+struct BuildUI;
+#[derive(Component)]
+struct UnitInfoUI;
+
 fn game_overlay(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands
+        // Main lower window
         .spawn(NodeBundle {
             style: Style {
                 size: Size::new(Val::Percent(100.0), Val::Percent(15.0)),
                 position: UiRect {
-                    top: Val::Percent(50.0),
+                    top: Val::Percent(85.0),
                     left: Val::Px(0.0),
                     ..default()
                 },
                 align_items: AlignItems::Center,
-                justify_content: JustifyContent::SpaceAround,
+                justify_content: JustifyContent::Start,
                 ..default()
             },
-            background_color: Color::rgb(0.0, 0.2, 0.05).into(),
+            background_color: Color::rgb(1.0, 1.0, 1.0).into(),
 
             ..default()
         })
         .with_children(|parent| {
-            parent
-                .spawn(ButtonBundle {
+            // Left part (Build menu)
+            parent.spawn((
+                NodeBundle {
                     style: Style {
-                        size: Size::new(Val::Percent(40.0), Val::Percent(20.0)),
+                        size: Size::new(Val::Percent(33.0), Val::Percent(100.0)),
                         position: UiRect {
-                            top: Val::Percent(40.0),
-                            right: Val::Percent(30.0),
+                            top: Val::Percent(0.0),
+                            left: Val::Px(0.0),
                             ..default()
                         },
-                        // horizontally center child text
-                        justify_content: JustifyContent::Center,
-                        // vertically center child text
-                        align_items: AlignItems::Center,
+                        align_items: AlignItems::Start,
+                        justify_content: JustifyContent::Start,
                         ..default()
                     },
-                    background_color: NORMAL_BUTTON.into(),
-                    // image: UiImage {
-                    //     texture: asset_server.load("textures/selection_texture.png"),
-                    //     ..default()
-                    // },
+                    background_color: Color::rgb(1.0, 0.0, 0.0).into(),
+
                     ..default()
-                })
-                .with_children(|parent| {
-                    // parent.spawn(TextBundle::from_section(
-                    //     "Button",
-                    //     TextStyle {
-                    //         font: asset_server
-                    //             .load("fonts/android-insomnia-font/AndroidInsomniaRegular.ttf"),
-                    //         font_size: 40.0,
-                    //         color: Color::rgb(0.9, 0.9, 0.9),
-                    //     },
-                    // ));
-                    parent.spawn(ImageBundle {
-                        style: Style {
-                            size: Size::new(Val::Px(10.0), Val::Px(20.0)),
-                            align_self: AlignSelf::Center,
-                            ..Default::default()
-                        },
-                        background_color: NORMAL_BUTTON.into(),
-                        transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
-                        image: UiImage {
-                            texture: asset_server.load("textures/selection_texture.png"),
+                },
+                BuildUI,
+            ));
+            parent.spawn((
+                NodeBundle {
+                    style: Style {
+                        size: Size::new(Val::Percent(33.0), Val::Percent(100.0)),
+                        position: UiRect {
+                            top: Val::Percent(0.0),
+                            left: Val::Px(0.0),
                             ..default()
                         },
-                        ..Default::default()
-                    });
-                });
+                        align_items: AlignItems::Start,
+                        justify_content: JustifyContent::Start,
+                        ..default()
+                    },
+                    background_color: Color::rgb(0.0, 1.0, 0.0).into(),
+
+                    ..default()
+                },
+                UnitInfoUI,
+            ));
+            // .with_children(|parent| {
+            //     parent
+            //         .spawn(ButtonBundle {
+            //             style: Style {
+            //                 size: Size::new(Val::Percent(5.0), Val::Percent(20.0)),
+            //                 position: UiRect {
+            //                     top: Val::Percent(0.0),
+            //                     right: Val::Percent(0.0),
+            //                     ..default()
+            //                 },
+            //                 margin: UiRect {
+            //                     top: Val::Px(5.0),
+            //                     right: Val::Px(5.0),
+            //                     left: Val::Px(5.0),
+            //                     bottom: Val::Px(5.0)
+            //                 },
+            //                 // horizontally center child text
+            //                 justify_content: JustifyContent::Center,
+            //                 // vertically center child text
+            //                 align_items: AlignItems::Center,
+            //                 ..default()
+            //             },
+            //             background_color: NORMAL_BUTTON.into(),
+            //             // image: UiImage {
+            //             //     texture: asset_server.load("textures/selection_texture.png"),
+            //             //     ..default()
+            //             // },
+            //             ..default()
+            //         })
+            //         .with_children(|parent| {
+            //             // parent.spawn(TextBundle::from_section(
+            //             //     "Button",
+            //             //     TextStyle {
+            //             //         font: asset_server
+            //             //             .load("fonts/android-insomnia-font/AndroidInsomniaRegular.ttf"),
+            //             //         font_size: 40.0,
+            //             //         color: Color::rgb(0.9, 0.9, 0.9),
+            //             //     },
+            //             // ));
+            //             parent.spawn(ImageBundle {
+            //                 style: Style {
+            //                     size: Size::new(Val::Px(20.0), Val::Px(20.0)),
+            //                     align_self: AlignSelf::Center,
+            //                     ..Default::default()
+            //                 },
+            //                 background_color: NORMAL_BUTTON.into(),
+            //                 transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
+            //                 image: UiImage {
+            //                     texture: asset_server.load("textures/selection_texture.png"),
+            //                     ..default()
+            //                 },
+            //                 ..Default::default()
+            //             });
+            //         });
             // parent.spawn(bundle)
+            // });
         });
+}
+
+fn lower_ui_population(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut ray_hit_event: EventReader<RayHit>,
+    mut selected_entities: Query<(Entity, &Selected)>,
+    mut unit_info: Query<&UnitInformation, With<Selectable>>,
+    mut unit_info_ui: Query<Entity, With<UnitInfoUI>>
+) {
+    for hit in ray_hit_event.iter() {
+        if hit.mouse_key_enable_mouse{
+            if let Ok(unit_information) = unit_info.get_mut(hit.hit_entity) {
+                let infotext = commands.spawn(TextBundle::from_section(
+                 format!("{}\n{}\n{}", unit_information.unit_name, unit_information.civilisation.to_string(), unit_information.unit_type.to_string()),
+                 TextStyle {
+                     font: asset_server
+                         .load("fonts/android-insomnia-font/AndroidInsomniaRegular.ttf"),
+                     font_size: 30.0,
+                     color: Color::rgb(0.9, 0.0, 0.0),
+                 },
+                )).id();
+                
+                commands.entity(unit_info_ui.get_single_mut().unwrap()).push_children(
+                    &[
+                        infotext
+
+                    ]
+                );
+            }
+        }
+    }
 }

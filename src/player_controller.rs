@@ -585,28 +585,44 @@ fn lower_ui_population(
     mut ray_hit_event: EventReader<RayHit>,
     mut selected_entities: Query<(Entity, &Selected)>,
     mut unit_info: Query<&UnitInformation, With<Selectable>>,
-    mut unit_info_ui: Query<Entity, With<UnitInfoUI>>
+    mut unit_info_ui: Query<Entity, With<UnitInfoUI>>,
 ) {
     for hit in ray_hit_event.iter() {
-        if hit.mouse_key_enable_mouse{
+        if hit.mouse_key_enable_mouse {
+            commands
+                .entity(unit_info_ui.get_single().unwrap())
+                .clear_children();
             if let Ok(unit_information) = unit_info.get_mut(hit.hit_entity) {
-                let infotext = commands.spawn(TextBundle::from_section(
-                 format!("{}\n{}\n{}", unit_information.unit_name, unit_information.civilisation.to_string(), unit_information.unit_type.to_string()),
-                 TextStyle {
-                     font: asset_server
-                         .load("fonts/android-insomnia-font/AndroidInsomniaRegular.ttf"),
-                     font_size: 30.0,
-                     color: Color::rgb(0.9, 0.0, 0.0),
-                 },
-                )).id();
-                
-                commands.entity(unit_info_ui.get_single_mut().unwrap()).push_children(
-                    &[
-                        infotext
+                let infotext = commands
+                    .spawn(TextBundle::from_section(
+                        format!(
+                            "{}\n{}\n{}",
+                            unit_information.unit_name,
+                            unit_information.civilisation.to_string(),
+                            unit_information.unit_type.to_string()
+                        ),
+                        TextStyle {
+                            font: asset_server
+                                .load("fonts/android-insomnia-font/AndroidInsomniaRegular.ttf"),
+                            font_size: 30.0,
+                            color: Color::rgb(0.9, 0.0, 0.0),
+                        },
+                    ))
+                    .id();
 
-                    ]
-                );
+                commands
+                    .entity(unit_info_ui.get_single().unwrap())
+                    .push_children(&[infotext]);
             }
         }
     }
+}
+fn clear_ui(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut ray_hit_event: EventReader<RayHit>,
+    mut selected_entities: Query<(Entity, &Selected)>,
+    mut unit_info: Query<&UnitInformation, With<Selectable>>,
+    mut unit_info_ui: Query<Entity, With<UnitInfoUI>>,
+) {
 }

@@ -17,13 +17,16 @@ use bevy::{
 };
 use bevy_rapier3d::prelude::*;
 pub struct PlayerController;
+pub struct DeselectEvent;
 impl Plugin for PlayerController {
     fn build(&self, app: &mut App) {
         app.add_plugin(CameraController)
             .add_event::<RayHit>()
+            .add_event::<DeselectEvent>()
             .add_startup_system(game_overlay)
             .add_system(process_mouse)
             .add_system(lower_ui_population)
+            .add_system(clear_ui.after(process_mouse).before(lower_ui_population))
             .add_system(mouse_controller.after(process_mouse));
     }
 }
@@ -224,21 +227,34 @@ fn camera_setup(mut commands: Commands) {
         ))
         .insert(CameraControllerSettings::default());
 }
-
 fn mouse_controller(
-    // mut mouse_events: EventReader<MouseMotion>,
-    mouse_button_input: Res<Input<MouseButton>>,
-    rapier_context: Res<RapierContext>,
-    cameras: Query<(&Camera, &GlobalTransform)>,
-    mut camera_options: Query<&mut CameraControllerSettings, With<Camera>>,
     mut selectable: Query<(Entity, &mut Selectable, &Children)>,
     mut selection_circle: Query<&mut Visibility, With<SelectionCircle>>,
     mut selected_entities: Query<(Entity, &Selected)>,
     mut movables: Query<Entity, (With<Selected>, With<Movable>)>,
     mut commands: Commands,
-    gridmap: Res<MovementGrid>,
     mut ray_hit_event: EventReader<RayHit>,
+    deselect_event: EventReader<DeselectEvent>,
+    key_input: Res<Input<KeyCode>>,
 ) {
+    if !deselect_event.is_empty(){
+        println!("Deselection");
+        for (sel_entity, _, children) in selectable.iter() {
+                // let mut deselect: bool = true;
+
+                // if sel_entity == hit.hit_entity {
+                //     deselect = false;
+                // }
+                // if deselect {
+                    for child in children.iter() {
+                        if let Ok(mut selection_visibility) = selection_circle.get_mut(*child) {
+                            *selection_visibility = Visibility::Hidden;
+                            commands.entity(sel_entity).remove::<Selected>();
+                        }
+                    }
+                // }
+            }
+    }
     for hit in ray_hit_event.iter() {
         if hit.mouse_key_enable_mouse && selected_entities.get_mut(hit.hit_entity).is_err() {
             if let Ok((_, _select, children)) = selectable.get_mut(hit.hit_entity) {
@@ -249,25 +265,25 @@ fn mouse_controller(
                     }
                 }
             }
-            for (sel_entity, _, children) in selectable.iter() {
-                let mut deselect: bool = true;
+            if !key_input.pressed(KeyCode::LControl){
+             for (sel_entity, _, children) in selectable.iter() {
+                 let mut deselect: bool = true;
 
-                if sel_entity == hit.hit_entity {
-                    deselect = false;
-                }
-                if deselect {
-                    for child in children.iter() {
-                        if let Ok(mut selection_visibility) = selection_circle.get_mut(*child) {
-                            *selection_visibility = Visibility::Hidden;
-                            commands.entity(sel_entity).remove::<Selected>();
-                        }
-                    }
-                }
+                 if sel_entity == hit.hit_entity {
+                     deselect = false;
+                 }
+                 if deselect {
+                     for child in children.iter() {
+                         if let Ok(mut selection_visibility) = selection_circle.get_mut(*child) {
+                             *selection_visibility = Visibility::Hidden;
+                             commands.entity(sel_entity).remove::<Selected>();
+                         }
+                     }
+                 }
+             }
             }
         }
-
-        // }
-
+        
         if hit.mouse_unit_move_button {
             println!("Move");
             let target: Vec2 = Vec2 {
@@ -335,6 +351,7 @@ fn handle_select(
     ray_hit_event: &mut EventWriter<RayHit>,
     mouse_unit_move_button: bool,
     mouse_key_enable_mouse: bool,
+    deselect_event: &mut EventWriter<DeselectEvent>,
 ) {
     let (ray_pos, ray_dir) = ray_from_mouse_position(primary, camera, camera_transform);
     // println!("{:?}", mouse_unit_move_button);
@@ -356,6 +373,8 @@ fn handle_select(
             mouse_key_enable_mouse,
             ray_intersection,
         })
+    } else {
+        deselect_event.send(DeselectEvent);
     }
 }
 fn handle_unit_move_cmd(
@@ -391,6 +410,7 @@ fn process_mouse(
     mut interaction_query: Query<(&Interaction, &mut BackgroundColor, &Children)>,
     // mut text_query: Query<&mut Text>,
     mut ray_hit_event: EventWriter<RayHit>,
+    mut deselect_event: EventWriter<DeselectEvent>,
     mouse_button_input: Res<Input<MouseButton>>,
     camera_options: Query<(&CameraControllerSettings, &Camera, &GlobalTransform)>,
     primary_query: Query<&Window, With<PrimaryWindow>>,
@@ -437,6 +457,7 @@ fn process_mouse(
                 &mut ray_hit_event,
                 mouse_unit_move_button,
                 mouse_key_enable_mouse,
+                &mut deselect_event,
             )
         }
         if mouse_unit_move_button {
@@ -624,5 +645,12 @@ fn clear_ui(
     mut selected_entities: Query<(Entity, &Selected)>,
     mut unit_info: Query<&UnitInformation, With<Selectable>>,
     mut unit_info_ui: Query<Entity, With<UnitInfoUI>>,
+    mut deselect_event: EventReader<DeselectEvent>,
 ) {
+    if !deselect_event.is_empty() {
+        println!("Clearing UI");
+        commands
+            .entity(unit_info_ui.get_single().unwrap())
+            .clear_children();
+    }
 }

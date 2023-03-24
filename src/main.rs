@@ -5,10 +5,10 @@ mod ownable;
 mod player_controller;
 mod skybox;
 mod spawner;
-
+mod ui;
+use crate::ui::GameUI;
 use bevy::prelude::*;
 use spawner::{Civilisation, InstanceSpawnRequest, UnitType};
-
 //use bevy::render::render_resource::Texture;
 use crate::environment::Environment;
 use crate::movable::UnitMovement;
@@ -26,6 +26,7 @@ fn main() {
         .add_plugin(Environment)
         .add_plugin(UnitMovement)
         .add_plugin(InstanceSpawner)
+        .add_plugin(GameUI)
         // .add_plugin(WorldInspectorPlugin/* ) */
         .add_startup_system(setup)
         .run();

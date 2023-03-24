@@ -212,5 +212,6 @@ fn update_emissiveness(
             //     image_assets.get_mut(&image_handle).unwrap().data;
             // }
             // println!("Name: {}", name.as_str());
-        }     }
+        }
+    }
 }

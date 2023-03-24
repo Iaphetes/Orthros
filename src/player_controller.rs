@@ -23,10 +23,10 @@ impl Plugin for PlayerController {
         app.add_plugin(CameraController)
             .add_event::<RayHit>()
             .add_event::<DeselectEvent>()
-            .add_startup_system(game_overlay)
+            // .add_startup_system(game_overlay)
             .add_system(process_mouse)
-            .add_system(lower_ui_population)
-            .add_system(clear_ui.after(process_mouse).before(lower_ui_population))
+            // .add_system(populate_lower_ui)
+            // .add_system(clear_ui.after(process_mouse).before(populate_lower_ui))
             .add_system(mouse_controller.after(process_mouse));
     }
 }
@@ -237,23 +237,23 @@ fn mouse_controller(
     deselect_event: EventReader<DeselectEvent>,
     key_input: Res<Input<KeyCode>>,
 ) {
-    if !deselect_event.is_empty(){
+    if !deselect_event.is_empty() {
         println!("Deselection");
         for (sel_entity, _, children) in selectable.iter() {
-                // let mut deselect: bool = true;
+            // let mut deselect: bool = true;
 
-                // if sel_entity == hit.hit_entity {
-                //     deselect = false;
-                // }
-                // if deselect {
-                    for child in children.iter() {
-                        if let Ok(mut selection_visibility) = selection_circle.get_mut(*child) {
-                            *selection_visibility = Visibility::Hidden;
-                            commands.entity(sel_entity).remove::<Selected>();
-                        }
-                    }
-                // }
+            // if sel_entity == hit.hit_entity {
+            //     deselect = false;
+            // }
+            // if deselect {
+            for child in children.iter() {
+                if let Ok(mut selection_visibility) = selection_circle.get_mut(*child) {
+                    *selection_visibility = Visibility::Hidden;
+                    commands.entity(sel_entity).remove::<Selected>();
+                }
             }
+            // }
+        }
     }
     for hit in ray_hit_event.iter() {
         if hit.mouse_key_enable_mouse && selected_entities.get_mut(hit.hit_entity).is_err() {
@@ -265,25 +265,25 @@ fn mouse_controller(
                     }
                 }
             }
-            if !key_input.pressed(KeyCode::LControl){
-             for (sel_entity, _, children) in selectable.iter() {
-                 let mut deselect: bool = true;
+            if !key_input.pressed(KeyCode::LControl) {
+                for (sel_entity, _, children) in selectable.iter() {
+                    let mut deselect: bool = true;
 
-                 if sel_entity == hit.hit_entity {
-                     deselect = false;
-                 }
-                 if deselect {
-                     for child in children.iter() {
-                         if let Ok(mut selection_visibility) = selection_circle.get_mut(*child) {
-                             *selection_visibility = Visibility::Hidden;
-                             commands.entity(sel_entity).remove::<Selected>();
-                         }
-                     }
-                 }
-             }
+                    if sel_entity == hit.hit_entity {
+                        deselect = false;
+                    }
+                    if deselect {
+                        for child in children.iter() {
+                            if let Ok(mut selection_visibility) = selection_circle.get_mut(*child) {
+                                *selection_visibility = Visibility::Hidden;
+                                commands.entity(sel_entity).remove::<Selected>();
+                            }
+                        }
+                    }
+                }
             }
         }
-        
+
         if hit.mouse_unit_move_button {
             println!("Move");
             let target: Vec2 = Vec2 {
@@ -337,11 +337,11 @@ fn ray_from_camera_center(camera: &Camera, camera_transform: &GlobalTransform) -
     (near, dir)
 }
 
-struct RayHit {
-    hit_entity: Entity,
-    mouse_key_enable_mouse: bool,
-    mouse_unit_move_button: bool,
-    ray_intersection: RayIntersection,
+pub struct RayHit {
+    pub hit_entity: Entity,
+    pub mouse_key_enable_mouse: bool,
+    pub mouse_unit_move_button: bool,
+    pub ray_intersection: RayIntersection,
 }
 fn handle_select(
     primary: &Window,
@@ -395,7 +395,6 @@ fn handle_unit_move_cmd(
         true,
         QueryFilter::exclude_solids(QueryFilter::new()),
     ); //Make also sensor cast...
-    let mut hit_entity: Option<Entity> = None;
     if let Some((hit_entity, ray_intersection)) = hit {
         println!("Send event");
         ray_hit_event.send(RayHit {
@@ -407,7 +406,7 @@ fn handle_unit_move_cmd(
     }
 }
 fn process_mouse(
-    mut interaction_query: Query<(&Interaction, &mut BackgroundColor, &Children)>,
+    mut interaction_query: Query<(&Interaction, &mut BackgroundColor), With<Children>>,
     // mut text_query: Query<&mut Text>,
     mut ray_hit_event: EventWriter<RayHit>,
     mut deselect_event: EventWriter<DeselectEvent>,
@@ -421,22 +420,22 @@ fn process_mouse(
     };
 
     let mut mouse_over_ui: bool = false;
-    for (interaction, mut color, children) in &mut interaction_query {
+    for (interaction, mut color) in &mut interaction_query {
         // let mut text = text_query.get_mut(children[0]).unwrap();
         match *interaction {
             Interaction::Clicked => {
                 // te}xt.sections[0].value = "Press".to_string();
-                *color = PRESSED_BUTTON.into();
+                // *color = PRESSED_BUTTON.into();
                 mouse_over_ui = true;
             }
             Interaction::Hovered => {
                 // text.sections[0].value = "Hover".to_string();
-                *color = HOVERED_BUTTON.into();
+                // *color = HOVERED_BUTTON.into();
                 mouse_over_ui = true;
             }
             Interaction::None => {
                 // text.sections[0].value = "Button".to_string();
-                *color = NORMAL_BUTTON.into();
+                // *color = NORMAL_BUTTON.into();
             }
         }
     }
@@ -471,186 +470,5 @@ fn process_mouse(
                 mouse_key_enable_mouse,
             )
         }
-    }
-}
-const NORMAL_BUTTON: Color = Color::rgb(0.15, 0.15, 0.15);
-const HOVERED_BUTTON: Color = Color::rgb(0.25, 0.25, 0.25);
-const PRESSED_BUTTON: Color = Color::rgb(0.35, 0.75, 0.35);
-
-#[derive(Component)]
-struct BuildUI;
-#[derive(Component)]
-struct UnitInfoUI;
-
-fn game_overlay(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands
-        // Main lower window
-        .spawn(NodeBundle {
-            style: Style {
-                size: Size::new(Val::Percent(100.0), Val::Percent(15.0)),
-                position: UiRect {
-                    top: Val::Percent(85.0),
-                    left: Val::Px(0.0),
-                    ..default()
-                },
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Start,
-                ..default()
-            },
-            background_color: Color::rgb(1.0, 1.0, 1.0).into(),
-
-            ..default()
-        })
-        .with_children(|parent| {
-            // Left part (Build menu)
-            parent.spawn((
-                NodeBundle {
-                    style: Style {
-                        size: Size::new(Val::Percent(33.0), Val::Percent(100.0)),
-                        position: UiRect {
-                            top: Val::Percent(0.0),
-                            left: Val::Px(0.0),
-                            ..default()
-                        },
-                        align_items: AlignItems::Start,
-                        justify_content: JustifyContent::Start,
-                        ..default()
-                    },
-                    background_color: Color::rgb(1.0, 0.0, 0.0).into(),
-
-                    ..default()
-                },
-                BuildUI,
-            ));
-            parent.spawn((
-                NodeBundle {
-                    style: Style {
-                        size: Size::new(Val::Percent(33.0), Val::Percent(100.0)),
-                        position: UiRect {
-                            top: Val::Percent(0.0),
-                            left: Val::Px(0.0),
-                            ..default()
-                        },
-                        align_items: AlignItems::Start,
-                        justify_content: JustifyContent::Start,
-                        ..default()
-                    },
-                    background_color: Color::rgb(0.0, 1.0, 0.0).into(),
-
-                    ..default()
-                },
-                UnitInfoUI,
-            ));
-            // .with_children(|parent| {
-            //     parent
-            //         .spawn(ButtonBundle {
-            //             style: Style {
-            //                 size: Size::new(Val::Percent(5.0), Val::Percent(20.0)),
-            //                 position: UiRect {
-            //                     top: Val::Percent(0.0),
-            //                     right: Val::Percent(0.0),
-            //                     ..default()
-            //                 },
-            //                 margin: UiRect {
-            //                     top: Val::Px(5.0),
-            //                     right: Val::Px(5.0),
-            //                     left: Val::Px(5.0),
-            //                     bottom: Val::Px(5.0)
-            //                 },
-            //                 // horizontally center child text
-            //                 justify_content: JustifyContent::Center,
-            //                 // vertically center child text
-            //                 align_items: AlignItems::Center,
-            //                 ..default()
-            //             },
-            //             background_color: NORMAL_BUTTON.into(),
-            //             // image: UiImage {
-            //             //     texture: asset_server.load("textures/selection_texture.png"),
-            //             //     ..default()
-            //             // },
-            //             ..default()
-            //         })
-            //         .with_children(|parent| {
-            //             // parent.spawn(TextBundle::from_section(
-            //             //     "Button",
-            //             //     TextStyle {
-            //             //         font: asset_server
-            //             //             .load("fonts/android-insomnia-font/AndroidInsomniaRegular.ttf"),
-            //             //         font_size: 40.0,
-            //             //         color: Color::rgb(0.9, 0.9, 0.9),
-            //             //     },
-            //             // ));
-            //             parent.spawn(ImageBundle {
-            //                 style: Style {
-            //                     size: Size::new(Val::Px(20.0), Val::Px(20.0)),
-            //                     align_self: AlignSelf::Center,
-            //                     ..Default::default()
-            //                 },
-            //                 background_color: NORMAL_BUTTON.into(),
-            //                 transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
-            //                 image: UiImage {
-            //                     texture: asset_server.load("textures/selection_texture.png"),
-            //                     ..default()
-            //                 },
-            //                 ..Default::default()
-            //             });
-            //         });
-            // parent.spawn(bundle)
-            // });
-        });
-}
-
-fn lower_ui_population(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut ray_hit_event: EventReader<RayHit>,
-    mut selected_entities: Query<(Entity, &Selected)>,
-    mut unit_info: Query<&UnitInformation, With<Selectable>>,
-    mut unit_info_ui: Query<Entity, With<UnitInfoUI>>,
-) {
-    for hit in ray_hit_event.iter() {
-        if hit.mouse_key_enable_mouse {
-            commands
-                .entity(unit_info_ui.get_single().unwrap())
-                .clear_children();
-            if let Ok(unit_information) = unit_info.get_mut(hit.hit_entity) {
-                let infotext = commands
-                    .spawn(TextBundle::from_section(
-                        format!(
-                            "{}\n{}\n{}",
-                            unit_information.unit_name,
-                            unit_information.civilisation.to_string(),
-                            unit_information.unit_type.to_string()
-                        ),
-                        TextStyle {
-                            font: asset_server
-                                .load("fonts/android-insomnia-font/AndroidInsomniaRegular.ttf"),
-                            font_size: 30.0,
-                            color: Color::rgb(0.9, 0.0, 0.0),
-                        },
-                    ))
-                    .id();
-
-                commands
-                    .entity(unit_info_ui.get_single().unwrap())
-                    .push_children(&[infotext]);
-            }
-        }
-    }
-}
-fn clear_ui(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut ray_hit_event: EventReader<RayHit>,
-    mut selected_entities: Query<(Entity, &Selected)>,
-    mut unit_info: Query<&UnitInformation, With<Selectable>>,
-    mut unit_info_ui: Query<Entity, With<UnitInfoUI>>,
-    mut deselect_event: EventReader<DeselectEvent>,
-) {
-    if !deselect_event.is_empty() {
-        println!("Clearing UI");
-        commands
-            .entity(unit_info_ui.get_single().unwrap())
-            .clear_children();
     }
 }

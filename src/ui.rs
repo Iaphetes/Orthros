@@ -24,6 +24,7 @@ impl Plugin for GameUI {
             .add_event::<DeselectEvent>()
             .add_system(change_text_system)
             .add_system(populate_lower_ui)
+                    .add_plugin(FrameTimeDiagnosticsPlugin)
             .add_system(clear_ui.before(populate_lower_ui));
     }
 }

@@ -7,7 +7,7 @@ mod skybox;
 mod spawner;
 mod ui;
 use crate::ui::GameUI;
-use bevy::prelude::*;
+use bevy::{prelude::*,     window::{PresentMode, WindowPlugin}};
 use spawner::{Civilisation, InstanceSpawnRequest, UnitType};
 //use bevy::render::render_resource::Texture;
 use crate::environment::Environment;
@@ -18,7 +18,13 @@ use crate::spawner::InstanceSpawner;
 use bevy_rapier3d::prelude::*;
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            primary_window: Some(Window {
+                present_mode: PresentMode::AutoVsync,
+                ..default()
+            }),
+            ..default()
+        }))
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugin(RapierDebugRenderPlugin::default())
         .insert_resource(Msaa::Sample4)

@@ -361,7 +361,7 @@ fn handle_select(
         ray_dir,
         f32::MAX,
         true,
-        QueryFilter::only_dynamic(),
+        QueryFilter::only_kinematic()// only_dynamic(),
     );
     //Make also sensor cast...
     // let mut hit_entity: Option<Entity> = None;

@@ -7,7 +7,10 @@ mod skybox;
 mod spawner;
 mod ui;
 use crate::ui::GameUI;
-use bevy::{prelude::*,     window::{PresentMode, WindowPlugin}};
+use bevy::{
+    prelude::*,
+    window::{PresentMode, WindowPlugin},
+};
 use spawner::{Civilisation, InstanceSpawnRequest, UnitType};
 //use bevy::render::render_resource::Texture;
 use crate::environment::Environment;
@@ -43,9 +46,9 @@ fn setup(mut commands: Commands) {
         for y in 0..2 {
             commands.spawn(InstanceSpawnRequest {
                 location: Vec3 {
-                    x: x as f32,
+                    x: x as f32 * 2.0,
                     y: 2.0,
-                    z: y as f32,
+                    z: y as f32 * 2.0,
                 },
                 unit_type: UnitType::CRUISER,
                 civilisation: Civilisation::GREEK,

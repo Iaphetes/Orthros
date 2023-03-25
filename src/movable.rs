@@ -73,11 +73,11 @@ struct MovementPath {
     pub path: Vec<PathNode>,
 }
 fn calculate_a_star(
-    mut movables: Query<(Entity, &mut Transform, &mut MoveCommand), Without<MovementPath>>,
+    movables: Query<(Entity, &mut Transform, &mut MoveCommand), Without<MovementPath>>,
     gridmap: Res<MovementGrid>,
     mut commands: Commands,
 ) {
-    for (entity, transform, mut movcmd) in movables.iter_mut() {
+    for (entity, transform, movcmd) in movables.iter() {
         if transform.translation.x == movcmd.target.x && transform.translation.y == movcmd.target.y
         {
             commands.entity(entity).remove::<MoveCommand>();

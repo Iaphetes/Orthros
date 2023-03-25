@@ -163,7 +163,10 @@ fn spawn(
                             unit_type: spawn_request.unit_type,
                             civilisation: spawn_request.civilisation,
                         },
-                        RigidBody::Dynamic,
+                        RigidBody::KinematicPositionBased,
+                        // MassProperties{
+
+                        //     }
                         collider,
                         GravityScale(0.0),
                     ))

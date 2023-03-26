@@ -24,7 +24,7 @@ impl Plugin for GameUI {
             .add_event::<DeselectEvent>()
             // .add_system(change_text_system)
             .add_system(populate_lower_ui)
-                    .add_plugin(FrameTimeDiagnosticsPlugin)
+            .add_plugin(FrameTimeDiagnosticsPlugin)
             .add_system(clear_ui.before(populate_lower_ui));
     }
 }
@@ -34,151 +34,157 @@ fn game_overlay(mut commands: Commands, asset_server: Res<AssetServer>) {
         .spawn(NodeBundle {
             style: Style {
                 size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
-                position: UiRect {
-                    top: Val::Percent(0.0),
-                    left: Val::Px(0.0),
-                    ..default()
-                },
+                
                 align_items: AlignItems::Start,
                 justify_content: JustifyContent::Start,
+                flex_direction: FlexDirection::Column,
                 ..default()
             },
             // background_color: Color::rgb(1.0, 1.0, 1.0).into(),
-
             ..default()
         })
         .with_children(|parent| {
-            parent.spawn((
-                TextBundle::from_section(
-                    format!("FPS - ms/Frame"),
-                    TextStyle {
-                        font: asset_server
-                            .load("fonts/android-insomnia-font/AndroidInsomniaRegular.ttf"),
-                        font_size: 20.0,
-                        color: Color::RED,
-                    },
-                ),
-                FPSCounter,
-            ));
-            parent.spawn(NodeBundle {
-            style: Style {
-                size: Size::new(Val::Percent(100.0), Val::Percent(15.0)),
-                position: UiRect {
-                    top: Val::Percent(35.0),
-                                        left: Val::Px(0.0),
-                    ..default()
-                },
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Start,
-                ..default()
-            },
-            background_color: Color::rgb(1.0, 1.0, 1.0).into(),
-
-            ..default()
-        })
-        .with_children(|parent| {
-            // Left part (Build menu)
-            parent.spawn((
-                NodeBundle {
+            parent
+                .spawn(NodeBundle {
                     style: Style {
-                        size: Size::new(Val::Percent(33.0), Val::Percent(100.0)),
-                        position: UiRect {
-                            top: Val::Percent(0.0),
-                            left: Val::Px(0.0),
-                            ..default()
-                        },
+                        size: Size::new(Val::Percent(50.0), Val::Percent(5.0)),
+
                         align_items: AlignItems::Start,
                         justify_content: JustifyContent::Start,
                         ..default()
                     },
-                    background_color: Color::rgb(1.0, 0.0, 0.0).into(),
-
                     ..default()
-                },
-                BuildUI,
-            ));
-            parent.spawn((
-                NodeBundle {
+                })
+                .with_children(|parent| {
+                    parent.spawn((
+                        TextBundle::from_section(
+                            format!("FPS - ms/Frame"),
+                            TextStyle {
+                                font: asset_server
+                                    .load("fonts/android-insomnia-font/AndroidInsomniaRegular.ttf"),
+                                font_size: 20.0,
+                                color: Color::RED,
+                            },
+                        ),
+                        FPSCounter,
+                    ));
+                });
+            parent
+                .spawn(NodeBundle {
                     style: Style {
-                        size: Size::new(Val::Percent(33.0), Val::Percent(100.0)),
+                        size: Size::new(Val::Percent(100.0), Val::Percent(15.0)),
                         position: UiRect {
-                            top: Val::Percent(35.0),
+                            top: Val::Percent(80.0),
                             left: Val::Px(0.0),
                             ..default()
                         },
-                        align_items: AlignItems::Start,
+                        align_items: AlignItems::Center,
                         justify_content: JustifyContent::Start,
                         ..default()
                     },
-                    background_color: Color::rgb(0.0, 1.0, 0.0).into(),
+                    background_color: Color::rgb(1.0, 1.0, 1.0).into(),
 
                     ..default()
-                },
-                UnitInfoUI,
-            ));
- 
+                })
+                .with_children(|parent| {
+                    // Left part (Build menu)
+                    parent.spawn((
+                        NodeBundle {
+                            style: Style {
+                                size: Size::new(Val::Percent(33.0), Val::Percent(100.0)),
+                                position: UiRect {
+                                    top: Val::Percent(0.0),
+                                    left: Val::Px(0.0),
+                                    ..default()
+                                },
+                                align_items: AlignItems::Start,
+                                justify_content: JustifyContent::Start,
+                                ..default()
+                            },
+                            background_color: Color::rgb(1.0, 0.0, 0.0).into(),
+
+                            ..default()
+                        },
+                        BuildUI,
+                    ));
+                    parent.spawn((
+                        NodeBundle {
+                            style: Style {
+                                size: Size::new(Val::Percent(33.0), Val::Percent(100.0)),
+                                position: UiRect {
+                                    top: Val::Percent(0.0),
+                                    left: Val::Px(0.0),
+                                    ..default()
+                                },
+                                align_items: AlignItems::Start,
+                                justify_content: JustifyContent::Start,
+                                ..default()
+                            },
+                            background_color: Color::rgb(0.0, 1.0, 0.0).into(),
+
+                            ..default()
+                        },
+                        UnitInfoUI,
+                    ));
+                    // .with_children(|parent| {
+                    //     parent
+                    //         .spawn(ButtonBundle {
+                    //             style: Style {
+                    //                 size: Size::new(Val::Percent(5.0), Val::Percent(20.0)),
+                    //                 position: UiRect {
+                    //                     top: Val::Percent(0.0),
+                    //                     right: Val::Percent(0.0),
+                    //                     ..default()
+                    //                 },
+                    //                 margin: UiRect {
+                    //                     top: Val::Px(5.0),
+                    //                     right: Val::Px(5.0),
+                    //                     left: Val::Px(5.0),
+                    //                     bottom: Val::Px(5.0)
+                    //                 },
+                    //                 // horizontally center child text
+                    //                 justify_content: JustifyContent::Center,
+                    //                 // vertically center child text
+                    //                 align_items: AlignItems::Center,
+                    //                 ..default()
+                    //             },
+                    //             background_color: NORMAL_BUTTON.into(),
+                    //             // image: UiImage {
+                    //             //     texture: asset_server.load("textures/selection_texture.png"),
+                    //             //     ..default()
+                    //             // },
+                    //             ..default()
+                    //         })
+                    //         .with_children(|parent| {
+                    //             // parent.spawn(TextBundle::from_section(
+                    //             //     "Button",
+                    //             //     TextStyle {
+                    //             //         font: asset_server
+                    //             //             .load("fonts/android-insomnia-font/AndroidInsomniaRegular.ttf"),
+                    //             //         font_size: 40.0,
+                    //             //         color: Color::rgb(0.9, 0.9, 0.9),
+                    //             //     },
+                    //             // ));
+                    //             parent.spawn(ImageBundle {
+                    //                 style: Style {
+                    //                     size: Size::new(Val::Px(20.0), Val::Px(20.0)),
+                    //                     align_self: AlignSelf::Center,
+                    //                     ..Default::default()
+                    //                 },
+                    //                 background_color: NORMAL_BUTTON.into(),
+                    //                 transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
+                    //                 image: UiImage {
+                    //                     texture: asset_server.load("textures/selection_texture.png"),
+                    //                     ..default()
+                    //                 },
+                    //                 ..Default::default()
+                    //             });
+                    //         });
+                    // parent.spawn(bundle)
+                    // });
+                });
         });
-        });
- //    commands
- //        // Main lower window
- //        .spawn(NodeBundle {
- //            style: Style {
- //                size: Size::new(Val::Percent(100.0), Val::Percent(15.0)),
- //                position: UiRect {
- //                    top: Val::Percent(00.0),
- //                                        left: Val::Px(0.0),
- //                    ..default()
- //                },
- //                align_items: AlignItems::Center,
- //                justify_content: JustifyContent::Start,
- //                ..default()
- //            },
- //            background_color: Color::rgb(1.0, 1.0, 1.0).into(),
-
- //            ..default()
- //        })
- //        .with_children(|parent| {
- //            // Left part (Build menu)
- //            parent.spawn((
- //                NodeBundle {
- //                    style: Style {
- //                        size: Size::new(Val::Percent(33.0), Val::Percent(100.0)),
- //                        position: UiRect {
- //                            top: Val::Percent(0.0),
- //                            left: Val::Px(0.0),
- //                            ..default()
- //                        },
- //                        align_items: AlignItems::Start,
- //                        justify_content: JustifyContent::Start,
- //                        ..default()
- //                    },
- //                    background_color: Color::rgb(1.0, 0.0, 0.0).into(),
-
- //                    ..default()
- //                },
- //                BuildUI,
- //            ));
- //            parent.spawn((
- //                NodeBundle {
- //                    style: Style {
- //                        size: Size::new(Val::Percent(33.0), Val::Percent(100.0)),
- //                        position: UiRect {
- //                            top: Val::Percent(0.0),
- //                            left: Val::Px(0.0),
- //                            ..default()
- //                        },
- //                        align_items: AlignItems::Start,
- //                        justify_content: JustifyContent::Start,
- //                        ..default()
- //                    },
- //                    background_color: Color::rgb(0.0, 1.0, 0.0).into(),
-
- //                    ..default()
- //                },
- //                UnitInfoUI,
- //            ));
- // 
- //        });
+    // Main lower window
 }
 
 fn populate_lower_ui(

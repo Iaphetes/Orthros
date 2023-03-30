@@ -23,7 +23,8 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
-                present_mode: PresentMode::AutoVsync,
+                present_mode: PresentMode::Immediate,
+
                 ..default()
             }),
             ..default()

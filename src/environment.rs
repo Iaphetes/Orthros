@@ -1,12 +1,15 @@
+use crate::player_controller::RenderLayerMap;
+use crate::skybox::Skybox;
 use bevy::{
     prelude::*,
     reflect::TypeUuid,
-    render::render_resource::{AsBindGroup, ShaderRef},
+    render::{
+        render_resource::{AsBindGroup, ShaderRef},
+        view::RenderLayers,
+    },
 };
 use bevy_rapier3d::geometry::Collider;
 use bevy_rapier3d::geometry::Sensor;
-
-use crate::skybox::Skybox;
 
 pub struct Environment;
 
@@ -85,20 +88,23 @@ pub fn environment_setup(
         },
         ..default()
     });
-    commands.spawn(MaterialMeshBundle {
-        mesh: meshes.add(
-            shape::Plane {
-                size: 200.,
-                subdivisions: 1,
-            }
-            .into(),
-        ),
-        material: custom_materials.add(CustomMaterial {
-            color: Color::GREEN,
-            alpha_mode: AlphaMode::Blend,
-        }),
-        ..default()
-    });
+    commands.spawn((
+        MaterialMeshBundle {
+            mesh: meshes.add(
+                shape::Plane {
+                    size: 200.,
+                    subdivisions: 1,
+                }
+                .into(),
+            ),
+            material: custom_materials.add(CustomMaterial {
+                color: Color::GREEN,
+                alpha_mode: AlphaMode::Blend,
+            }),
+            ..default()
+        },
+        RenderLayers::layer(RenderLayerMap::Grid as u8),
+    ));
     commands.spawn((
         Transform::from_xyz(0.0, 2.0, 0.0),
         Collider::cuboid(100.0, 2.0, 100.0),

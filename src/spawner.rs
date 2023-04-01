@@ -1,10 +1,10 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, render::view::RenderLayers};
 use std::collections::HashMap;
 use std::fmt;
 
 use crate::{
     movable::Movable,
-    ownable::{Selectable, SelectionCircle},
+    ownable::{Selectable, SelectionCircle}, player_controller::RenderLayerMap,
 };
 use bevy_rapier3d::{prelude::*, rapier::prelude::ShapeType};
 // Create some sort of unit map with regards to civ
@@ -110,6 +110,7 @@ fn populate_units(app: &mut App) {
 
     app.insert_resource(unit_specifications);
 }
+
 fn spawn(
     spawn_requests: Query<(Entity, &InstanceSpawnRequest)>,
     mut commands: Commands,
@@ -163,8 +164,7 @@ fn spawn(
                             unit_name: unit_specification.unit_name.clone(),
                             unit_type: spawn_request.unit_type,
                             civilisation: spawn_request.civilisation,
-                            thumbnail: "./3d_models/units/greek/greek_cruiser_thumbnail.png"
-                                .into(),
+                            thumbnail: "./3d_models/units/greek/greek_cruiser_thumbnail.png".into(),
                         },
                         RigidBody::KinematicPositionBased,
                         // MassProperties{
@@ -173,27 +173,47 @@ fn spawn(
                         collider,
                         GravityScale(0.0),
                     ))
+                    .with_children(|parent| {
+                        parent.spawn((
+                            MaterialMeshBundle {
+                                mesh: meshes.add(
+                                    shape::Plane {
+                                        size: 2.5 * unit_specification.dimensions.max_element(),
+                                        subdivisions: 1,
+                                    }
+                                    .into(),
+                                ),
+                                material: material_handle,
+                                transform: Transform::from_scale(Vec3::splat(1.0)),
+                                visibility: Visibility::Hidden,
+                                ..default()
+                            },
+                            SelectionCircle,
+                        ));
+                            parent.spawn(
+                                (
+                                MaterialMeshBundle{
+                                    mesh: meshes.add(shape::Plane{
+                                        size :10.0,
+                                        subdivisions: 1
+                                    }.into()
+                                    ),
+                                    material: materials.add(StandardMaterial{
+                                        base_color : Color::rgba(0.0, 1.0, 0.0, 0.5),
+                                        ..Default::default()
+                                    }),
+                                    ..default()
+
+
+                                },
+                                RenderLayers::layer(RenderLayerMap::Minimap as u8)
+                            )
+                            );
+                    })
                     .id();
                 if unit_specification.movable {
                     commands.entity(parent_id).insert(Movable {});
                 }
-                let child_id = commands
-                    .spawn(MaterialMeshBundle {
-                        mesh: meshes.add(
-                            shape::Plane {
-                                size: 2.5 * unit_specification.dimensions.max_element(),
-                                subdivisions: 1,
-                            }
-                            .into(),
-                        ),
-                        material: material_handle,
-                        transform: Transform::from_scale(Vec3::splat(1.0)),
-                        visibility: Visibility::Hidden,
-                        ..default()
-                    })
-                    .insert(SelectionCircle {})
-                    .id();
-                commands.entity(parent_id).push_children(&[child_id]);
             }
             None => {}
         }

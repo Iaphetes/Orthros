@@ -1,9 +1,9 @@
 use bevy::ecs::component::Component;
 
 #[derive(Component)]
-pub struct Selectable {}
+pub struct Selectable;
 #[derive(Component)]
-pub struct SelectionCircle {}
+pub struct SelectionCircle;
 
 #[derive(Component)]
 

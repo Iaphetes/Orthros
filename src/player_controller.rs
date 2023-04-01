@@ -7,6 +7,7 @@ use crate::spawner::{UnitInformation, UnitType};
 use bevy::input::mouse::MouseScrollUnit;
 use bevy::input::mouse::MouseWheel;
 use bevy::math::Quat;
+use bevy::render::view::RenderLayers;
 use bevy::window::PrimaryWindow;
 use bevy::{
     core_pipeline::{
@@ -15,6 +16,12 @@ use bevy::{
     },
     prelude::*,
 };
+#[repr(u8)]
+pub enum RenderLayerMap {
+    General = 0,
+    Grid = 1,
+    Minimap = 2,
+}
 use bevy_rapier3d::prelude::*;
 pub struct PlayerController;
 pub struct DeselectEvent;
@@ -220,10 +227,10 @@ fn camera_setup(mut commands: Commands) {
                     ..default()
                 },
                 transform: Transform::from_xyz(0.0, 15.0, 0.0).looking_at(Vec3::ZERO, Vec3::Z),
-                // tonemapping: Tonemapping::TonyMcMapface,
                 ..default()
             },
             BloomSettings::default(),
+            RenderLayers::from_layers(&[RenderLayerMap::General as u8, RenderLayerMap::Grid as u8]),
         ))
         .insert(CameraControllerSettings::default());
 }

@@ -1,9 +1,12 @@
 use crate::ownable::Selectable;
-use crate::player_controller::{DeselectEvent, RayHit};
+use crate::player_controller::{DeselectEvent, RayHit, RenderLayerMap};
 use crate::spawner::UnitInformation;
 use bevy::core_pipeline::clear_color::ClearColorConfig;
 use bevy::render::camera::RenderTarget;
-use bevy::render::render_resource::{Texture, TextureDescriptor, Extent3d, TextureDimension, TextureFormat, TextureUsages};
+use bevy::render::render_resource::{
+    Extent3d, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
+};
+use bevy::render::view::RenderLayers;
 use bevy::{
     diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin},
     prelude::*,
@@ -33,15 +36,17 @@ impl Plugin for GameUI {
     }
 }
 
-fn game_overlay(mut commands: Commands, asset_server: Res<AssetServer>,
+fn game_overlay(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
     mut images: ResMut<Assets<Image>>,
 ) {
-     let size = Extent3d {
+    let size = Extent3d {
         width: 512,
         height: 512,
         ..default()
     };
-       let mut image = Image {
+    let mut image = Image {
         texture_descriptor: TextureDescriptor {
             label: None,
             size,
@@ -57,7 +62,7 @@ fn game_overlay(mut commands: Commands, asset_server: Res<AssetServer>,
         ..default()
     };
     image.resize(size);
-        let image_handle = images.add(image);
+    let image_handle = images.add(image);
     commands.spawn((
         Camera3dBundle {
             camera_3d: Camera3d {
@@ -70,10 +75,13 @@ fn game_overlay(mut commands: Commands, asset_server: Res<AssetServer>,
                 target: RenderTarget::Image(image_handle.clone()),
                 ..default()
             },
-            transform: Transform::from_translation(Vec3::new(0.0, 20.0, 0.0))
+            transform: Transform::from_translation(Vec3::new(0.0, 200.0, 0.0))
                 .looking_at(Vec3::ZERO, Vec3::Z),
             ..default()
-        },));
+        },
+        UiCameraConfig { show_ui: false },
+        RenderLayers::from_layers(&[RenderLayerMap::General as u8, RenderLayerMap::Minimap as u8])
+    ));
     commands
         .spawn(NodeBundle {
             style: Style {
@@ -129,7 +137,6 @@ fn game_overlay(mut commands: Commands, asset_server: Res<AssetServer>,
                         ..default()
                     },
                     // background_color: Color::rgba(1.0, 1.0, 1.0, 0.5).into(),
-
                     ..default()
                 })
                 .with_children(|parent| {
@@ -171,26 +178,25 @@ fn game_overlay(mut commands: Commands, asset_server: Res<AssetServer>,
                         },
                         UnitInfoUI,
                     ));
-                    parent.spawn((
-                        NodeBundle{
-                            style: Style{
-                                size: Size::new(Val::Percent(20.0), Val::Percent(100.0)),
-                                ..default()
-                           },
-                            
-                            background_color: Color::rgba(0.0, 0.0, 1.0, 0.5).into(),
-                            ..default()
-                        },
-                        MapUI
+                    parent
+                        .spawn((
+                            NodeBundle {
+                                style: Style {
+                                    size: Size::new(Val::Percent(20.0), Val::Percent(100.0)),
+                                    ..default()
+                                },
 
-                    )).with_children(|parent|
-                            {parent.spawn(ImageBundle{
-                                
+                                background_color: Color::rgba(0.0, 0.0, 1.0, 0.5).into(),
+                                ..default()
+                            },
+                            MapUI,
+                        ))
+                        .with_children(|parent| {
+                            parent.spawn(ImageBundle {
                                 image: UiImage::from(image_handle),
                                 ..default()
                             });
-                });
-                    
+                        });
                 });
         });
     // Main lower window
@@ -228,13 +234,13 @@ fn populate_lower_ui(
                 let thumbnail = commands
                     .spawn(ImageBundle {
                         background_color: NORMAL_BUTTON.into(),
-                        style: Style{
-                            size: Size{
-                                width : Val::Px(100.0), 
-                                height: Val::Px(100.0)
+                        style: Style {
+                            size: Size {
+                                width: Val::Px(100.0),
+                                height: Val::Px(100.0),
                             },
                             ..Default::default()
-                        }, 
+                        },
                         // transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
                         image: UiImage {
                             texture: asset_server.load(&unit_information.thumbnail),
@@ -245,7 +251,7 @@ fn populate_lower_ui(
                     .id();
                 commands
                     .entity(unit_info_ui.get_single().unwrap())
-                    .push_children(&[infotext,  thumbnail]);
+                    .push_children(&[infotext, thumbnail]);
             }
         }
     }

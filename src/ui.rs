@@ -1,6 +1,9 @@
 use crate::ownable::Selectable;
 use crate::player_controller::{DeselectEvent, RayHit};
 use crate::spawner::UnitInformation;
+use bevy::core_pipeline::clear_color::ClearColorConfig;
+use bevy::render::camera::RenderTarget;
+use bevy::render::render_resource::{Texture, TextureDescriptor, Extent3d, TextureDimension, TextureFormat, TextureUsages};
 use bevy::{
     diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin},
     prelude::*,
@@ -15,7 +18,8 @@ struct BuildUI;
 struct UnitInfoUI;
 #[derive(Component)]
 struct FPSCounter;
-
+#[derive(Component)]
+struct MapUI;
 pub struct GameUI;
 impl Plugin for GameUI {
     fn build(&self, app: &mut App) {
@@ -29,12 +33,52 @@ impl Plugin for GameUI {
     }
 }
 
-fn game_overlay(mut commands: Commands, asset_server: Res<AssetServer>) {
+fn game_overlay(mut commands: Commands, asset_server: Res<AssetServer>,
+    mut images: ResMut<Assets<Image>>,
+) {
+     let size = Extent3d {
+        width: 512,
+        height: 512,
+        ..default()
+    };
+       let mut image = Image {
+        texture_descriptor: TextureDescriptor {
+            label: None,
+            size,
+            dimension: TextureDimension::D2,
+            format: TextureFormat::Bgra8UnormSrgb,
+            mip_level_count: 1,
+            sample_count: 1,
+            usage: TextureUsages::TEXTURE_BINDING
+                | TextureUsages::COPY_DST
+                | TextureUsages::RENDER_ATTACHMENT,
+            view_formats: &[],
+        },
+        ..default()
+    };
+    image.resize(size);
+        let image_handle = images.add(image);
+    commands.spawn((
+        Camera3dBundle {
+            camera_3d: Camera3d {
+                clear_color: ClearColorConfig::Custom(Color::WHITE),
+                ..default()
+            },
+            camera: Camera {
+                // render before the "main pass" camera
+                order: -1,
+                target: RenderTarget::Image(image_handle.clone()),
+                ..default()
+            },
+            transform: Transform::from_translation(Vec3::new(0.0, 20.0, 0.0))
+                .looking_at(Vec3::ZERO, Vec3::Z),
+            ..default()
+        },));
     commands
         .spawn(NodeBundle {
             style: Style {
                 size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
-                
+
                 align_items: AlignItems::Start,
                 justify_content: JustifyContent::Start,
                 flex_direction: FlexDirection::Column,
@@ -78,11 +122,13 @@ fn game_overlay(mut commands: Commands, asset_server: Res<AssetServer>) {
                             left: Val::Px(0.0),
                             ..default()
                         },
-                        align_items: AlignItems::Center,
-                        justify_content: JustifyContent::Start,
+                        // align_items: AlignItems::Center,
+                        justify_content: JustifyContent::SpaceBetween,
+                        flex_wrap: FlexWrap::Wrap,
+                        align_content: AlignContent::SpaceBetween,
                         ..default()
                     },
-                    background_color: Color::rgb(1.0, 1.0, 1.0).into(),
+                    // background_color: Color::rgba(1.0, 1.0, 1.0, 0.5).into(),
 
                     ..default()
                 })
@@ -91,7 +137,7 @@ fn game_overlay(mut commands: Commands, asset_server: Res<AssetServer>) {
                     parent.spawn((
                         NodeBundle {
                             style: Style {
-                                size: Size::new(Val::Percent(33.0), Val::Percent(100.0)),
+                                size: Size::new(Val::Percent(20.0), Val::Percent(100.0)),
                                 position: UiRect {
                                     top: Val::Percent(0.0),
                                     left: Val::Px(0.0),
@@ -101,7 +147,7 @@ fn game_overlay(mut commands: Commands, asset_server: Res<AssetServer>) {
                                 justify_content: JustifyContent::Start,
                                 ..default()
                             },
-                            background_color: Color::rgb(1.0, 0.0, 0.0).into(),
+                            background_color: Color::rgba(1.0, 0.0, 0.0, 0.5).into(),
 
                             ..default()
                         },
@@ -110,78 +156,41 @@ fn game_overlay(mut commands: Commands, asset_server: Res<AssetServer>) {
                     parent.spawn((
                         NodeBundle {
                             style: Style {
-                                size: Size::new(Val::Percent(33.0), Val::Percent(100.0)),
-                                position: UiRect {
-                                    top: Val::Percent(0.0),
-                                    left: Val::Px(0.0),
-                                    ..default()
-                                },
+                                size: Size::new(Val::Percent(20.0), Val::Percent(100.0)),
+                                // position: UiRect {
+                                //     top: Val::Percent(0.0),
+                                //     left: Val::Px(0.0),
+                                //     ..default()
+                                // },
                                 align_items: AlignItems::Start,
                                 justify_content: JustifyContent::Start,
                                 ..default()
                             },
-                            background_color: Color::rgb(0.0, 1.0, 0.0).into(),
-
+                            background_color: Color::rgba(0.0, 1.0, 0.0, 0.5).into(),
                             ..default()
                         },
                         UnitInfoUI,
                     ));
-                    // .with_children(|parent| {
-                    //     parent
-                    //         .spawn(ButtonBundle {
-                    //             style: Style {
-                    //                 size: Size::new(Val::Percent(5.0), Val::Percent(20.0)),
-                    //                 position: UiRect {
-                    //                     top: Val::Percent(0.0),
-                    //                     right: Val::Percent(0.0),
-                    //                     ..default()
-                    //                 },
-                    //                 margin: UiRect {
-                    //                     top: Val::Px(5.0),
-                    //                     right: Val::Px(5.0),
-                    //                     left: Val::Px(5.0),
-                    //                     bottom: Val::Px(5.0)
-                    //                 },
-                    //                 // horizontally center child text
-                    //                 justify_content: JustifyContent::Center,
-                    //                 // vertically center child text
-                    //                 align_items: AlignItems::Center,
-                    //                 ..default()
-                    //             },
-                    //             background_color: NORMAL_BUTTON.into(),
-                    //             // image: UiImage {
-                    //             //     texture: asset_server.load("textures/selection_texture.png"),
-                    //             //     ..default()
-                    //             // },
-                    //             ..default()
-                    //         })
-                    //         .with_children(|parent| {
-                    //             // parent.spawn(TextBundle::from_section(
-                    //             //     "Button",
-                    //             //     TextStyle {
-                    //             //         font: asset_server
-                    //             //             .load("fonts/android-insomnia-font/AndroidInsomniaRegular.ttf"),
-                    //             //         font_size: 40.0,
-                    //             //         color: Color::rgb(0.9, 0.9, 0.9),
-                    //             //     },
-                    //             // ));
-                    //             parent.spawn(ImageBundle {
-                    //                 style: Style {
-                    //                     size: Size::new(Val::Px(20.0), Val::Px(20.0)),
-                    //                     align_self: AlignSelf::Center,
-                    //                     ..Default::default()
-                    //                 },
-                    //                 background_color: NORMAL_BUTTON.into(),
-                    //                 transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
-                    //                 image: UiImage {
-                    //                     texture: asset_server.load("textures/selection_texture.png"),
-                    //                     ..default()
-                    //                 },
-                    //                 ..Default::default()
-                    //             });
-                    //         });
-                    // parent.spawn(bundle)
-                    // });
+                    parent.spawn((
+                        NodeBundle{
+                            style: Style{
+                                size: Size::new(Val::Percent(20.0), Val::Percent(100.0)),
+                                ..default()
+                           },
+                            
+                            background_color: Color::rgba(0.0, 0.0, 1.0, 0.5).into(),
+                            ..default()
+                        },
+                        MapUI
+
+                    )).with_children(|parent|
+                            {parent.spawn(ImageBundle{
+                                
+                                image: UiImage::from(image_handle),
+                                ..default()
+                            });
+                });
+                    
                 });
         });
     // Main lower window
@@ -216,10 +225,27 @@ fn populate_lower_ui(
                         },
                     ))
                     .id();
-
+                let thumbnail = commands
+                    .spawn(ImageBundle {
+                        background_color: NORMAL_BUTTON.into(),
+                        style: Style{
+                            size: Size{
+                                width : Val::Px(100.0), 
+                                height: Val::Px(100.0)
+                            },
+                            ..Default::default()
+                        }, 
+                        // transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
+                        image: UiImage {
+                            texture: asset_server.load(&unit_information.thumbnail),
+                            ..default()
+                        },
+                        ..Default::default()
+                    })
+                    .id();
                 commands
                     .entity(unit_info_ui.get_single().unwrap())
-                    .push_children(&[infotext]);
+                    .push_children(&[infotext,  thumbnail]);
             }
         }
     }

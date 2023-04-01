@@ -65,6 +65,7 @@ pub struct UnitInformation {
     pub unit_name: String,
     pub unit_type: UnitType,
     pub civilisation: Civilisation,
+    pub thumbnail: String,
 }
 impl Plugin for InstanceSpawner {
     fn build(&self, app: &mut App) {
@@ -162,6 +163,8 @@ fn spawn(
                             unit_name: unit_specification.unit_name.clone(),
                             unit_type: spawn_request.unit_type,
                             civilisation: spawn_request.civilisation,
+                            thumbnail: "./3d_models/units/greek/greek_cruiser_thumbnail.png"
+                                .into(),
                         },
                         RigidBody::KinematicPositionBased,
                         // MassProperties{

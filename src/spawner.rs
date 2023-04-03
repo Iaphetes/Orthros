@@ -4,7 +4,8 @@ use std::fmt;
 
 use crate::{
     movable::Movable,
-    ownable::{Selectable, SelectionCircle}, player_controller::RenderLayerMap,
+    ownable::{Selectable, SelectionCircle},
+    player_controller::RenderLayerMap,
 };
 use bevy_rapier3d::{prelude::*, rapier::prelude::ShapeType};
 // Create some sort of unit map with regards to civ
@@ -190,25 +191,23 @@ fn spawn(
                             },
                             SelectionCircle,
                         ));
-                            parent.spawn(
-                                (
-                                MaterialMeshBundle{
-                                    mesh: meshes.add(shape::Plane{
-                                        size :10.0,
-                                        subdivisions: 1
-                                    }.into()
-                                    ),
-                                    material: materials.add(StandardMaterial{
-                                        base_color : Color::rgba(0.0, 1.0, 0.0, 0.5),
-                                        ..Default::default()
-                                    }),
-                                    ..default()
-
-
-                                },
-                                RenderLayers::layer(RenderLayerMap::Minimap as u8)
-                            )
-                            );
+                        parent.spawn((
+                            MaterialMeshBundle {
+                                mesh: meshes.add(
+                                    shape::Plane {
+                                        size: 10.0,
+                                        subdivisions: 1,
+                                    }
+                                    .into(),
+                                ),
+                                material: materials.add(StandardMaterial {
+                                    base_color: Color::rgba(0.0, 1.0, 0.0, 0.5),
+                                    ..Default::default()
+                                }),
+                                ..default()
+                            },
+                            RenderLayers::layer(RenderLayerMap::Minimap as u8),
+                        ));
                     })
                     .id();
                 if unit_specification.movable {

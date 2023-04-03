@@ -2,6 +2,7 @@ use crate::ownable::Selectable;
 use crate::player_controller::{DeselectEvent, RayHit, RenderLayerMap};
 use crate::spawner::UnitInformation;
 use bevy::core_pipeline::clear_color::ClearColorConfig;
+use bevy::ecs::system::EntityCommands;
 use bevy::render::camera::RenderTarget;
 use bevy::render::render_resource::{
     Extent3d, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
@@ -14,19 +15,36 @@ use bevy::{
 const NORMAL_BUTTON: Color = Color::rgb(0.15, 0.15, 0.15);
 const HOVERED_BUTTON: Color = Color::rgb(0.25, 0.25, 0.25);
 const PRESSED_BUTTON: Color = Color::rgb(0.35, 0.75, 0.35);
+#[derive(PartialEq, Eq, Clone, Copy)]
+enum UIType {
+    MapUI,
+    SelectionInfo,
+    ContextMenu,
+    Diagnostics,
+}
+#[derive(Component, PartialEq, Eq, Clone, Copy)]
+enum UIContent {
+    Content(UIType),
+    Decoration(UIType),
+}
+// #[derive(Component)]
+// struct BuildUI;
+// #[derive(Component)]
+// struct UnitInfoUI;
+// #[derive(Component)]
+// struct FPSCounter;
+// #[derive(Component)]
+// struct MapUI;
+// #[derive(Component)]
+// struct UIContent;
+// #[derive(Component)]
+// struct UIDecoration;
 
-#[derive(Component)]
-struct BuildUI;
-#[derive(Component)]
-struct UnitInfoUI;
-#[derive(Component)]
-struct FPSCounter;
-#[derive(Component)]
-struct MapUI;
 pub struct GameUI;
 impl Plugin for GameUI {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(game_overlay)
+        app.add_startup_system(game_overlay.before(initialise_mini_map))
+            // .add_startup_system(initialise_mini_map)
             .add_event::<RayHit>()
             .add_event::<DeselectEvent>()
             .add_system(change_text_system)
@@ -35,13 +53,12 @@ impl Plugin for GameUI {
             .add_system(clear_ui.before(populate_lower_ui));
     }
 }
-
-fn game_overlay(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
+fn initialise_mini_map(mut commands: Commands,
+    // asset_server: Res<AssetServer>,
     mut images: ResMut<Assets<Image>>,
-) {
-    let size = Extent3d {
+    ui_elements: Query<(Entity, &UIContent)>,
+){
+let size = Extent3d {
         width: 512,
         height: 512,
         ..default()
@@ -80,8 +97,121 @@ fn game_overlay(
             ..default()
         },
         UiCameraConfig { show_ui: false },
-        RenderLayers::from_layers(&[RenderLayerMap::General as u8, RenderLayerMap::Minimap as u8])
+        RenderLayers::from_layers(&[RenderLayerMap::General as u8, RenderLayerMap::Minimap as u8]),
     ));
+    let map_content_id: Entity = ui_elements
+                .into_iter()
+                .find(|(entity, content)| **content == UIContent::Content(UIType::MapUI))
+                .unwrap()
+                .0;
+    commands.entity(map_content_id).with_children(|parent| {
+                            parent.spawn(ImageBundle {
+                                image: UiImage::from(image_handle),
+                                style: Style {
+                                    size: Size {
+                                        width: Val::Percent(100.0),
+                                        height: Val::Percent(100.0),
+                                    },
+                                    ..Default::default()
+                                },
+                                ..default()
+                            });
+                        });
+}
+fn create_ui_segment(commands: &mut Commands, style: Style, ui_type: UIType) -> Entity {
+    commands
+        .spawn((NodeBundle {
+            style,
+            ..default()
+        },))
+        .with_children(|parent| {
+            parent.spawn((
+                UIContent::Content(ui_type),
+                NodeBundle {
+                    style: Style {
+                        size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                        position: UiRect {
+                            top: Val::Percent(0.0),
+                            left: Val::Px(0.0),
+                            ..default()
+                        },
+                        align_items: AlignItems::Start,
+                        justify_content: JustifyContent::Start,
+                        ..default()
+                    },
+                    background_color: Color::rgba(1.0, 0.0, 0.0, 0.5).into(),
+
+                    ..default()
+                },
+            ));
+            parent.spawn((
+                UIContent::Decoration(ui_type),
+                NodeBundle {
+                    style: Style {
+                        size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                        position_type: PositionType::Absolute,
+                        ..default()
+                    },
+                    background_color: Color::rgba(0.0, 0.0, 1.0, 0.5).into(),
+                    ..default()
+                },
+            ));
+        })
+        .id()
+}
+fn game_overlay(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut images: ResMut<Assets<Image>>,
+) {
+    
+    let lower_ui_elements: Vec<Entity> = vec![
+        create_ui_segment(
+            &mut commands,
+            Style {
+                size: Size::new(Val::Percent(30.0), Val::Percent(100.0)),
+                position: UiRect {
+                    top: Val::Percent(0.0),
+                    left: Val::Px(0.0),
+                    ..default()
+                },
+                align_items: AlignItems::Start,
+                justify_content: JustifyContent::Start,
+                ..default()
+            },
+            UIType::ContextMenu,
+        ),
+        create_ui_segment(
+            &mut commands,
+            Style {
+                size: Size::new(Val::Percent(30.0), Val::Percent(100.0)),
+                position: UiRect {
+                    top: Val::Percent(0.0),
+                    left: Val::Px(0.0),
+                    ..default()
+                },
+                align_items: AlignItems::Start,
+                justify_content: JustifyContent::Start,
+                ..default()
+            },
+            UIType::SelectionInfo,
+        ),
+create_ui_segment(
+            &mut commands,
+            Style {
+                size: Size::new(Val::Percent(30.0), Val::Percent(100.0)),
+                position: UiRect {
+                    top: Val::Percent(0.0),
+                    left: Val::Px(0.0),
+                    ..default()
+                },
+                align_items: AlignItems::Start,
+                justify_content: JustifyContent::Start,
+                ..default()
+            },
+            UIType::MapUI,
+        )
+    ];
     commands
         .spawn(NodeBundle {
             style: Style {
@@ -109,6 +239,7 @@ fn game_overlay(
                 })
                 .with_children(|parent| {
                     parent.spawn((
+                        UIContent::Content(UIType::Diagnostics),
                         TextBundle::from_section(
                             format!("FPS - ms/Frame"),
                             TextStyle {
@@ -118,7 +249,6 @@ fn game_overlay(
                                 color: Color::RED,
                             },
                         ),
-                        FPSCounter,
                     ));
                 });
             parent
@@ -139,65 +269,20 @@ fn game_overlay(
                     // background_color: Color::rgba(1.0, 1.0, 1.0, 0.5).into(),
                     ..default()
                 })
-                .with_children(|parent| {
-                    // Left part (Build menu)
-                    parent.spawn((
-                        NodeBundle {
-                            style: Style {
-                                size: Size::new(Val::Percent(20.0), Val::Percent(100.0)),
-                                position: UiRect {
-                                    top: Val::Percent(0.0),
-                                    left: Val::Px(0.0),
-                                    ..default()
-                                },
-                                align_items: AlignItems::Start,
-                                justify_content: JustifyContent::Start,
-                                ..default()
-                            },
-                            background_color: Color::rgba(1.0, 0.0, 0.0, 0.5).into(),
+                .push_children(&lower_ui_elements);
+                // .with_children(|parent| {
+                //     parent
+                //         .spawn((NodeBundle {
+                //             style: Style {
+                //                 size: Size::new(Val::Percent(30.0), Val::Percent(100.0)),
+                //                 ..default()
+                //             },
 
-                            ..default()
-                        },
-                        BuildUI,
-                    ));
-                    parent.spawn((
-                        NodeBundle {
-                            style: Style {
-                                size: Size::new(Val::Percent(20.0), Val::Percent(100.0)),
-                                // position: UiRect {
-                                //     top: Val::Percent(0.0),
-                                //     left: Val::Px(0.0),
-                                //     ..default()
-                                // },
-                                align_items: AlignItems::Start,
-                                justify_content: JustifyContent::Start,
-                                ..default()
-                            },
-                            background_color: Color::rgba(0.0, 1.0, 0.0, 0.5).into(),
-                            ..default()
-                        },
-                        UnitInfoUI,
-                    ));
-                    parent
-                        .spawn((
-                            NodeBundle {
-                                style: Style {
-                                    size: Size::new(Val::Percent(20.0), Val::Percent(100.0)),
-                                    ..default()
-                                },
+                //             background_color: Color::rgba(0.0, 0.0, 1.0, 0.5).into(),
+                //             ..default()
+                //         },));
 
-                                background_color: Color::rgba(0.0, 0.0, 1.0, 0.5).into(),
-                                ..default()
-                            },
-                            MapUI,
-                        ))
-                        .with_children(|parent| {
-                            parent.spawn(ImageBundle {
-                                image: UiImage::from(image_handle),
-                                ..default()
-                            });
-                        });
-                });
+                // });
         });
     // Main lower window
 }
@@ -207,13 +292,16 @@ fn populate_lower_ui(
     asset_server: Res<AssetServer>,
     mut ray_hit_event: EventReader<RayHit>,
     mut unit_info: Query<&UnitInformation, With<Selectable>>,
-    unit_info_ui: Query<Entity, With<UnitInfoUI>>,
+    ui_elements: Query<(Entity, &UIContent)>,
 ) {
     for hit in ray_hit_event.iter() {
         if hit.mouse_key_enable_mouse {
-            commands
-                .entity(unit_info_ui.get_single().unwrap())
-                .clear_children();
+            let selection_info_content: Entity = ui_elements
+                .into_iter()
+                .find(|(entity, content)| **content == UIContent::Content(UIType::SelectionInfo))
+                .unwrap()
+                .0;
+            commands.entity(selection_info_content).clear_children();
             if let Ok(unit_information) = unit_info.get_mut(hit.hit_entity) {
                 let infotext = commands
                     .spawn(TextBundle::from_section(
@@ -250,7 +338,7 @@ fn populate_lower_ui(
                     })
                     .id();
                 commands
-                    .entity(unit_info_ui.get_single().unwrap())
+                    .entity(selection_info_content)
                     .push_children(&[infotext, thumbnail]);
             }
         }
@@ -258,7 +346,7 @@ fn populate_lower_ui(
 }
 fn clear_ui(
     mut commands: Commands,
-    unit_info_ui: Query<Entity, With<UnitInfoUI>>,
+    unit_info_ui: Query<Entity, With<UIContent>>,
     deselect_event: EventReader<DeselectEvent>,
 ) {
     if !deselect_event.is_empty() {
@@ -270,7 +358,7 @@ fn clear_ui(
 fn change_text_system(
     time: Res<Time>,
     diagnostics: Res<Diagnostics>,
-    mut query: Query<&mut Text, With<FPSCounter>>,
+    mut query: Query<&mut Text, With<UIContent>>,
 ) {
     for mut text in &mut query {
         let mut fps = 0.0;

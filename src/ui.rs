@@ -2,10 +2,9 @@ use crate::ownable::Selectable;
 use crate::player_controller::{DeselectEvent, RayHit, RenderLayerMap};
 use crate::spawner::UnitInformation;
 use bevy::core_pipeline::clear_color::ClearColorConfig;
-use bevy::ecs::system::EntityCommands;
 use bevy::render::camera::RenderTarget;
 use bevy::render::render_resource::{
-    Extent3d, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
+    Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
 };
 use bevy::render::view::RenderLayers;
 use bevy::{
@@ -27,24 +26,10 @@ enum UIContent {
     Content(UIType),
     Decoration(UIType),
 }
-// #[derive(Component)]
-// struct BuildUI;
-// #[derive(Component)]
-// struct UnitInfoUI;
-// #[derive(Component)]
-// struct FPSCounter;
-// #[derive(Component)]
-// struct MapUI;
-// #[derive(Component)]
-// struct UIContent;
-// #[derive(Component)]
-// struct UIDecoration;
-
 pub struct GameUI;
 impl Plugin for GameUI {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(game_overlay.before(initialise_mini_map))
-            // .add_startup_system(initialise_mini_map)
+        app.add_startup_system(game_overlay)
             .add_event::<RayHit>()
             .add_event::<DeselectEvent>()
             .add_system(change_text_system)
@@ -53,14 +38,14 @@ impl Plugin for GameUI {
             .add_system(clear_ui.before(populate_lower_ui));
     }
 }
-fn initialise_mini_map(mut commands: Commands,
+fn initialise_mini_map(
+    commands: &mut Commands,
     // asset_server: Res<AssetServer>,
     mut images: ResMut<Assets<Image>>,
-    ui_elements: Query<(Entity, &UIContent)>,
-){
-let size = Extent3d {
-        width: 512,
-        height: 512,
+) -> Entity {
+    let size = Extent3d {
+        width: 1024,
+        height: 1024,
         ..default()
     };
     let mut image = Image {
@@ -99,51 +84,51 @@ let size = Extent3d {
         UiCameraConfig { show_ui: false },
         RenderLayers::from_layers(&[RenderLayerMap::General as u8, RenderLayerMap::Minimap as u8]),
     ));
-    let map_content_id: Entity = ui_elements
-                .into_iter()
-                .find(|(entity, content)| **content == UIContent::Content(UIType::MapUI))
-                .unwrap()
-                .0;
-    commands.entity(map_content_id).with_children(|parent| {
-                            parent.spawn(ImageBundle {
-                                image: UiImage::from(image_handle),
-                                style: Style {
-                                    size: Size {
-                                        width: Val::Percent(100.0),
-                                        height: Val::Percent(100.0),
-                                    },
-                                    ..Default::default()
-                                },
-                                ..default()
-                            });
-                        });
-}
-fn create_ui_segment(commands: &mut Commands, style: Style, ui_type: UIType) -> Entity {
     commands
-        .spawn((NodeBundle {
-            style,
+        .spawn(ImageBundle {
+            image: UiImage::from(image_handle),
+            style: Style {
+                size: Size {
+                    width: Val::Percent(100.0),
+                    height: Val::Percent(100.0),
+                },
+                ..Default::default()
+            },
             ..default()
-        },))
+        })
+        .id()
+}
+fn create_ui_segment(
+    commands: &mut Commands,
+    style: Style,
+    ui_type: UIType,
+    content: Vec<Entity>,
+    decoration: Vec<Entity>,
+) -> Entity {
+    commands
+        .spawn((NodeBundle { style, ..default() },))
         .with_children(|parent| {
-            parent.spawn((
-                UIContent::Content(ui_type),
-                NodeBundle {
-                    style: Style {
-                        size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
-                        position: UiRect {
-                            top: Val::Percent(0.0),
-                            left: Val::Px(0.0),
+            parent
+                .spawn((
+                    UIContent::Content(ui_type),
+                    NodeBundle {
+                        style: Style {
+                            size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                            position: UiRect {
+                                top: Val::Percent(0.0),
+                                left: Val::Px(0.0),
+                                ..default()
+                            },
+                            align_items: AlignItems::Start,
+                            justify_content: JustifyContent::Start,
                             ..default()
                         },
-                        align_items: AlignItems::Start,
-                        justify_content: JustifyContent::Start,
+                        background_color: Color::rgba(1.0, 0.0, 0.0, 0.5).into(),
+
                         ..default()
                     },
-                    background_color: Color::rgba(1.0, 0.0, 0.0, 0.5).into(),
-
-                    ..default()
-                },
-            ));
+                ))
+                .push_children(&content);
             parent.spawn((
                 UIContent::Decoration(ui_type),
                 NodeBundle {
@@ -152,10 +137,10 @@ fn create_ui_segment(commands: &mut Commands, style: Style, ui_type: UIType) -> 
                         position_type: PositionType::Absolute,
                         ..default()
                     },
-                    background_color: Color::rgba(0.0, 0.0, 1.0, 0.5).into(),
+                    // background_color: Color::rgba(0.0, 0.0, 1.0, 0.5).into(),
                     ..default()
                 },
-            ));
+            )).push_children(&decoration);
         })
         .id()
 }
@@ -164,7 +149,37 @@ fn game_overlay(
     asset_server: Res<AssetServer>,
     mut images: ResMut<Assets<Image>>,
 ) {
-    
+    let map_ui_content: Vec<Entity> = vec![initialise_mini_map(&mut commands, images)];
+    let map_ui_decoration: Vec<Entity> = vec![commands.spawn(ImageBundle{
+        style: Style{
+            size: Size{
+                height: Val::Percent(100.0),
+                width: Val::Percent(100.0) 
+            },
+            ..default()
+        },
+        image: UiImage{
+
+            texture: asset_server.load("textures/ui/greek/map_decoration.png"),
+            ..default()
+        },
+        ..default()}).id()];
+    let context_menu_decoration: Vec<Entity> = vec![commands.spawn(ImageBundle{
+        style: Style{
+            size: Size{
+                height: Val::Percent(100.0),
+                width: Val::Percent(100.0) 
+            },
+            ..default()
+        },
+        image: UiImage{
+
+            texture: asset_server.load("textures/ui/greek/context_menu_decoration.png"),
+            ..default()
+        },
+        ..default()}).id()];
+
+
     let lower_ui_elements: Vec<Entity> = vec![
         create_ui_segment(
             &mut commands,
@@ -180,6 +195,8 @@ fn game_overlay(
                 ..default()
             },
             UIType::ContextMenu,
+            Vec::new(),
+            context_menu_decoration,
         ),
         create_ui_segment(
             &mut commands,
@@ -195,8 +212,10 @@ fn game_overlay(
                 ..default()
             },
             UIType::SelectionInfo,
+            Vec::new(),
+            Vec::new(),
         ),
-create_ui_segment(
+        create_ui_segment(
             &mut commands,
             Style {
                 size: Size::new(Val::Percent(30.0), Val::Percent(100.0)),
@@ -210,7 +229,9 @@ create_ui_segment(
                 ..default()
             },
             UIType::MapUI,
-        )
+            map_ui_content,
+            map_ui_decoration,
+        ),
     ];
     commands
         .spawn(NodeBundle {
@@ -270,19 +291,19 @@ create_ui_segment(
                     ..default()
                 })
                 .push_children(&lower_ui_elements);
-                // .with_children(|parent| {
-                //     parent
-                //         .spawn((NodeBundle {
-                //             style: Style {
-                //                 size: Size::new(Val::Percent(30.0), Val::Percent(100.0)),
-                //                 ..default()
-                //             },
+            // .with_children(|parent| {
+            //     parent
+            //         .spawn((NodeBundle {
+            //             style: Style {
+            //                 size: Size::new(Val::Percent(30.0), Val::Percent(100.0)),
+            //                 ..default()
+            //             },
 
-                //             background_color: Color::rgba(0.0, 0.0, 1.0, 0.5).into(),
-                //             ..default()
-                //         },));
+            //             background_color: Color::rgba(0.0, 0.0, 1.0, 0.5).into(),
+            //             ..default()
+            //         },));
 
-                // });
+            // });
         });
     // Main lower window
 }
@@ -344,14 +365,19 @@ fn populate_lower_ui(
         }
     }
 }
+// remove all children
 fn clear_ui(
     mut commands: Commands,
-    unit_info_ui: Query<Entity, With<UIContent>>,
+    ui_elements: Query<(Entity, &UIContent)>,
     deselect_event: EventReader<DeselectEvent>,
 ) {
     if !deselect_event.is_empty() {
         commands
-            .entity(unit_info_ui.get_single().unwrap())
+            .entity(ui_elements
+                .into_iter()
+                .find(|(entity, content)| **content == UIContent::Content(UIType::SelectionInfo))
+                .unwrap()
+                .0)
             .clear_children();
     }
 }

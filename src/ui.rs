@@ -129,18 +129,25 @@ fn create_ui_segment(
                     },
                 ))
                 .push_children(&content);
-            parent.spawn((
-                UIContent::Decoration(ui_type),
-                NodeBundle {
-                    style: Style {
-                        size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
-                        position_type: PositionType::Absolute,
+            parent
+                .spawn((
+                    UIContent::Decoration(ui_type),
+                    NodeBundle {
+                        style: Style {
+                            size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                            // position_type: PositionType::Absolute,
+                            align_items: AlignItems::Center,
+                            justify_content: JustifyContent::Center,
+                            // align_content: AlignContent::SpaceBetween,
+                            // flex_wrap: FlexWrap::Wrap,
+                            flex_direction: FlexDirection::Row,
+                            ..default()
+                        },
+                        // background_color: Color::rgba(0.0, 0.0, 1.0, 0.5).into(),
                         ..default()
                     },
-                    // background_color: Color::rgba(0.0, 0.0, 1.0, 0.5).into(),
-                    ..default()
-                },
-            )).push_children(&decoration);
+                ))
+                .push_children(&decoration);
         })
         .id()
 }
@@ -150,35 +157,62 @@ fn game_overlay(
     mut images: ResMut<Assets<Image>>,
 ) {
     let map_ui_content: Vec<Entity> = vec![initialise_mini_map(&mut commands, images)];
-    let map_ui_decoration: Vec<Entity> = vec![commands.spawn(ImageBundle{
-        style: Style{
-            size: Size{
-                height: Val::Percent(100.0),
-                width: Val::Percent(100.0) 
+    let map_ui_decoration: Vec<Entity> = vec![commands
+        .spawn(ImageBundle {
+            style: Style {
+                size: Size {
+                    height: Val::Percent(100.0),
+                    width: Val::Percent(100.0),
+                },
+                ..default()
+            },
+            image: UiImage {
+                texture: asset_server.load("textures/ui/greek/map_decoration.png"),
+                ..default()
             },
             ..default()
-        },
-        image: UiImage{
+        })
+        .id()];
+    let context_menu_decoration: Vec<Entity> = vec![
+        commands
+            .spawn(ImageBundle {
+                style: Style {
+                    size: Size::height(Val::Percent(100.0)),
+                    // align_items: AlignItems::Center,
+                    // justify_content: JustifyContent::SpaceAround,
+                    ..default()
+                },
+                calculated_size: CalculatedSize {
+                    preserve_aspect_ratio: true,
+                    ..default()
+                },
+                image: UiImage {
+                    texture: asset_server.load("textures/ui/greek/context_menu_decoration.png"),
+                    ..default()
+                },
+                ..default()
+            })
+            .id(),
+        // commands
+        //     .spawn(ImageBundle {
+        //         style: Style {
+        //             size: Size {
+        //                 height: Val::Percent(100.0),
+        //                 // width: Val::Percent(100.0),
+        //                 ..default()
+        //             },
 
-            texture: asset_server.load("textures/ui/greek/map_decoration.png"),
-            ..default()
-        },
-        ..default()}).id()];
-    let context_menu_decoration: Vec<Entity> = vec![commands.spawn(ImageBundle{
-        style: Style{
-            size: Size{
-                height: Val::Percent(100.0),
-                width: Val::Percent(100.0) 
-            },
-            ..default()
-        },
-        image: UiImage{
+        //             ..default()
+        //         },
 
-            texture: asset_server.load("textures/ui/greek/context_menu_decoration.png"),
-            ..default()
-        },
-        ..default()}).id()];
-
+        //         image: UiImage {
+        //             texture: asset_server.load("textures/ui/greek/context_menu_decoration.png"),
+        //             ..default()
+        //         },
+        //         ..default()
+        //     })
+        //     .id(),
+    ];
 
     let lower_ui_elements: Vec<Entity> = vec![
         create_ui_segment(
@@ -313,16 +347,24 @@ fn populate_lower_ui(
     asset_server: Res<AssetServer>,
     mut ray_hit_event: EventReader<RayHit>,
     mut unit_info: Query<&UnitInformation, With<Selectable>>,
-    ui_elements: Query<(Entity, &UIContent)>,
+    ui_elements: Query<(Entity, &UIContent, &Children)>,
+    ui_children: Query<(Entity), With<Style>>,
 ) {
     for hit in ray_hit_event.iter() {
         if hit.mouse_key_enable_mouse {
-            let selection_info_content: Entity = ui_elements
+            let (selection_info_content, _, children): (Entity, _, &Children) = ui_elements
                 .into_iter()
-                .find(|(entity, content)| **content == UIContent::Content(UIType::SelectionInfo))
-                .unwrap()
-                .0;
-            commands.entity(selection_info_content).clear_children();
+                .find(|(entity, content, _)| **content == UIContent::Content(UIType::SelectionInfo))
+                .unwrap();
+            for &child in children.iter() {
+                println!("{:#?}", child);
+                match ui_children.get(child) {
+                    Ok(child) => {
+                        commands.entity(child).despawn_recursive();
+                    }
+                    Err(_) => {}
+                }
+            }
             if let Ok(unit_information) = unit_info.get_mut(hit.hit_entity) {
                 let infotext = commands
                     .spawn(TextBundle::from_section(
@@ -361,6 +403,8 @@ fn populate_lower_ui(
                 commands
                     .entity(selection_info_content)
                     .push_children(&[infotext, thumbnail]);
+            } else {
+                commands.entity(selection_info_content).push_children(&[]);
             }
         }
     }
@@ -368,17 +412,24 @@ fn populate_lower_ui(
 // remove all children
 fn clear_ui(
     mut commands: Commands,
-    ui_elements: Query<(Entity, &UIContent)>,
+    ui_elements: Query<(Entity, &UIContent, &Children)>,
+    ui_children: Query<(Entity), With<Style>>,
     deselect_event: EventReader<DeselectEvent>,
 ) {
     if !deselect_event.is_empty() {
-        commands
-            .entity(ui_elements
-                .into_iter()
-                .find(|(entity, content)| **content == UIContent::Content(UIType::SelectionInfo))
-                .unwrap()
-                .0)
-            .clear_children();
+        let (selection_info_content, _, children): (Entity, _, &Children) = ui_elements
+            .into_iter()
+            .find(|(entity, content, _)| **content == UIContent::Content(UIType::SelectionInfo))
+            .unwrap();
+        for &child in children.iter() {
+            println!("{:#?}", child);
+            match ui_children.get(child) {
+                Ok(child) => {
+                    commands.entity(child).despawn_recursive();
+                }
+                Err(_) => {}
+            }
+        }
     }
 }
 fn change_text_system(

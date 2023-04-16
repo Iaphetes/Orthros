@@ -9,7 +9,7 @@ mod ui;
 use crate::ui::GameUI;
 use bevy::{
     prelude::*,
-    window::{PresentMode, WindowPlugin},
+    window::{PresentMode, WindowMode, WindowPlugin, WindowResolution},
 };
 use spawner::{Civilisation, InstanceSpawnRequest, UnitType};
 //use bevy::render::render_resource::Texture;
@@ -24,7 +24,7 @@ fn main() {
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 present_mode: PresentMode::Immediate,
-
+                mode: WindowMode::Fullscreen,
                 ..default()
             }),
             ..default()

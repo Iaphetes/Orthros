@@ -11,7 +11,7 @@ use bevy::{
     diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin},
     prelude::*,
 };
-const NORMAL_BUTTON: Color = Color::rgb(0.15, 0.15, 0.15);
+const NORMAL_BUTTON: Color = Color::BLACK;
 const HOVERED_BUTTON: Color = Color::rgb(0.25, 0.25, 0.25);
 const PRESSED_BUTTON: Color = Color::rgb(0.35, 0.75, 0.35);
 #[derive(PartialEq, Eq, Clone, Copy)]
@@ -89,7 +89,7 @@ fn initialise_mini_map(
             image: UiImage::from(image_handle),
             style: Style {
                 size: Size {
-                    width: Val::Percent(100.0),
+                    width: Val::Percent(65.0),
                     height: Val::Percent(100.0),
                 },
                 ..Default::default()
@@ -119,12 +119,13 @@ fn create_ui_segment(
                                 left: Val::Px(0.0),
                                 ..default()
                             },
-                            align_items: AlignItems::Start,
-                            justify_content: JustifyContent::Start,
+                            position_type: PositionType::Absolute,
+                            align_items: AlignItems::FlexEnd,
+                            justify_content: JustifyContent::SpaceBetween,
+                            flex_direction: FlexDirection::Row,
                             ..default()
                         },
-                        background_color: Color::rgba(1.0, 0.0, 0.0, 0.5).into(),
-
+                        // background_color: Color::rgba(1.0, 0.0, 0.0, 0.5).into(),
                         ..default()
                     },
                 ))
@@ -135,15 +136,12 @@ fn create_ui_segment(
                     NodeBundle {
                         style: Style {
                             size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
-                            // position_type: PositionType::Absolute,
-                            align_items: AlignItems::Center,
-                            justify_content: JustifyContent::Center,
-                            // align_content: AlignContent::SpaceBetween,
-                            // flex_wrap: FlexWrap::Wrap,
+                            position_type: PositionType::Absolute,
+                            align_items: AlignItems::FlexEnd,
+                            justify_content: JustifyContent::SpaceBetween,
                             flex_direction: FlexDirection::Row,
                             ..default()
                         },
-                        // background_color: Color::rgba(0.0, 0.0, 1.0, 0.5).into(),
                         ..default()
                     },
                 ))
@@ -156,30 +154,16 @@ fn game_overlay(
     asset_server: Res<AssetServer>,
     mut images: ResMut<Assets<Image>>,
 ) {
-    let map_ui_content: Vec<Entity> = vec![initialise_mini_map(&mut commands, images)];
-    let map_ui_decoration: Vec<Entity> = vec![commands
-        .spawn(ImageBundle {
-            style: Style {
-                size: Size {
-                    height: Val::Percent(100.0),
-                    width: Val::Percent(100.0),
-                },
-                ..default()
-            },
-            image: UiImage {
-                texture: asset_server.load("textures/ui/greek/map_decoration.png"),
-                ..default()
-            },
-            ..default()
-        })
-        .id()];
-    let context_menu_decoration: Vec<Entity> = vec![
+    let map_ui_content: Vec<Entity> = vec![
+        commands.spawn(NodeBundle::default()).id(),
+        initialise_mini_map(&mut commands, images),
+        commands.spawn(NodeBundle::default()).id(),
+    ];
+    let map_ui_decoration: Vec<Entity> = vec![
         commands
             .spawn(ImageBundle {
                 style: Style {
-                    size: Size::height(Val::Percent(100.0)),
-                    // align_items: AlignItems::Center,
-                    // justify_content: JustifyContent::SpaceAround,
+                    size: Size::new(Val::Percent(10.0), Val::Percent(120.0)),
                     ..default()
                 },
                 calculated_size: CalculatedSize {
@@ -193,25 +177,131 @@ fn game_overlay(
                 ..default()
             })
             .id(),
-        // commands
-        //     .spawn(ImageBundle {
-        //         style: Style {
-        //             size: Size {
-        //                 height: Val::Percent(100.0),
-        //                 // width: Val::Percent(100.0),
-        //                 ..default()
-        //             },
-
-        //             ..default()
-        //         },
-
-        //         image: UiImage {
-        //             texture: asset_server.load("textures/ui/greek/context_menu_decoration.png"),
-        //             ..default()
-        //         },
-        //         ..default()
-        //     })
-        //     .id(),
+        commands
+            .spawn(ImageBundle {
+                style: Style {
+                    size: Size {
+                        height: Val::Percent(100.0),
+                        width: Val::Percent(65.0),
+                    },
+                    ..default()
+                },
+                image: UiImage {
+                    texture: asset_server.load("textures/ui/greek/map_decoration.png"),
+                    ..default()
+                },
+                ..default()
+            })
+            .id(),
+        commands
+            .spawn(ImageBundle {
+                style: Style {
+                    size: Size::new(Val::Percent(10.0), Val::Percent(120.0)),
+                    ..default()
+                },
+                calculated_size: CalculatedSize {
+                    preserve_aspect_ratio: true,
+                    ..default()
+                },
+                image: UiImage {
+                    texture: asset_server.load("textures/ui/greek/context_menu_decoration.png"),
+                    ..default()
+                },
+                ..default()
+            })
+            .id(),
+    ];
+    let context_menu_decoration: Vec<Entity> = vec![
+        commands
+            .spawn(ImageBundle {
+                style: Style {
+                    size: Size::new(Val::Percent(10.0), Val::Percent(120.0)),
+                    ..default()
+                },
+                calculated_size: CalculatedSize {
+                    preserve_aspect_ratio: true,
+                    ..default()
+                },
+                image: UiImage {
+                    texture: asset_server.load("textures/ui/greek/context_menu_decoration.png"),
+                    ..default()
+                },
+                ..default()
+            })
+            .id(),
+        commands
+            .spawn(NodeBundle {
+                style: Style {
+                    size: Size::new(Val::Px(800.0), Val::Percent(100.0)),
+                    ..default()
+                },
+                background_color: Color::rgba(0.0, 0.0, 0.153125, 0.5).into(),
+                ..default()
+            })
+            .id(),
+        commands
+            .spawn(ImageBundle {
+                style: Style {
+                    size: Size::new(Val::Percent(10.0), Val::Percent(120.0)),
+                    ..default()
+                },
+                calculated_size: CalculatedSize {
+                    preserve_aspect_ratio: true,
+                    ..default()
+                },
+                image: UiImage {
+                    texture: asset_server.load("textures/ui/greek/context_menu_decoration.png"),
+                    ..default()
+                },
+                ..default()
+            })
+            .id(),
+    ];
+    let selection_info_decoration: Vec<Entity> = vec![
+        commands
+            .spawn(ImageBundle {
+                style: Style {
+                    size: Size::new(Val::Percent(10.0), Val::Percent(120.0)),
+                    ..default()
+                },
+                calculated_size: CalculatedSize {
+                    preserve_aspect_ratio: true,
+                    ..default()
+                },
+                image: UiImage {
+                    texture: asset_server.load("textures/ui/greek/context_menu_decoration.png"),
+                    ..default()
+                },
+                ..default()
+            })
+            .id(),
+        commands
+            .spawn(NodeBundle {
+                style: Style {
+                    size: Size::new(Val::Px(800.0), Val::Percent(100.0)),
+                    ..default()
+                },
+                background_color: Color::rgba(0.0, 0.0, 0.153125, 0.5).into(),
+                ..default()
+            })
+            .id(),
+        commands
+            .spawn(ImageBundle {
+                style: Style {
+                    size: Size::new(Val::Percent(10.0), Val::Percent(120.0)),
+                    ..default()
+                },
+                calculated_size: CalculatedSize {
+                    preserve_aspect_ratio: true,
+                    ..default()
+                },
+                image: UiImage {
+                    texture: asset_server.load("textures/ui/greek/context_menu_decoration.png"),
+                    ..default()
+                },
+                ..default()
+            })
+            .id(),
     ];
 
     let lower_ui_elements: Vec<Entity> = vec![
@@ -247,7 +337,7 @@ fn game_overlay(
             },
             UIType::SelectionInfo,
             Vec::new(),
-            Vec::new(),
+            selection_info_decoration,
         ),
         create_ui_segment(
             &mut commands,
@@ -325,21 +415,7 @@ fn game_overlay(
                     ..default()
                 })
                 .push_children(&lower_ui_elements);
-            // .with_children(|parent| {
-            //     parent
-            //         .spawn((NodeBundle {
-            //             style: Style {
-            //                 size: Size::new(Val::Percent(30.0), Val::Percent(100.0)),
-            //                 ..default()
-            //             },
-
-            //             background_color: Color::rgba(0.0, 0.0, 1.0, 0.5).into(),
-            //             ..default()
-            //         },));
-
-            // });
         });
-    // Main lower window
 }
 
 fn populate_lower_ui(
@@ -383,26 +459,49 @@ fn populate_lower_ui(
                     ))
                     .id();
                 let thumbnail = commands
-                    .spawn(ImageBundle {
-                        background_color: NORMAL_BUTTON.into(),
+                    .spawn(NodeBundle {
                         style: Style {
                             size: Size {
                                 width: Val::Px(100.0),
                                 height: Val::Px(100.0),
                             },
-                            ..Default::default()
-                        },
-                        // transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
-                        image: UiImage {
-                            texture: asset_server.load(&unit_information.thumbnail),
                             ..default()
                         },
-                        ..Default::default()
+                        background_color: NORMAL_BUTTON.into(),
+                        ..default()
+                    })
+                    .with_children(|parent| {
+                        parent.spawn(ImageBundle {
+                            style: Style {
+                                size: Size {
+                                    width: Val::Percent(100.0),
+                                    height: Val::Percent(100.0),
+                                },
+                                ..Default::default()
+                            },
+                            // transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
+                            image: UiImage {
+                                texture: asset_server.load(&unit_information.thumbnail),
+                                ..default()
+                            },
+                            ..Default::default()
+                        });
                     })
                     .id();
-                commands
-                    .entity(selection_info_content)
-                    .push_children(&[infotext, thumbnail]);
+                let container = commands
+                    .spawn(NodeBundle {
+                        style: Style {
+                            size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                            align_items: AlignItems::Center,
+                            justify_content: JustifyContent::SpaceAround,
+                            flex_direction: FlexDirection::Row,
+                            ..default()
+                        },
+                        ..default()
+                    })
+                    .push_children(&[infotext, thumbnail])
+                    .id();
+                commands.entity(selection_info_content).add_child(container);
             } else {
                 commands.entity(selection_info_content).push_children(&[]);
             }
@@ -413,13 +512,13 @@ fn populate_lower_ui(
 fn clear_ui(
     mut commands: Commands,
     ui_elements: Query<(Entity, &UIContent, &Children)>,
-    ui_children: Query<(Entity), With<Style>>,
+    ui_children: Query<Entity, With<Style>>,
     deselect_event: EventReader<DeselectEvent>,
 ) {
     if !deselect_event.is_empty() {
-        let (selection_info_content, _, children): (Entity, _, &Children) = ui_elements
+        let (_, _, children): (_, _, &Children) = ui_elements
             .into_iter()
-            .find(|(entity, content, _)| **content == UIContent::Content(UIType::SelectionInfo))
+            .find(|(_, content, _)| **content == UIContent::Content(UIType::SelectionInfo))
             .unwrap();
         for &child in children.iter() {
             println!("{:#?}", child);

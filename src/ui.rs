@@ -11,7 +11,13 @@ use bevy::{
     diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin},
     prelude::*,
 };
-const NORMAL_BUTTON: Color = Color::BLACK;
+const NORMAL_BUTTON: Color = Color::rgb(12.0 / 256.0, 11.0 / 256.0, 13.0 / 256.0);
+const MAIN_UI_BACKGROUND: Color = Color::rgba(
+    0x73 as f32 / 256.0,
+    0x5F as f32 / 256.0,
+    0x3D as f32 / 256.0,
+    0xF0 as f32 / 256.0,
+);
 const HOVERED_BUTTON: Color = Color::rgb(0.25, 0.25, 0.25);
 const PRESSED_BUTTON: Color = Color::rgb(0.35, 0.75, 0.35);
 #[derive(PartialEq, Eq, Clone, Copy)]
@@ -171,7 +177,7 @@ fn game_overlay(
                     ..default()
                 },
                 image: UiImage {
-                    texture: asset_server.load("textures/ui/greek/context_menu_decoration.png"),
+                    texture: asset_server.load("textures/ui/greek/context_menu_decoration_b.png"),
                     ..default()
                 },
                 ..default()
@@ -204,7 +210,7 @@ fn game_overlay(
                     ..default()
                 },
                 image: UiImage {
-                    texture: asset_server.load("textures/ui/greek/context_menu_decoration.png"),
+                    texture: asset_server.load("textures/ui/greek/context_menu_decoration_b.png"),
                     ..default()
                 },
                 ..default()
@@ -223,7 +229,7 @@ fn game_overlay(
                     ..default()
                 },
                 image: UiImage {
-                    texture: asset_server.load("textures/ui/greek/context_menu_decoration.png"),
+                    texture: asset_server.load("textures/ui/greek/context_menu_decoration_b.png"),
                     ..default()
                 },
                 ..default()
@@ -235,7 +241,7 @@ fn game_overlay(
                     size: Size::new(Val::Px(800.0), Val::Percent(100.0)),
                     ..default()
                 },
-                background_color: Color::rgba(0.0, 0.0, 0.153125, 0.5).into(),
+                background_color: MAIN_UI_BACKGROUND.into(),
                 ..default()
             })
             .id(),
@@ -250,7 +256,7 @@ fn game_overlay(
                     ..default()
                 },
                 image: UiImage {
-                    texture: asset_server.load("textures/ui/greek/context_menu_decoration.png"),
+                    texture: asset_server.load("textures/ui/greek/context_menu_decoration_b.png"),
                     ..default()
                 },
                 ..default()
@@ -269,7 +275,7 @@ fn game_overlay(
                     ..default()
                 },
                 image: UiImage {
-                    texture: asset_server.load("textures/ui/greek/context_menu_decoration.png"),
+                    texture: asset_server.load("textures/ui/greek/context_menu_decoration_b.png"),
                     ..default()
                 },
                 ..default()
@@ -281,7 +287,7 @@ fn game_overlay(
                     size: Size::new(Val::Px(800.0), Val::Percent(100.0)),
                     ..default()
                 },
-                background_color: Color::rgba(0.0, 0.0, 0.153125, 0.5).into(),
+                background_color: MAIN_UI_BACKGROUND.into(),
                 ..default()
             })
             .id(),
@@ -296,7 +302,7 @@ fn game_overlay(
                     ..default()
                 },
                 image: UiImage {
-                    texture: asset_server.load("textures/ui/greek/context_menu_decoration.png"),
+                    texture: asset_server.load("textures/ui/greek/context_menu_decoration_b.png"),
                     ..default()
                 },
                 ..default()

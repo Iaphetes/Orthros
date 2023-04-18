@@ -13,12 +13,12 @@ use bevy::{
 };
 const NORMAL_BUTTON: Color = Color::rgb(12.0 / 256.0, 11.0 / 256.0, 13.0 / 256.0);
 const MAIN_UI_BACKGROUND: Color = Color::rgba(
-    0x73 as f32 / 256.0,
-    0x5F as f32 / 256.0,
-    0x3D as f32 / 256.0,
+    0x81 as f32 / 256.0,
+    0xC1 as f32 / 256.0,
+    0x14 as f32 / 256.0,
     0xF0 as f32 / 256.0,
 );
-const HOVERED_BUTTON: Color = Color::rgb(0.25, 0.25, 0.25);
+const MAIN_UI_TEXT: Color = Color::rgb(12.0 / 256.0, 11.0 / 256.0, 13.0 / 256.0);
 const PRESSED_BUTTON: Color = Color::rgb(0.35, 0.75, 0.35);
 #[derive(PartialEq, Eq, Clone, Copy)]
 enum UIType {
@@ -109,11 +109,28 @@ fn create_ui_segment(
     style: Style,
     ui_type: UIType,
     content: Vec<Entity>,
-    decoration: Vec<Entity>,
+    background_decoration: Vec<Entity>,
+    foreground_decoration: Vec<Entity>,
 ) -> Entity {
     commands
         .spawn((NodeBundle { style, ..default() },))
         .with_children(|parent| {
+            parent
+                .spawn((
+                    UIContent::Decoration(ui_type),
+                    NodeBundle {
+                        style: Style {
+                            size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                            position_type: PositionType::Absolute,
+                            align_items: AlignItems::FlexEnd,
+                            justify_content: JustifyContent::SpaceBetween,
+                            flex_direction: FlexDirection::Row,
+                            ..default()
+                        },
+                        ..default()
+                    },
+                ))
+                .push_children(&background_decoration);
             parent
                 .spawn((
                     UIContent::Content(ui_type),
@@ -131,17 +148,21 @@ fn create_ui_segment(
                             flex_direction: FlexDirection::Row,
                             ..default()
                         },
-                        // background_color: Color::rgba(1.0, 0.0, 0.0, 0.5).into(),
                         ..default()
                     },
                 ))
                 .push_children(&content);
             parent
                 .spawn((
-                    UIContent::Decoration(ui_type),
+                    UIContent::Content(ui_type),
                     NodeBundle {
                         style: Style {
                             size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                            position: UiRect {
+                                top: Val::Percent(0.0),
+                                left: Val::Px(0.0),
+                                ..default()
+                            },
                             position_type: PositionType::Absolute,
                             align_items: AlignItems::FlexEnd,
                             justify_content: JustifyContent::SpaceBetween,
@@ -151,7 +172,7 @@ fn create_ui_segment(
                         ..default()
                     },
                 ))
-                .push_children(&decoration);
+                .push_children(&foreground_decoration);
         })
         .id()
 }
@@ -170,10 +191,6 @@ fn game_overlay(
             .spawn(ImageBundle {
                 style: Style {
                     size: Size::new(Val::Percent(10.0), Val::Percent(120.0)),
-                    ..default()
-                },
-                calculated_size: CalculatedSize {
-                    preserve_aspect_ratio: true,
                     ..default()
                 },
                 image: UiImage {
@@ -205,10 +222,6 @@ fn game_overlay(
                     size: Size::new(Val::Percent(10.0), Val::Percent(120.0)),
                     ..default()
                 },
-                calculated_size: CalculatedSize {
-                    preserve_aspect_ratio: true,
-                    ..default()
-                },
                 image: UiImage {
                     texture: asset_server.load("textures/ui/greek/context_menu_decoration_b.png"),
                     ..default()
@@ -222,10 +235,6 @@ fn game_overlay(
             .spawn(ImageBundle {
                 style: Style {
                     size: Size::new(Val::Percent(10.0), Val::Percent(120.0)),
-                    ..default()
-                },
-                calculated_size: CalculatedSize {
-                    preserve_aspect_ratio: true,
                     ..default()
                 },
                 image: UiImage {
@@ -249,10 +258,6 @@ fn game_overlay(
             .spawn(ImageBundle {
                 style: Style {
                     size: Size::new(Val::Percent(10.0), Val::Percent(120.0)),
-                    ..default()
-                },
-                calculated_size: CalculatedSize {
-                    preserve_aspect_ratio: true,
                     ..default()
                 },
                 image: UiImage {
@@ -270,8 +275,42 @@ fn game_overlay(
                     size: Size::new(Val::Percent(10.0), Val::Percent(120.0)),
                     ..default()
                 },
-                calculated_size: CalculatedSize {
-                    preserve_aspect_ratio: true,
+                image: UiImage {
+                    texture: asset_server.load("textures/ui/greek/context_menu_decoration_b.png"),
+                    ..default()
+                },
+                ..default()
+            })
+            .id(),
+        commands
+            .spawn(NodeBundle {
+                style: Style {
+                    size: Size::new(Val::Px(800.0), Val::Percent(100.0)),
+                    ..default()
+                },
+                background_color: MAIN_UI_BACKGROUND.into(),
+                ..default()
+            })
+            .id(),
+        commands
+            .spawn(ImageBundle {
+                style: Style {
+                    size: Size::new(Val::Percent(10.0), Val::Percent(120.0)),
+                    ..default()
+                },
+                image: UiImage {
+                    texture: asset_server.load("textures/ui/greek/context_menu_decoration_b.png"),
+                    ..default()
+                },
+                ..default()
+            })
+            .id(),
+    ];
+    let diagnosttics_decoration: Vec<Entity> = vec![
+        commands
+            .spawn(ImageBundle {
+                style: Style {
+                    size: Size::new(Val::Percent(10.0), Val::Percent(120.0)),
                     ..default()
                 },
                 image: UiImage {
@@ -297,10 +336,6 @@ fn game_overlay(
                     size: Size::new(Val::Percent(10.0), Val::Percent(120.0)),
                     ..default()
                 },
-                calculated_size: CalculatedSize {
-                    preserve_aspect_ratio: true,
-                    ..default()
-                },
                 image: UiImage {
                     texture: asset_server.load("textures/ui/greek/context_menu_decoration_b.png"),
                     ..default()
@@ -309,7 +344,38 @@ fn game_overlay(
             })
             .id(),
     ];
-
+    let diagnostics_content: Vec<Entity> = vec![commands
+        .spawn((
+            UIContent::Content(UIType::Diagnostics),
+            TextBundle::from_section(
+                format!("FPS - ms/Frame"),
+                TextStyle {
+                    font: asset_server
+                        .load("fonts/android-insomnia-font/AndroidInsomniaRegular.ttf"),
+                    font_size: 20.0,
+                    color: MAIN_UI_TEXT,
+                },
+            ),
+        ))
+        .id()];
+    let top_ui_elements: Vec<Entity> = vec![create_ui_segment(
+        &mut commands,
+        Style {
+            size: Size::new(Val::Percent(30.0), Val::Percent(100.0)),
+            position: UiRect {
+                top: Val::Percent(0.0),
+                left: Val::Px(0.0),
+                ..default()
+            },
+            align_items: AlignItems::Start,
+            justify_content: JustifyContent::Start,
+            ..default()
+        },
+        UIType::ContextMenu,
+        diagnosttics_decoration,
+        diagnostics_content,
+        Vec::new(),
+    )];
     let lower_ui_elements: Vec<Entity> = vec![
         create_ui_segment(
             &mut commands,
@@ -325,8 +391,9 @@ fn game_overlay(
                 ..default()
             },
             UIType::ContextMenu,
-            Vec::new(),
             context_menu_decoration,
+            Vec::new(),
+            Vec::new(),
         ),
         create_ui_segment(
             &mut commands,
@@ -342,8 +409,9 @@ fn game_overlay(
                 ..default()
             },
             UIType::SelectionInfo,
-            Vec::new(),
             selection_info_decoration,
+            Vec::new(),
+            Vec::new(),
         ),
         create_ui_segment(
             &mut commands,
@@ -359,10 +427,12 @@ fn game_overlay(
                 ..default()
             },
             UIType::MapUI,
+            Vec::new(),
             map_ui_content,
             map_ui_decoration,
         ),
     ];
+    //Full UI
     commands
         .spawn(NodeBundle {
             style: Style {
@@ -373,10 +443,10 @@ fn game_overlay(
                 flex_direction: FlexDirection::Column,
                 ..default()
             },
-            // background_color: Color::rgb(1.0, 1.0, 1.0).into(),
             ..default()
         })
         .with_children(|parent| {
+            // Top UI
             parent
                 .spawn(NodeBundle {
                     style: Style {
@@ -388,20 +458,22 @@ fn game_overlay(
                     },
                     ..default()
                 })
-                .with_children(|parent| {
-                    parent.spawn((
-                        UIContent::Content(UIType::Diagnostics),
-                        TextBundle::from_section(
-                            format!("FPS - ms/Frame"),
-                            TextStyle {
-                                font: asset_server
-                                    .load("fonts/android-insomnia-font/AndroidInsomniaRegular.ttf"),
-                                font_size: 20.0,
-                                color: Color::RED,
-                            },
-                        ),
-                    ));
-                });
+                .push_children(&top_ui_elements);
+            // .with_children(|parent| {
+            //     parent.spawn((
+            //         UIContent::Content(UIType::Diagnostics),
+            //         TextBundle::from_section(
+            //             format!("FPS - ms/Frame"),
+            //             TextStyle {
+            //                 font: asset_server
+            //                     .load("fonts/android-insomnia-font/AndroidInsomniaRegular.ttf"),
+            //                 font_size: 20.0,
+            //                 color: MAIN_UI_TEXT,
+            //             },
+            //         ),
+            //     ));
+            // });
+            // Lower UI
             parent
                 .spawn(NodeBundle {
                     style: Style {
@@ -411,13 +483,11 @@ fn game_overlay(
                             left: Val::Px(0.0),
                             ..default()
                         },
-                        // align_items: AlignItems::Center,
                         justify_content: JustifyContent::SpaceBetween,
                         flex_wrap: FlexWrap::Wrap,
                         align_content: AlignContent::SpaceBetween,
                         ..default()
                     },
-                    // background_color: Color::rgba(1.0, 1.0, 1.0, 0.5).into(),
                     ..default()
                 })
                 .push_children(&lower_ui_elements);
@@ -460,7 +530,7 @@ fn populate_lower_ui(
                             font: asset_server
                                 .load("fonts/android-insomnia-font/AndroidInsomniaRegular.ttf"),
                             font_size: 30.0,
-                            color: Color::rgb(0.9, 0.0, 0.0),
+                            color: MAIN_UI_TEXT,
                         },
                     ))
                     .id();
@@ -485,7 +555,6 @@ fn populate_lower_ui(
                                 },
                                 ..Default::default()
                             },
-                            // transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
                             image: UiImage {
                                 texture: asset_server.load(&unit_information.thumbnail),
                                 ..default()

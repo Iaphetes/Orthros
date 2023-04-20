@@ -27,21 +27,8 @@ impl Plugin for Skybox {
             .add_system(asset_loaded.after(cycle_cubemap_asset));
     }
 }
-const CUBEMAPS: &[(&str, CompressedImageFormats)] = &[
-    ("textures/skybox/stacked.png", CompressedImageFormats::NONE), // ,
-                                                                   // (
-                                                                   //     "textures/Ryfjallet_cubemap_astc4x4.ktx2",
-                                                                   //     CompressedImageFormats::ASTC_LDR,
-                                                                   // ),
-                                                                   // (
-                                                                   //     "textures/Ryfjallet_cubemap_bc7.ktx2",
-                                                                   //     CompressedImageFormats::BC,
-                                                                   // ),
-                                                                   // (
-                                                                   //     "textures/Ryfjallet_cubemap_etc2.ktx2",
-                                                                   //     CompressedImageFormats::ETC2,
-                                                                   // ),
-];
+const CUBEMAPS: &[(&str, CompressedImageFormats)] =
+    &[("textures/skybox/stacked.png", CompressedImageFormats::NONE)];
 #[derive(Resource)]
 struct Cubemap {
     pub is_loaded: bool,

@@ -19,7 +19,6 @@ const MAIN_UI_BACKGROUND: Color = Color::rgba(
     0xF0 as f32 / 256.0,
 );
 const MAIN_UI_TEXT: Color = Color::rgb(12.0 / 256.0, 11.0 / 256.0, 13.0 / 256.0);
-const PRESSED_BUTTON: Color = Color::rgb(0.35, 0.75, 0.35);
 #[derive(PartialEq, Eq, Clone, Copy)]
 enum UIType {
     MapUI,
@@ -180,7 +179,7 @@ fn create_ui_segment(
 fn game_overlay(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    mut images: ResMut<Assets<Image>>,
+    images: ResMut<Assets<Image>>,
 ) {
     let map_ui_content: Vec<Entity> = vec![
         commands.spawn(NodeBundle::default()).id(),
@@ -349,7 +348,7 @@ fn game_overlay(
         .spawn((
             UIContent::Content(UIType::Diagnostics),
             TextBundle::from_section(
-                format!("FPS - ms/Frame"),
+                format!("FPS"),
                 TextStyle {
                     font: asset_server
                         .load("fonts/android-insomnia-font/AndroidInsomniaRegular.ttf"),
@@ -501,13 +500,13 @@ fn populate_lower_ui(
     mut ray_hit_event: EventReader<RayHit>,
     mut unit_info: Query<&UnitInformation, With<Selectable>>,
     ui_elements: Query<(Entity, &UIContent, &Children)>,
-    ui_children: Query<(Entity), With<Style>>,
+    ui_children: Query<Entity, With<Style>>,
 ) {
     for hit in ray_hit_event.iter() {
         if hit.mouse_key_enable_mouse {
             let (selection_info_content, _, children): (Entity, _, &Children) = ui_elements
                 .into_iter()
-                .find(|(entity, content, _)| **content == UIContent::Content(UIType::SelectionInfo))
+                .find(|(_, content, _)| **content == UIContent::Content(UIType::SelectionInfo))
                 .unwrap();
             for &child in children.iter() {
                 println!("{:#?}", child);
@@ -607,11 +606,7 @@ fn clear_ui(
         }
     }
 }
-fn change_text_system(
-    time: Res<Time>,
-    diagnostics: Res<Diagnostics>,
-    mut query: Query<&mut Text, With<UIContent>>,
-) {
+fn change_text_system(diagnostics: Res<Diagnostics>, mut query: Query<&mut Text, With<UIContent>>) {
     for mut text in &mut query {
         let mut fps = 0.0;
         if let Some(fps_diagnostic) = diagnostics.get(FrameTimeDiagnosticsPlugin::FPS) {
@@ -620,14 +615,6 @@ fn change_text_system(
             }
         }
 
-        let mut frame_time = time.delta_seconds_f64();
-        if let Some(frame_time_diagnostic) = diagnostics.get(FrameTimeDiagnosticsPlugin::FRAME_TIME)
-        {
-            if let Some(frame_time_smoothed) = frame_time_diagnostic.smoothed() {
-                frame_time = frame_time_smoothed;
-            }
-        }
-
-        text.sections[0].value = format!("{fps:.1} fps, {frame_time:.3} ms/frame",);
+        text.sections[0].value = format!("{fps:.1} fps",);
     }
 }

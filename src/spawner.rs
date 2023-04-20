@@ -48,7 +48,7 @@ pub struct UnitSpecification {
     movable: bool,
     shape: ShapeType,
     dimensions: Vec3,
-    prescaling: f32,
+    _prescaling: f32,
 }
 pub struct InstanceSpawner;
 #[derive(Component)]
@@ -58,7 +58,7 @@ pub struct InstanceSpawnRequest {
     pub civilisation: Civilisation,
 }
 
-pub struct CustomMaterialInformation {
+pub struct _CustomMaterialInformation {
     emissiveness: f32,
 }
 #[derive(Component)]
@@ -90,7 +90,7 @@ fn populate_units(app: &mut App) {
                 y: 1.0,
                 z: 2.0,
             },
-            prescaling: 0.2,
+            _prescaling: 0.2,
         },
     );
     unit_specifications.unit_specifications.insert(
@@ -105,7 +105,7 @@ fn populate_units(app: &mut App) {
                 y: 15.0,
                 z: 10.0,
             },
-            prescaling: 0.2,
+            _prescaling: 0.2,
         },
     );
 
@@ -221,12 +221,12 @@ fn spawn(
 }
 
 fn update_emissiveness(
-    mut commands: Commands,
+    _commands: Commands,
     loaded_units: Query<(Entity, &Handle<StandardMaterial>, &Name)>,
     mut mesh_assets: ResMut<Assets<StandardMaterial>>,
-    mut image_assets: ResMut<Assets<Image>>,
+    _image_assets: ResMut<Assets<Image>>,
 ) {
-    for (entity, material_handle, name) in loaded_units.into_iter() {
+    for (_entity, material_handle, name) in loaded_units.into_iter() {
         if name.as_str() == "Cube.002" {
             let mut glow_material: &mut StandardMaterial =
                 mesh_assets.get_mut(material_handle).unwrap();

@@ -1,4 +1,4 @@
-//! Load a cubemap texture onto a cube like a skybox and cycle through different compressed texture formats
+#![feature(let_chains)]
 mod environment;
 mod movable;
 mod ownable;
@@ -6,19 +6,17 @@ mod player_controller;
 mod skybox;
 mod spawner;
 mod ui;
+use crate::environment::Environment;
+use crate::movable::UnitMovement;
+use crate::player_controller::PlayerController;
+use crate::spawner::InstanceSpawner;
 use crate::ui::GameUI;
 use bevy::{
     prelude::*,
-    window::{PresentMode, WindowMode, WindowPlugin, WindowResolution},
+    window::{PresentMode, WindowMode, WindowPlugin},
 };
-use spawner::{Civilisation, InstanceSpawnRequest, UnitType};
-//use bevy::render::render_resource::Texture;
-use crate::environment::Environment;
-use crate::movable::UnitMovement;
-// use crate::movable::{move_units, MoveTarget};
-use crate::player_controller::PlayerController;
-use crate::spawner::InstanceSpawner;
 use bevy_rapier3d::prelude::*;
+use spawner::{Civilisation, InstanceSpawnRequest, UnitType};
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {

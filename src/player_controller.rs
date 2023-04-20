@@ -1,21 +1,12 @@
-#![feature(let_chains)]
-use crate::environment::MovementGrid;
 use crate::movable::{Movable, MoveCommand};
 use crate::ownable::SelectionCircle;
 use crate::ownable::{Selectable, Selected};
-use crate::spawner::{UnitInformation, UnitType};
 use bevy::input::mouse::MouseScrollUnit;
 use bevy::input::mouse::MouseWheel;
 use bevy::math::Quat;
 use bevy::render::view::RenderLayers;
 use bevy::window::PrimaryWindow;
-use bevy::{
-    core_pipeline::{
-        bloom::{BloomCompositeMode, BloomSettings},
-        tonemapping::Tonemapping,
-    },
-    prelude::*,
-};
+use bevy::{core_pipeline::bloom::BloomSettings, prelude::*};
 #[repr(u8)]
 pub enum RenderLayerMap {
     General = 0,
@@ -30,10 +21,7 @@ impl Plugin for PlayerController {
         app.add_plugin(CameraController)
             .add_event::<RayHit>()
             .add_event::<DeselectEvent>()
-            // .add_startup_system(game_overlay)
             .add_system(process_mouse)
-            // .add_system(populate_lower_ui)
-            // .add_system(clear_ui.after(process_mouse).before(populate_lower_ui))
             .add_system(mouse_controller.after(process_mouse));
     }
 }
@@ -413,7 +401,7 @@ fn handle_unit_move_cmd(
     }
 }
 fn process_mouse(
-    mut interaction_query: Query<(&Interaction, &mut BackgroundColor), With<Children>>,
+    mut interaction_query: Query<&Interaction, With<Children>>,
     // mut text_query: Query<&mut Text>,
     mut ray_hit_event: EventWriter<RayHit>,
     mut deselect_event: EventWriter<DeselectEvent>,
@@ -427,23 +415,15 @@ fn process_mouse(
     };
 
     let mut mouse_over_ui: bool = false;
-    for (interaction, mut color) in &mut interaction_query {
-        // let mut text = text_query.get_mut(children[0]).unwrap();
+    for interaction in &mut interaction_query {
         match *interaction {
             Interaction::Clicked => {
-                // te}xt.sections[0].value = "Press".to_string();
-                // *color = PRESSED_BUTTON.into();
                 mouse_over_ui = true;
             }
             Interaction::Hovered => {
-                // text.sections[0].value = "Hover".to_string();
-                // *color = HOVERED_BUTTON.into();
                 mouse_over_ui = true;
             }
-            Interaction::None => {
-                // text.sections[0].value = "Button".to_string();
-                // *color = NORMAL_BUTTON.into();
-            }
+            Interaction::None => {}
         }
     }
     if let Ok((options, camera, camera_transform)) = camera_options.get_single() {

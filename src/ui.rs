@@ -108,8 +108,9 @@ fn create_ui_segment(
     commands: &mut Commands,
     style: Style,
     ui_type: UIType,
-    content: Vec<Entity>,
     background_decoration: Vec<Entity>,
+
+    content: Vec<Entity>,
     foreground_decoration: Vec<Entity>,
 ) -> Entity {
     commands
@@ -121,7 +122,7 @@ fn create_ui_segment(
                     NodeBundle {
                         style: Style {
                             size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
-                            position_type: PositionType::Absolute,
+                            // position_type: PositionType::Absolute,
                             align_items: AlignItems::FlexEnd,
                             justify_content: JustifyContent::SpaceBetween,
                             flex_direction: FlexDirection::Row,
@@ -154,7 +155,7 @@ fn create_ui_segment(
                 .push_children(&content);
             parent
                 .spawn((
-                    UIContent::Content(ui_type),
+                    UIContent::Decoration(ui_type),
                     NodeBundle {
                         style: Style {
                             size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
@@ -306,20 +307,20 @@ fn game_overlay(
             })
             .id(),
     ];
-    let diagnosttics_decoration: Vec<Entity> = vec![
-        commands
-            .spawn(ImageBundle {
-                style: Style {
-                    size: Size::new(Val::Percent(10.0), Val::Percent(120.0)),
-                    ..default()
-                },
-                image: UiImage {
-                    texture: asset_server.load("textures/ui/greek/context_menu_decoration_b.png"),
-                    ..default()
-                },
-                ..default()
-            })
-            .id(),
+    let diagnostics_decoration: Vec<Entity> = vec![
+        // commands
+        //     .spawn(ImageBundle {
+        //         style: Style {
+        //             size: Size::new(Val::Percent(10.0), Val::Percent(120.0)),
+        //             ..default()
+        //         },
+        //         image: UiImage {
+        //             texture: asset_server.load("textures/ui/greek/context_menu_decoration_b.png"),
+        //             ..default()
+        //         },
+        //         ..default()
+        //     })
+        //     .id(),
         commands
             .spawn(NodeBundle {
                 style: Style {
@@ -330,19 +331,19 @@ fn game_overlay(
                 ..default()
             })
             .id(),
-        commands
-            .spawn(ImageBundle {
-                style: Style {
-                    size: Size::new(Val::Percent(10.0), Val::Percent(120.0)),
-                    ..default()
-                },
-                image: UiImage {
-                    texture: asset_server.load("textures/ui/greek/context_menu_decoration_b.png"),
-                    ..default()
-                },
-                ..default()
-            })
-            .id(),
+        // commands
+        //     .spawn(ImageBundle {
+        //         style: Style {
+        //             size: Size::new(Val::Percent(10.0), Val::Percent(120.0)),
+        //             ..default()
+        //         },
+        //         image: UiImage {
+        //             texture: asset_server.load("textures/ui/greek/context_menu_decoration_b.png"),
+        //             ..default()
+        //         },
+        //         ..default()
+        //     })
+        //     .id(),
     ];
     let diagnostics_content: Vec<Entity> = vec![commands
         .spawn((
@@ -361,7 +362,7 @@ fn game_overlay(
     let top_ui_elements: Vec<Entity> = vec![create_ui_segment(
         &mut commands,
         Style {
-            size: Size::new(Val::Percent(30.0), Val::Percent(100.0)),
+            size: Size::new(Val::Percent(10.0), Val::Percent(100.0)),
             position: UiRect {
                 top: Val::Percent(0.0),
                 left: Val::Px(0.0),
@@ -372,7 +373,7 @@ fn game_overlay(
             ..default()
         },
         UIType::ContextMenu,
-        diagnosttics_decoration,
+        diagnostics_decoration,
         diagnostics_content,
         Vec::new(),
     )];

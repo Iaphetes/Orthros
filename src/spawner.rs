@@ -70,7 +70,9 @@ pub struct UnitInformation {
 }
 impl Plugin for InstanceSpawner {
     fn build(&self, app: &mut App) {
-        app.add_system(spawn).add_system(update_emissiveness);
+        app.add_system(spawn)
+            .add_event::<UnitSpecification>()
+            .add_system(update_emissiveness);
         populate_units(app);
     }
 }
@@ -168,9 +170,6 @@ fn spawn(
                             thumbnail: "./3d_models/units/greek/greek_cruiser_thumbnail.png".into(),
                         },
                         RigidBody::KinematicPositionBased,
-                        // MassProperties{
-
-                        //     }
                         collider,
                         GravityScale(0.0),
                     ))
@@ -222,21 +221,20 @@ fn spawn(
 
 fn update_emissiveness(
     _commands: Commands,
+    mut unit_info: EventReader<UnitSpecification>,
     loaded_units: Query<(Entity, &Handle<StandardMaterial>, &Name)>,
     mut mesh_assets: ResMut<Assets<StandardMaterial>>,
     _image_assets: ResMut<Assets<Image>>,
 ) {
-    for (_entity, material_handle, name) in loaded_units.into_iter() {
-        if name.as_str() == "Cube.002" {
-            let mut glow_material: &mut StandardMaterial =
-                mesh_assets.get_mut(material_handle).unwrap();
-            // Can multiply by factor to reach correct emmisiveness
-            glow_material.emissive = Color::rgb_linear(0.0, 250.0, 0.0);
-
-            // if let Some(image_handle) = glow_material.emissive_texture.clone() {
-            //     image_assets.get_mut(&image_handle).unwrap().data;
-            // }
-            // println!("Name: {}", name.as_str());
+    for info in unit_info.iter() {
+        for (_entity, material_handle, name) in loaded_units.into_iter() {
+            if name.as_str() == "Cube.002" {
+                let mut glow_material: &mut StandardMaterial =
+                    mesh_assets.get_mut(material_handle).unwrap();
+                println!("{:#?}", glow_material.emissive);
+                // Can multiply by factor to reach correct emmisiveness
+                // glow_material.emissive = Color::rgb_linear(0.0, 250.0, 0.0);
+            }
         }
     }
 }

@@ -1,13 +1,14 @@
-use bevy::{prelude::*, render::view::RenderLayers};
-use std::collections::HashMap;
-use std::fmt;
-
 use crate::{
     movable::Movable,
     ownable::{Selectable, SelectionCircle},
     player_controller::RenderLayerMap,
 };
+use bevy::{prelude::*, render::view::RenderLayers};
 use bevy_rapier3d::{prelude::*, rapier::prelude::ShapeType};
+use std::collections::HashMap;
+use std::fmt;
+use std::fs::File;
+use std::io::prelude::*;
 // Create some sort of unit map with regards to civ
 #[derive(Eq, Hash, PartialEq, Clone, Copy)]
 pub enum Civilisation {
@@ -42,6 +43,7 @@ pub struct UnitSpecifications {
     unit_specifications: HashMap<(Civilisation, UnitType), UnitSpecification>,
 }
 //TODO specify modifications to model (e.g #update_emissiveness)
+#[derive(Clone)]
 pub struct UnitSpecification {
     file_path: String,
     unit_name: String,
@@ -121,6 +123,7 @@ fn spawn(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     asset_server: Res<AssetServer>,
+    mut unit_info: EventWriter<UnitSpecification>,
 ) {
     for (entity, spawn_request) in spawn_requests.iter() {
         match unit_specifications
@@ -128,6 +131,7 @@ fn spawn(
             .get(&(spawn_request.civilisation, spawn_request.unit_type))
         {
             Some(unit_specification) => {
+                unit_info.send((*unit_specification).clone());
                 let texture_handle = asset_server.load("textures/selection_texture.png");
                 let material_handle = materials.add(StandardMaterial {
                     base_color_texture: Some(texture_handle),
@@ -227,6 +231,16 @@ fn update_emissiveness(
     _image_assets: ResMut<Assets<Image>>,
 ) {
     for info in unit_info.iter() {
+        println!(
+            "{}",
+            &info.file_path.split_once("#").unwrap().0.split_at(1).1
+        );
+        let mut file =
+            File::open(&info.file_path.split_once("#").unwrap().0.split_at(1).1).unwrap();
+        let mut contents: String = String::new();
+        file.read_to_string(&mut contents);
+        let gltf_model = json::parse(&contents);
+        println!("{:#?}", gltf_model);
         for (_entity, material_handle, name) in loaded_units.into_iter() {
             if name.as_str() == "Cube.002" {
                 let mut glow_material: &mut StandardMaterial =

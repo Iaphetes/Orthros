@@ -11,7 +11,8 @@ bevy_rapier3d = { version = "0.21", features = [  "debug-render-3d" ] }
 strum = "*"
 strum_macros = "*"
 noise = "0.8.2"
-bevy-inspector-egui = "0.17.0"
+# bevy-inspector-egui = "0.17.0"
+json = "0.12.4"
 # Enable a small amount of optimization in debug mode
 [profile.dev]
 opt-level = 1

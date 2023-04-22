@@ -3,8 +3,9 @@ use crate::{
     ownable::{Selectable, SelectionCircle},
     player_controller::RenderLayerMap,
 };
-use bevy::{prelude::*, render::view::RenderLayers};
+use bevy::{prelude::*, render::view::RenderLayers, scene::SceneInstance};
 use bevy_rapier3d::{prelude::*, rapier::prelude::ShapeType};
+use serde_json::{Result, Value};
 use std::collections::HashMap;
 use std::fmt;
 use std::fs::File;
@@ -43,7 +44,7 @@ pub struct UnitSpecifications {
     unit_specifications: HashMap<(Civilisation, UnitType), UnitSpecification>,
 }
 //TODO specify modifications to model (e.g #update_emissiveness)
-#[derive(Clone)]
+#[derive(Clone, Component)]
 pub struct UnitSpecification {
     file_path: String,
     unit_name: String,
@@ -73,8 +74,8 @@ pub struct UnitInformation {
 impl Plugin for InstanceSpawner {
     fn build(&self, app: &mut App) {
         app.add_system(spawn)
-            .add_event::<UnitSpecification>()
-            .add_system(update_emissiveness);
+            .add_event::<(Entity, UnitSpecification)>()
+            .add_system(update_emissiveness.before(spawn));
         populate_units(app);
     }
 }
@@ -115,7 +116,10 @@ fn populate_units(app: &mut App) {
 
     app.insert_resource(unit_specifications);
 }
-
+#[derive(Component)]
+struct EntityWrapper {
+    entity: Entity,
+}
 fn spawn(
     spawn_requests: Query<(Entity, &InstanceSpawnRequest)>,
     mut commands: Commands,
@@ -123,7 +127,6 @@ fn spawn(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     asset_server: Res<AssetServer>,
-    mut unit_info: EventWriter<UnitSpecification>,
 ) {
     for (entity, spawn_request) in spawn_requests.iter() {
         match unit_specifications
@@ -131,7 +134,6 @@ fn spawn(
             .get(&(spawn_request.civilisation, spawn_request.unit_type))
         {
             Some(unit_specification) => {
-                unit_info.send((*unit_specification).clone());
                 let texture_handle = asset_server.load("textures/selection_texture.png");
                 let material_handle = materials.add(StandardMaterial {
                     base_color_texture: Some(texture_handle),
@@ -213,6 +215,11 @@ fn spawn(
                         ));
                     })
                     .id();
+                // unit_info.send((parent_id, (*unit_specification).clone()));
+                commands.spawn((
+                    EntityWrapper { entity: parent_id },
+                    (*unit_specification).clone(),
+                ));
                 if unit_specification.movable {
                     commands.entity(parent_id).insert(Movable {});
                 }
@@ -224,13 +231,16 @@ fn spawn(
 }
 
 fn update_emissiveness(
-    _commands: Commands,
-    mut unit_info: EventReader<UnitSpecification>,
-    loaded_units: Query<(Entity, &Handle<StandardMaterial>, &Name)>,
-    mut mesh_assets: ResMut<Assets<StandardMaterial>>,
-    _image_assets: ResMut<Assets<Image>>,
+    mut commands: Commands,
+    mut unit_info: Query<(Entity, &EntityWrapper, &UnitSpecification)>,
+    material_handles: Query<&Handle<StandardMaterial>>,
+    mut material_assets: ResMut<Assets<StandardMaterial>>,
+    image_assets: ResMut<Assets<Image>>,
+    scene_instances: Query<&SceneInstance>,
+    scene_server: ResMut<Assets<Scene>>,
+    scene_spawner: Res<SceneSpawner>,
 ) {
-    for info in unit_info.iter() {
+    for (entity, entity_wrapper, info) in unit_info.iter() {
         println!(
             "{}",
             &info.file_path.split_once("#").unwrap().0.split_at(1).1
@@ -239,16 +249,93 @@ fn update_emissiveness(
             File::open(&info.file_path.split_once("#").unwrap().0.split_at(1).1).unwrap();
         let mut contents: String = String::new();
         file.read_to_string(&mut contents);
-        let gltf_model = json::parse(&contents);
-        println!("{:#?}", gltf_model);
-        for (_entity, material_handle, name) in loaded_units.into_iter() {
-            if name.as_str() == "Cube.002" {
-                let mut glow_material: &mut StandardMaterial =
-                    mesh_assets.get_mut(material_handle).unwrap();
-                println!("{:#?}", glow_material.emissive);
-                // Can multiply by factor to reach correct emmisiveness
-                // glow_material.emissive = Color::rgb_linear(0.0, 250.0, 0.0);
+        let gltf_model: serde_json::Value = serde_json::from_str(&contents).unwrap();
+        for material_str in gltf_model["materials"].as_array() {
+            for material in material_str {
+                let mut material_name: &str = &material["name"].to_string();
+                material_name = material_name.trim_matches('"');
+                let mut emissiveness: u8 = 1;
+                match &material["extensions"] {
+                    serde_json::Value::Object(map) => {
+                        for (extension_name, extension) in map {
+                            if extension_name == "KHR_materials_emissive_strength" {
+                                // println!("{:#?}: {:#?}", extension_name, extension);
+                                match &extension["emissiveStrength"] {
+                                    serde_json::Value::Number(num) => {
+                                        emissiveness = num.as_u64().expect("No value found for emissiveness, despite KHR_materials_emissive_strength defined") as u8 ;
+                                    }
+                                    _ => {}
+                                }
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+                match scene_instances.get(entity_wrapper.entity) {
+                    Ok(scene_instance) => {
+                        println!("Found scene instance");
+                        for scene_entity in
+                            scene_spawner.iter_instance_entities(**scene_instance.to_owned())
+                        {
+                            match material_handles.get(scene_entity) {
+                                Ok(material_handle) => {
+                                    match material_assets.get_mut(material_handle) {
+                                        Some(material) => {
+                                            println!("{:#?}", material);
+                                            commands.entity(entity).despawn_recursive();
+                                            // material.emissive = material.emissive * emissiveness;
+                                            //Color::rgb_linear(0.0, 250.0, 0.0);
+                                        }
+                                        None => {
+                                            println!("Invalid shader handle")
+                                        }
+                                    }
+                                    // let mut glow_material: &mut StandardMaterial =
+                                    //     mesh_assets.get_mut(material_handle).unwrap();
+                                    // println!("{:#?}", glow_material.emissive);
+                                    // Can multiply by factor to reach correct emmisiveness
+                                    // glow_material.emissive = Color::rgb_linear(0.0, 250.0, 0.0);
+                                }
+                                Err(error) => {
+                                    println!("No material attached to entity {:?}", error)
+                                }
+                            }
+                        }
+                    }
+                    Err(error) => println!("No scene attached to entity {:?}", error),
+                }
+                // match material_handles.get(*entity) {
+                //     Ok(material_handle) => {
+                //         match mesh_assets.get_mut(material_handle) {
+                //             Some(material) => {
+                //                 println!("{:#?}", material.emissive);
+                //                 // material.emissive = material.emissive * emissiveness;
+                //                 //Color::rgb_linear(0.0, 250.0, 0.0);
+                //             }
+                //             None => {
+                //                 println!("Invalid shader handle")
+                //             }
+                //         }
+                //         // let mut glow_material: &mut StandardMaterial =
+                //         //     mesh_assets.get_mut(material_handle).unwrap();
+                //         // println!("{:#?}", glow_material.emissive);
+                //         // Can multiply by factor to reach correct emmisiveness
+                //         // glow_material.emissive = Color::rgb_linear(0.0, 250.0, 0.0);
+                //     }
+                //     Err(error) => println!("No material attached to entity {:?}", error),
+                // }
             }
         }
+        // for (_entity, material_handle, name) in loaded_units.into_iter() {
+        //     if name.as_str() == "Cube.002" {
+        //         let mut glow_material: &mut StandardMaterial =
+        //             mesh_assets.get_mut(material_handle).unwrap();
+        //         println!("{:#?}", glow_material.emissive);
+        //         // Can multiply by factor to reach correct emmisiveness
+        //         // glow_material.emissive = Color::rgb_linear(0.0, 250.0, 0.0);
+        //     }
+        // }
     }
+
+    //
 }

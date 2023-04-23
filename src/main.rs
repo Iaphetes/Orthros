@@ -26,6 +26,7 @@ enum TechLevel {
 // struct ContextMenuActions {
 //     actions: Vec<ContextMenuAction>,
 // }
+#[derive(Component, Clone)]
 enum ContextMenuAction {
     BUILD(UnitType),
 }

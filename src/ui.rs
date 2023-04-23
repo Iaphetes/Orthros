@@ -1,6 +1,8 @@
 use crate::ownable::Selectable;
 use crate::player_controller::{DeselectEvent, RayHit, RenderLayerMap};
-use crate::spawner::{UnitInformation, UnitSpecification, UnitSpecifications, UnitType};
+use crate::spawner::{
+    InstanceSpawnRequest, UnitInformation, UnitSpecification, UnitSpecifications, UnitType,
+};
 use crate::{ContextMenuAction, PlayerInfo};
 use bevy::core_pipeline::clear_color::ClearColorConfig;
 use bevy::render::camera::RenderTarget;
@@ -13,7 +15,10 @@ use bevy::{
     diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin},
     prelude::*,
 };
+const ICON_BACKGROUND: Color = Color::rgb(12.0 / 256.0, 11.0 / 256.0, 13.0 / 256.0);
 const NORMAL_BUTTON: Color = Color::rgb(12.0 / 256.0, 11.0 / 256.0, 13.0 / 256.0);
+const HOVERED_BUTTON: Color = Color::rgb(64.0 / 256.0, 99.0 / 256.0, 64.0 / 256.0);
+const PRESSED_BUTTON: Color = Color::rgb(75.0 / 256.0, 110.0 / 256.0, 75.0 / 256.0);
 const MAIN_UI_BACKGROUND: Color = Color::rgba(
     0x81 as f32 / 256.0,
     0xC1 as f32 / 256.0,
@@ -42,7 +47,8 @@ impl Plugin for GameUI {
             .add_system(change_text_system)
             .add_system(populate_lower_ui)
             .add_plugin(FrameTimeDiagnosticsPlugin)
-            .add_system(clear_ui.before(populate_lower_ui));
+            .add_system(clear_ui.before(populate_lower_ui))
+            .add_system(button_system);
     }
 }
 fn initialise_mini_map(
@@ -498,7 +504,7 @@ fn update_selection_info(
                 },
                 ..default()
             },
-            background_color: NORMAL_BUTTON.into(),
+            background_color: ICON_BACKGROUND.into(),
             ..default()
         })
         .with_children(|parent| {
@@ -533,9 +539,43 @@ fn update_selection_info(
         .id();
     commands.entity(selection_info_content).add_child(container);
 }
+fn button_system(
+    mut commands: Commands,
+    mut interaction_query: Query<
+        (&Interaction, &mut BackgroundColor, &ContextMenuAction),
+        (Changed<Interaction>, With<Button>),
+    >,
+    player_info: Res<PlayerInfo>,
+) {
+    for (interaction, mut color, action) in &mut interaction_query {
+        match *interaction {
+            Interaction::Clicked => {
+                match action {
+                    ContextMenuAction::BUILD(unit_type) => {
+                        commands.spawn(InstanceSpawnRequest {
+                            location: Vec3 {
+                                x: 5.0,
+                                y: 2.0,
+                                z: 6.0,
+                            },
+                            unit_type: *unit_type,
+                            civilisation: player_info.civilisation,
+                        });
+                    }
+                }
+                *color = PRESSED_BUTTON.into();
+            }
+            Interaction::Hovered => {
+                *color = HOVERED_BUTTON.into();
+            }
+            Interaction::None => {
+                *color = NORMAL_BUTTON.into();
+            }
+        }
+    }
+}
 fn update_context_menu(
     commands: &mut Commands,
-    unit_information: &UnitInformation,
     asset_server: &Res<AssetServer>,
     context_menu_content: Entity,
     context_menu_actions: &Vec<ContextMenuAction>,
@@ -550,20 +590,23 @@ fn update_context_menu(
                     [&(player_info.civilisation, *unit_type)];
                 buttons.push(
                     commands
-                        .spawn(ButtonBundle {
-                            style: Style {
-                                size: Size::new(Val::Px(65.0), Val::Px(65.0)),
-                                justify_content: JustifyContent::Center,
-                                align_items: AlignItems::Center,
+                        .spawn((
+                            ButtonBundle {
+                                style: Style {
+                                    size: Size::new(Val::Px(65.0), Val::Px(65.0)),
+                                    justify_content: JustifyContent::Center,
+                                    align_items: AlignItems::Center,
+                                    ..default()
+                                },
+                                image: UiImage {
+                                    texture: asset_server.load(&unit_information.icon_path),
+                                    ..default()
+                                },
+                                background_color: Color::BLACK.into(),
                                 ..default()
                             },
-                            image: UiImage {
-                                texture: asset_server.load(&unit_information.icon_path),
-                                ..default()
-                            },
-                            background_color: Color::BLACK.into(),
-                            ..default()
-                        })
+                            action.clone(),
+                        ))
                         .id(),
                 );
             }
@@ -635,7 +678,6 @@ fn populate_lower_ui(
                 {
                     Some(contex_menu_actions) => update_context_menu(
                         &mut commands,
-                        &unit_information,
                         &asset_server,
                         context_menu_content,
                         &contex_menu_actions,

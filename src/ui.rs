@@ -1,4 +1,4 @@
-use crate::ownable::Selectable;
+use crate::ownable::{Selectable, Selected};
 use crate::player_controller::{DeselectEvent, RayHit, RenderLayerMap};
 use crate::spawner::{
     InstanceSpawnRequest, UnitInformation, UnitSpecification, UnitSpecifications,
@@ -548,30 +548,33 @@ fn button_system(
         (Changed<Interaction>, With<Button>),
     >,
     player_info: Res<PlayerInfo>,
+    selected_entities: Query<&Transform, With<Selected>>,
 ) {
-    for (interaction, mut color, action) in &mut interaction_query {
-        match *interaction {
-            Interaction::Clicked => {
-                match action {
-                    ContextMenuAction::BUILD(unit_type) => {
-                        commands.spawn(InstanceSpawnRequest {
-                            location: Vec3 {
-                                x: 5.0,
-                                y: 2.0,
-                                z: 6.0,
-                            },
-                            unit_type: *unit_type,
-                            civilisation: player_info.civilisation,
-                        });
+    for transform in selected_entities.iter() {
+        for (interaction, mut color, action) in &mut interaction_query {
+            match *interaction {
+                Interaction::Clicked => {
+                    match action {
+                        ContextMenuAction::BUILD(unit_type) => {
+                            commands.spawn(InstanceSpawnRequest {
+                                location: Vec3 {
+                                    x: transform.translation.x + 2.0,
+                                    y: 2.0,
+                                    z: transform.translation.z + 1.0,
+                                },
+                                unit_type: *unit_type,
+                                civilisation: player_info.civilisation,
+                            });
+                        }
                     }
+                    *color = PRESSED_BUTTON.into();
                 }
-                *color = PRESSED_BUTTON.into();
-            }
-            Interaction::Hovered => {
-                *color = HOVERED_BUTTON.into();
-            }
-            Interaction::None => {
-                *color = NORMAL_BUTTON.into();
+                Interaction::Hovered => {
+                    *color = HOVERED_BUTTON.into();
+                }
+                Interaction::None => {
+                    *color = NORMAL_BUTTON.into();
+                }
             }
         }
     }

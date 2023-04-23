@@ -1,12 +1,14 @@
 use crate::ownable::Selectable;
 use crate::player_controller::{DeselectEvent, RayHit, RenderLayerMap};
-use crate::spawner::UnitInformation;
+use crate::spawner::{UnitInformation, UnitSpecification, UnitSpecifications, UnitType};
+use crate::{ContextMenuAction, PlayerInfo};
 use bevy::core_pipeline::clear_color::ClearColorConfig;
 use bevy::render::camera::RenderTarget;
 use bevy::render::render_resource::{
     Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
 };
 use bevy::render::view::RenderLayers;
+use bevy::utils::HashMap;
 use bevy::{
     diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin},
     prelude::*,
@@ -330,19 +332,6 @@ fn game_overlay(
                 ..default()
             })
             .id(),
-        // commands
-        //     .spawn(ImageBundle {
-        //         style: Style {
-        //             size: Size::new(Val::Percent(10.0), Val::Percent(120.0)),
-        //             ..default()
-        //         },
-        //         image: UiImage {
-        //             texture: asset_server.load("textures/ui/greek/context_menu_decoration_b.png"),
-        //             ..default()
-        //         },
-        //         ..default()
-        //     })
-        //     .id(),
     ];
     let diagnostics_content: Vec<Entity> = vec![commands
         .spawn((
@@ -371,7 +360,7 @@ fn game_overlay(
             justify_content: JustifyContent::Start,
             ..default()
         },
-        UIType::ContextMenu,
+        UIType::Diagnostics,
         diagnostics_decoration,
         diagnostics_content,
         Vec::new(),
@@ -459,20 +448,6 @@ fn game_overlay(
                     ..default()
                 })
                 .push_children(&top_ui_elements);
-            // .with_children(|parent| {
-            //     parent.spawn((
-            //         UIContent::Content(UIType::Diagnostics),
-            //         TextBundle::from_section(
-            //             format!("FPS - ms/Frame"),
-            //             TextStyle {
-            //                 font: asset_server
-            //                     .load("fonts/android-insomnia-font/AndroidInsomniaRegular.ttf"),
-            //                 font_size: 20.0,
-            //                 color: MAIN_UI_TEXT,
-            //             },
-            //         ),
-            //     ));
-            // });
             // Lower UI
             parent
                 .spawn(NodeBundle {
@@ -493,7 +468,122 @@ fn game_overlay(
                 .push_children(&lower_ui_elements);
         });
 }
-
+fn update_selection_info(
+    commands: &mut Commands,
+    unit_information: &UnitInformation,
+    asset_server: &Res<AssetServer>,
+    selection_info_content: Entity,
+) {
+    let infotext = commands
+        .spawn(TextBundle::from_section(
+            format!(
+                "{}\n{}\n{}",
+                unit_information.unit_name,
+                unit_information.civilisation.to_string(),
+                unit_information.unit_type.to_string()
+            ),
+            TextStyle {
+                font: asset_server.load("fonts/android-insomnia-font/AndroidInsomniaRegular.ttf"),
+                font_size: 20.0,
+                color: MAIN_UI_TEXT,
+            },
+        ))
+        .id();
+    let thumbnail = commands
+        .spawn(NodeBundle {
+            style: Style {
+                size: Size {
+                    width: Val::Px(100.0),
+                    height: Val::Px(100.0),
+                },
+                ..default()
+            },
+            background_color: NORMAL_BUTTON.into(),
+            ..default()
+        })
+        .with_children(|parent| {
+            parent.spawn(ImageBundle {
+                style: Style {
+                    size: Size {
+                        width: Val::Percent(100.0),
+                        height: Val::Percent(100.0),
+                    },
+                    ..Default::default()
+                },
+                image: UiImage {
+                    texture: asset_server.load(&unit_information.thumbnail),
+                    ..default()
+                },
+                ..Default::default()
+            });
+        })
+        .id();
+    let container = commands
+        .spawn(NodeBundle {
+            style: Style {
+                size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::SpaceAround,
+                flex_direction: FlexDirection::Row,
+                ..default()
+            },
+            ..default()
+        })
+        .push_children(&[infotext, thumbnail])
+        .id();
+    commands.entity(selection_info_content).add_child(container);
+}
+fn update_context_menu(
+    commands: &mut Commands,
+    unit_information: &UnitInformation,
+    asset_server: &Res<AssetServer>,
+    context_menu_content: Entity,
+    context_menu_actions: &Vec<ContextMenuAction>,
+    unit_specifications: &Res<UnitSpecifications>,
+    player_info: &Res<PlayerInfo>,
+) {
+    let mut buttons: Vec<Entity> = Vec::new();
+    for action in context_menu_actions {
+        match action {
+            ContextMenuAction::BUILD(unit_type) => {
+                let unit_information: &UnitSpecification = &unit_specifications.unit_specifications
+                    [&(player_info.civilisation, *unit_type)];
+                buttons.push(
+                    commands
+                        .spawn(ButtonBundle {
+                            style: Style {
+                                size: Size::new(Val::Px(65.0), Val::Px(65.0)),
+                                justify_content: JustifyContent::Center,
+                                align_items: AlignItems::Center,
+                                ..default()
+                            },
+                            image: UiImage {
+                                texture: asset_server.load(&unit_information.icon_path),
+                                ..default()
+                            },
+                            background_color: Color::BLACK.into(),
+                            ..default()
+                        })
+                        .id(),
+                );
+            }
+        }
+    }
+    let container = commands
+        .spawn(NodeBundle {
+            style: Style {
+                size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::SpaceAround,
+                flex_direction: FlexDirection::Row,
+                ..default()
+            },
+            ..default()
+        })
+        .push_children(&buttons)
+        .id();
+    commands.entity(context_menu_content).add_child(container);
+}
 fn populate_lower_ui(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -501,6 +591,8 @@ fn populate_lower_ui(
     mut unit_info: Query<&UnitInformation, With<Selectable>>,
     ui_elements: Query<(Entity, &UIContent, &Children)>,
     ui_children: Query<Entity, With<Style>>,
+    player_info: Res<PlayerInfo>,
+    unit_specifications: Res<UnitSpecifications>,
 ) {
     for hit in ray_hit_event.iter() {
         if hit.mouse_key_enable_mouse {
@@ -517,66 +609,41 @@ fn populate_lower_ui(
                     Err(_) => {}
                 }
             }
+            let (context_menu_content, _, children): (Entity, _, &Children) = ui_elements
+                .into_iter()
+                .find(|(_, content, _)| **content == UIContent::Content(UIType::ContextMenu))
+                .unwrap();
+            for &child in children.iter() {
+                println!("{:#?}", child);
+                match ui_children.get(child) {
+                    Ok(child) => {
+                        commands.entity(child).despawn_recursive();
+                    }
+                    Err(_) => {}
+                }
+            }
             if let Ok(unit_information) = unit_info.get_mut(hit.hit_entity) {
-                let infotext = commands
-                    .spawn(TextBundle::from_section(
-                        format!(
-                            "{}\n{}\n{}",
-                            unit_information.unit_name,
-                            unit_information.civilisation.to_string(),
-                            unit_information.unit_type.to_string()
-                        ),
-                        TextStyle {
-                            font: asset_server
-                                .load("fonts/android-insomnia-font/AndroidInsomniaRegular.ttf"),
-                            font_size: 30.0,
-                            color: MAIN_UI_TEXT,
-                        },
-                    ))
-                    .id();
-                let thumbnail = commands
-                    .spawn(NodeBundle {
-                        style: Style {
-                            size: Size {
-                                width: Val::Px(100.0),
-                                height: Val::Px(100.0),
-                            },
-                            ..default()
-                        },
-                        background_color: NORMAL_BUTTON.into(),
-                        ..default()
-                    })
-                    .with_children(|parent| {
-                        parent.spawn(ImageBundle {
-                            style: Style {
-                                size: Size {
-                                    width: Val::Percent(100.0),
-                                    height: Val::Percent(100.0),
-                                },
-                                ..Default::default()
-                            },
-                            image: UiImage {
-                                texture: asset_server.load(&unit_information.thumbnail),
-                                ..default()
-                            },
-                            ..Default::default()
-                        });
-                    })
-                    .id();
-                let container = commands
-                    .spawn(NodeBundle {
-                        style: Style {
-                            size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
-                            align_items: AlignItems::Center,
-                            justify_content: JustifyContent::SpaceAround,
-                            flex_direction: FlexDirection::Row,
-                            ..default()
-                        },
-                        ..default()
-                    })
-                    .push_children(&[infotext, thumbnail])
-                    .id();
-                commands.entity(selection_info_content).add_child(container);
+                update_selection_info(
+                    &mut commands,
+                    &unit_information,
+                    &asset_server,
+                    selection_info_content,
+                );
+                match player_info
+                    .context_menu_actions
+                    .get(&unit_information.unit_type)
+                {
+                    Some(contex_menu_actions) => update_context_menu(
+                        &mut commands,
+                        &unit_information,
+                        &asset_server,
+                        context_menu_content,
+                        &contex_menu_actions,
+                        &unit_specifications,
+                        &player_info,
+                    ),
+                    None => {}
+                }
             } else {
                 commands.entity(selection_info_content).push_children(&[]);
             }
@@ -594,6 +661,18 @@ fn clear_ui(
         let (_, _, children): (_, _, &Children) = ui_elements
             .into_iter()
             .find(|(_, content, _)| **content == UIContent::Content(UIType::SelectionInfo))
+            .unwrap();
+        for &child in children.iter() {
+            match ui_children.get(child) {
+                Ok(child) => {
+                    commands.entity(child).despawn_recursive();
+                }
+                Err(_) => {}
+            }
+        }
+        let (context_menu_content, _, children): (Entity, _, &Children) = ui_elements
+            .into_iter()
+            .find(|(_, content, _)| **content == UIContent::Content(UIType::ContextMenu))
             .unwrap();
         for &child in children.iter() {
             println!("{:#?}", child);

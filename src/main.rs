@@ -13,10 +13,29 @@ use crate::spawner::InstanceSpawner;
 use crate::ui::GameUI;
 use bevy::{
     prelude::*,
+    utils::HashMap,
     window::{PresentMode, WindowMode, WindowPlugin},
 };
 use bevy_rapier3d::prelude::*;
 use spawner::{Civilisation, InstanceSpawnRequest, UnitType};
+enum TechLevel {
+    L0,
+}
+
+// #[derive(Component)]
+// struct ContextMenuActions {
+//     actions: Vec<ContextMenuAction>,
+// }
+enum ContextMenuAction {
+    BUILD(UnitType),
+}
+#[derive(Resource)]
+struct PlayerInfo {
+    civilisation: Civilisation,
+    tech_level: TechLevel,
+
+    context_menu_actions: HashMap<UnitType, Vec<ContextMenuAction>>,
+}
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
@@ -35,12 +54,21 @@ fn main() {
         .add_plugin(UnitMovement)
         .add_plugin(InstanceSpawner)
         .add_plugin(GameUI)
-        // .add_plugin(WorldInspectorPlugin/* ) */
         .add_startup_system(setup)
         .run();
 }
 
 fn setup(mut commands: Commands) {
+    let mut player_info: PlayerInfo = PlayerInfo {
+        civilisation: Civilisation::GREEK,
+        tech_level: TechLevel::L0,
+        context_menu_actions: HashMap::new(),
+    };
+    player_info.context_menu_actions.insert(
+        UnitType::SPACESTATION,
+        vec![ContextMenuAction::BUILD(UnitType::CRUISER)],
+    );
+    commands.insert_resource(player_info);
     for x in 0..2 {
         for y in 0..2 {
             commands.spawn(InstanceSpawnRequest {

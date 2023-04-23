@@ -40,12 +40,13 @@ impl fmt::Display for UnitType {
 
 #[derive(Resource)]
 pub struct UnitSpecifications {
-    unit_specifications: HashMap<(Civilisation, UnitType), UnitSpecification>,
+    pub unit_specifications: HashMap<(Civilisation, UnitType), UnitSpecification>,
 }
 //TODO specify modifications to model (e.g #update_emissiveness)
 #[derive(Clone, Component)]
 pub struct UnitSpecification {
     file_path: String,
+    pub icon_path: String,
     unit_name: String,
     movable: bool,
     shape: ShapeType,
@@ -86,6 +87,7 @@ fn populate_units(app: &mut App) {
         (Civilisation::GREEK, UnitType::CRUISER),
         UnitSpecification {
             file_path: "../assets/3d_models/units/greek/fighter_01.gltf#Scene0".into(),
+            icon_path: "./3d_models/units/greek/greek_cruiser_thumbnail.png".into(),
             unit_name: "Andreia Class Cruiser".into(),
             movable: true,
             shape: ShapeType::Capsule,
@@ -101,6 +103,7 @@ fn populate_units(app: &mut App) {
         (Civilisation::GREEK, UnitType::SPACESTATION),
         UnitSpecification {
             file_path: "../assets/3d_models/buildings/greek/spacestation.gltf#Scene0".into(),
+            icon_path: "./3d_models/buildings/greek/spacestation_thumbnail.png".into(),
             unit_name: "Akinetos Space Station".into(),
             movable: false,
             shape: ShapeType::Capsule,
@@ -172,11 +175,12 @@ fn spawn(
                             unit_name: unit_specification.unit_name.clone(),
                             unit_type: spawn_request.unit_type,
                             civilisation: spawn_request.civilisation,
-                            thumbnail: "./3d_models/units/greek/greek_cruiser_thumbnail.png".into(),
+                            thumbnail: unit_specification.icon_path.clone(),
                         },
                         RigidBody::KinematicPositionBased,
                         collider,
                         GravityScale(0.0),
+                        // ContextMenuActions {},
                     ))
                     .with_children(|parent| {
                         parent.spawn((
@@ -214,7 +218,6 @@ fn spawn(
                         ));
                     })
                     .id();
-                // unit_info.send((parent_id, (*unit_specification).clone()));
                 commands.spawn((
                     EntityWrapper { entity: parent_id },
                     (*unit_specification).clone(),

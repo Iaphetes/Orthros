@@ -1,7 +1,7 @@
 use crate::ownable::Selectable;
 use crate::player_controller::{DeselectEvent, RayHit, RenderLayerMap};
 use crate::spawner::{
-    InstanceSpawnRequest, UnitInformation, UnitSpecification, UnitSpecifications, UnitType,
+    InstanceSpawnRequest, UnitInformation, UnitSpecification, UnitSpecifications,
 };
 use crate::{ContextMenuAction, PlayerInfo};
 use bevy::core_pipeline::clear_color::ClearColorConfig;
@@ -10,7 +10,6 @@ use bevy::render::render_resource::{
     Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
 };
 use bevy::render::view::RenderLayers;
-use bevy::utils::HashMap;
 use bevy::{
     diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin},
     prelude::*,
@@ -48,14 +47,13 @@ impl Plugin for GameUI {
             .add_system(populate_lower_ui)
             .add_plugin(FrameTimeDiagnosticsPlugin)
             .add_system(clear_ui.before(populate_lower_ui))
+            .add_system(catch_interaction)
             .add_system(button_system);
     }
 }
-fn initialise_mini_map(
-    commands: &mut Commands,
-    // asset_server: Res<AssetServer>,
-    mut images: ResMut<Assets<Image>>,
-) -> Entity {
+#[derive(Component)]
+pub struct RayBlock;
+fn initialise_mini_map(commands: &mut Commands, mut images: ResMut<Assets<Image>>) -> Entity {
     let size = Extent3d {
         width: 1024,
         height: 1024,
@@ -121,7 +119,7 @@ fn create_ui_segment(
     foreground_decoration: Vec<Entity>,
 ) -> Entity {
     commands
-        .spawn((NodeBundle { style, ..default() },))
+        .spawn((NodeBundle { style, ..default() }, Interaction::None))
         .with_children(|parent| {
             parent
                 .spawn((
@@ -314,31 +312,16 @@ fn game_overlay(
             })
             .id(),
     ];
-    let diagnostics_decoration: Vec<Entity> = vec![
-        // commands
-        //     .spawn(ImageBundle {
-        //         style: Style {
-        //             size: Size::new(Val::Percent(10.0), Val::Percent(120.0)),
-        //             ..default()
-        //         },
-        //         image: UiImage {
-        //             texture: asset_server.load("textures/ui/greek/context_menu_decoration_b.png"),
-        //             ..default()
-        //         },
-        //         ..default()
-        //     })
-        //     .id(),
-        commands
-            .spawn(NodeBundle {
-                style: Style {
-                    size: Size::new(Val::Px(800.0), Val::Percent(100.0)),
-                    ..default()
-                },
-                background_color: MAIN_UI_BACKGROUND.into(),
+    let diagnostics_decoration: Vec<Entity> = vec![commands
+        .spawn(NodeBundle {
+            style: Style {
+                size: Size::new(Val::Px(800.0), Val::Percent(100.0)),
                 ..default()
-            })
-            .id(),
-    ];
+            },
+            background_color: MAIN_UI_BACKGROUND.into(),
+            ..default()
+        })
+        .id()];
     let diagnostics_content: Vec<Entity> = vec![commands
         .spawn((
             UIContent::Content(UIType::Diagnostics),
@@ -539,6 +522,25 @@ fn update_selection_info(
         .id();
     commands.entity(selection_info_content).add_child(container);
 }
+fn catch_interaction(
+    mut commands: Commands,
+    mut interaction_query: Query<&Interaction, Changed<Interaction>>,
+    rayblock: Query<Entity, With<RayBlock>>,
+) {
+    for interaction in &mut interaction_query {
+        match *interaction {
+            Interaction::Clicked | Interaction::Hovered => {
+                commands.spawn(RayBlock);
+                println!("Catching Rays");
+            }
+            Interaction::None => {
+                for block in rayblock.iter() {
+                    commands.entity(block).despawn_recursive();
+                }
+            }
+        }
+    }
+}
 fn button_system(
     mut commands: Commands,
     mut interaction_query: Query<
@@ -695,14 +697,14 @@ fn populate_lower_ui(
 // remove all children
 fn clear_ui(
     mut commands: Commands,
-    ui_elements: Query<(Entity, &UIContent, &Children)>,
+    ui_elements: Query<(&UIContent, &Children)>,
     ui_children: Query<Entity, With<Style>>,
     deselect_event: EventReader<DeselectEvent>,
 ) {
     if !deselect_event.is_empty() {
-        let (_, _, children): (_, _, &Children) = ui_elements
+        let (_, children): (_, &Children) = ui_elements
             .into_iter()
-            .find(|(_, content, _)| **content == UIContent::Content(UIType::SelectionInfo))
+            .find(|(content, _)| **content == UIContent::Content(UIType::SelectionInfo))
             .unwrap();
         for &child in children.iter() {
             match ui_children.get(child) {
@@ -712,9 +714,9 @@ fn clear_ui(
                 Err(_) => {}
             }
         }
-        let (context_menu_content, _, children): (Entity, _, &Children) = ui_elements
+        let (_, children): (_, &Children) = ui_elements
             .into_iter()
-            .find(|(_, content, _)| **content == UIContent::Content(UIType::ContextMenu))
+            .find(|(content, _)| **content == UIContent::Content(UIType::ContextMenu))
             .unwrap();
         for &child in children.iter() {
             println!("{:#?}", child);

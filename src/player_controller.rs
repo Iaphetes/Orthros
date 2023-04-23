@@ -1,6 +1,7 @@
 use crate::movable::{Movable, MoveCommand};
 use crate::ownable::SelectionCircle;
 use crate::ownable::{Selectable, Selected};
+use crate::ui::RayBlock;
 use bevy::input::mouse::MouseScrollUnit;
 use bevy::input::mouse::MouseWheel;
 use bevy::math::Quat;
@@ -401,30 +402,21 @@ fn handle_unit_move_cmd(
     }
 }
 fn process_mouse(
-    mut interaction_query: Query<&Interaction, With<Children>>,
-    // mut text_query: Query<&mut Text>,
     mut ray_hit_event: EventWriter<RayHit>,
     mut deselect_event: EventWriter<DeselectEvent>,
     mouse_button_input: Res<Input<MouseButton>>,
     camera_options: Query<(&CameraControllerSettings, &Camera, &GlobalTransform)>,
     primary_query: Query<&Window, With<PrimaryWindow>>,
     rapier_context: Res<RapierContext>,
+    rayblock: Query<Entity, With<RayBlock>>,
 ) {
     let Ok(primary) = primary_query.get_single() else {
         return;
     };
 
     let mut mouse_over_ui: bool = false;
-    for interaction in &mut interaction_query {
-        match *interaction {
-            Interaction::Clicked => {
-                mouse_over_ui = true;
-            }
-            Interaction::Hovered => {
-                mouse_over_ui = true;
-            }
-            Interaction::None => {}
-        }
+    if !rayblock.is_empty() {
+        mouse_over_ui = true;
     }
     if let Ok((options, camera, camera_transform)) = camera_options.get_single() {
         let mouse_key_enable_mouse =

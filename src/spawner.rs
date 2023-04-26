@@ -256,14 +256,14 @@ fn update_emissiveness(
                             .to_string();
                         let mut emissiveness: u64 = 1;
                         let mut emissive_color: Color = Color::BLACK;
-                        match &material["extensions"] {
-                            serde_json::Value::Object(map) => {
-                                for (extension_name, extension) in map {
-                                    if extension_name == "KHR_materials_emissive_strength" {
-                                        match &extension["emissiveStrength"] {
-                                            serde_json::Value::Number(num) => {
-                                                emissiveness = num.as_u64().expect("No value found for emissiveness, despite KHR_materials_emissive_strength defined") * 10;
-                                                match &material["emissiveFactor"].as_array() {
+                        if let serde_json::Value::Object(map) = &material["extensions"] {
+                            for (extension_name, extension) in map {
+                                if extension_name == "KHR_materials_emissive_strength" {
+                                    if let serde_json::Value::Number(num) =
+                                        &extension["emissiveStrength"]
+                                    {
+                                        emissiveness = num.as_u64().expect("No value found for emissiveness, despite KHR_materials_emissive_strength defined") * 10;
+                                        match &material["emissiveFactor"].as_array() {
                                                     Some(emissive_vals) => {
                                                         emissive_color = Color::rgb_linear(
                                                             emissive_vals[0].as_f64().unwrap()
@@ -280,13 +280,9 @@ fn update_emissiveness(
                                                     },
                                                     None => println!("No value found for emissiveness, despite KHR_materials_emissive_strength defined")
                                                 }
-                                            }
-                                            _ => {}
-                                        }
                                     }
                                 }
                             }
-                            _ => {}
                         }
                         if emissiveness > 1 {
                             match scene_instances.get(entity_wrapper.entity) {

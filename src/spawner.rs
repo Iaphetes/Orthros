@@ -291,9 +291,6 @@ fn update_emissiveness(
                                     for scene_entity in scene_spawner
                                         .iter_instance_entities(**scene_instance.to_owned())
                                     {
-                                        // println!("found scene instance {:#?}", scene_entity);
-
-                                        // match mesh
                                         match material_handles.get(scene_entity) {
                                             Ok((name, material_handle)) => {
                                                 if name.to_string() == mesh_name.trim_matches('"') {

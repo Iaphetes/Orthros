@@ -55,8 +55,8 @@ impl Plugin for GameUI {
 pub struct RayBlock;
 fn initialise_mini_map(commands: &mut Commands, mut images: ResMut<Assets<Image>>) -> Entity {
     let size = Extent3d {
-        width: 1024,
-        height: 1024,
+        width: 512,
+        height: 512,
         ..default()
     };
     let mut image = Image {
@@ -96,16 +96,27 @@ fn initialise_mini_map(commands: &mut Commands, mut images: ResMut<Assets<Image>
         RenderLayers::from_layers(&[RenderLayerMap::General as u8, RenderLayerMap::Minimap as u8]),
     ));
     commands
-        .spawn(ImageBundle {
-            image: UiImage::from(image_handle),
+        .spawn(NodeBundle {
             style: Style {
-                size: Size {
-                    width: Val::Percent(65.0),
-                    height: Val::Percent(100.0),
-                },
-                ..Default::default()
+                size: Size::new(Val::Percent(65.0), Val::Percent(100.0)),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                ..default()
             },
             ..default()
+        })
+        .with_children(|parent| {
+            parent.spawn(ImageBundle {
+                image: UiImage::from(image_handle),
+                style: Style {
+                    size: Size {
+                        width: Val::Percent(100.0),
+                        height: Val::Percent(100.0),
+                    },
+                    ..Default::default()
+                },
+                ..default()
+            });
         })
         .id()
 }
@@ -114,7 +125,6 @@ fn create_ui_segment(
     style: Style,
     ui_type: UIType,
     background_decoration: Vec<Entity>,
-
     content: Vec<Entity>,
     foreground_decoration: Vec<Entity>,
 ) -> Entity {
@@ -127,10 +137,9 @@ fn create_ui_segment(
                     NodeBundle {
                         style: Style {
                             size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
-                            // position_type: PositionType::Absolute,
-                            align_items: AlignItems::FlexEnd,
-                            justify_content: JustifyContent::SpaceBetween,
-                            flex_direction: FlexDirection::Row,
+                            align_items: AlignItems::Center,
+                            justify_content: JustifyContent::Center,
+                            // flex_direction: FlexDirection::Row,
                             ..default()
                         },
                         ..default()
@@ -142,16 +151,16 @@ fn create_ui_segment(
                     UIContent::Content(ui_type),
                     NodeBundle {
                         style: Style {
-                            size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                            size: Size::new(Val::Percent(100.0), Val::Percent(80.0)),
                             position: UiRect {
                                 top: Val::Percent(0.0),
-                                left: Val::Px(0.0),
+                                left: Val::Percent(0.0),
                                 ..default()
                             },
                             position_type: PositionType::Absolute,
-                            align_items: AlignItems::FlexEnd,
-                            justify_content: JustifyContent::SpaceBetween,
-                            flex_direction: FlexDirection::Row,
+                            align_items: AlignItems::Center,
+                            justify_content: JustifyContent::Center,
+                            // flex_direction: FlexDirection::Row,
                             ..default()
                         },
                         ..default()
@@ -170,9 +179,9 @@ fn create_ui_segment(
                                 ..default()
                             },
                             position_type: PositionType::Absolute,
-                            align_items: AlignItems::FlexEnd,
-                            justify_content: JustifyContent::SpaceBetween,
-                            flex_direction: FlexDirection::Row,
+                            align_items: AlignItems::Center,
+                            justify_content: JustifyContent::Center,
+                            // flex_direction: FlexDirection::Row,
                             ..default()
                         },
                         ..default()
@@ -188,9 +197,9 @@ fn game_overlay(
     images: ResMut<Assets<Image>>,
 ) {
     let map_ui_content: Vec<Entity> = vec![
-        commands.spawn(NodeBundle::default()).id(),
+        // commands.spawn(NodeBundle::default()).id(),
         initialise_mini_map(&mut commands, images),
-        commands.spawn(NodeBundle::default()).id(),
+        // commands.spawn(NodeBundle::default()).id(),
     ];
     let map_ui_decoration: Vec<Entity> = vec![
         commands
@@ -210,7 +219,7 @@ fn game_overlay(
             .spawn(ImageBundle {
                 style: Style {
                     size: Size {
-                        height: Val::Percent(100.0),
+                        height: Val::Percent(80.0),
                         width: Val::Percent(65.0),
                     },
                     ..default()
@@ -253,7 +262,7 @@ fn game_overlay(
         commands
             .spawn(NodeBundle {
                 style: Style {
-                    size: Size::new(Val::Px(800.0), Val::Percent(100.0)),
+                    size: Size::new(Val::Px(1000.0), Val::Percent(80.0)),
                     ..default()
                 },
                 background_color: MAIN_UI_BACKGROUND.into(),
@@ -291,7 +300,7 @@ fn game_overlay(
         commands
             .spawn(NodeBundle {
                 style: Style {
-                    size: Size::new(Val::Px(800.0), Val::Percent(100.0)),
+                    size: Size::new(Val::Px(1000.0), Val::Percent(80.0)),
                     ..default()
                 },
                 background_color: MAIN_UI_BACKGROUND.into(),
@@ -330,7 +339,7 @@ fn game_overlay(
                 TextStyle {
                     font: asset_server
                         .load("fonts/android-insomnia-font/AndroidInsomniaRegular.ttf"),
-                    font_size: 20.0,
+                    font_size: 10.0,
                     color: MAIN_UI_TEXT,
                 },
             ),
@@ -394,14 +403,14 @@ fn game_overlay(
         create_ui_segment(
             &mut commands,
             Style {
-                size: Size::new(Val::Percent(30.0), Val::Percent(100.0)),
+                size: Size::new(Val::Percent(20.0), Val::Percent(100.0)),
                 position: UiRect {
                     top: Val::Percent(0.0),
                     left: Val::Px(0.0),
                     ..default()
                 },
-                align_items: AlignItems::Start,
-                justify_content: JustifyContent::Start,
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
                 ..default()
             },
             UIType::MapUI,
@@ -482,8 +491,8 @@ fn update_selection_info(
         .spawn(NodeBundle {
             style: Style {
                 size: Size {
-                    width: Val::Px(100.0),
-                    height: Val::Px(100.0),
+                    width: Val::Px(60.0),
+                    height: Val::Px(60.0),
                 },
                 ..default()
             },
@@ -510,9 +519,9 @@ fn update_selection_info(
     let container = commands
         .spawn(NodeBundle {
             style: Style {
-                size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                size: Size::new(Val::Percent(75.0), Val::Percent(100.0)),
                 align_items: AlignItems::Center,
-                justify_content: JustifyContent::SpaceAround,
+                justify_content: JustifyContent::SpaceBetween,
                 flex_direction: FlexDirection::Row,
                 ..default()
             },
@@ -620,9 +629,9 @@ fn update_context_menu(
     let container = commands
         .spawn(NodeBundle {
             style: Style {
-                size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::SpaceAround,
+                size: Size::new(Val::Percent(80.0), Val::Percent(100.0)),
+                align_items: AlignItems::Start,
+                justify_content: JustifyContent::Start,
                 flex_direction: FlexDirection::Row,
                 ..default()
             },

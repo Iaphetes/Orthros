@@ -307,7 +307,6 @@ fn move_towards(
     let mut directional_euler_fraction: f32 = (Heading::iter().len() as u32 - target.h as u32)
         as f32
         / (Heading::iter().len() as f32) as f32;
-    // println!("{}", directional_euler_fraction);
     directional_euler_fraction *= 2.0 * PI;
     // println!("{}", directional_euler_fraction);
     directional_euler_fraction = (directional_euler_fraction + 2.0 * PI) % (2.0 * PI);
@@ -351,20 +350,21 @@ fn move_towards(
     return target_reached;
 }
 fn move_units(
-    mut movables: Query<(Entity, &mut Transform, &mut MovementPath), With<MovementPath>>,
+    mut movables: Query<(Entity, &mut Transform, &mut MovementPath)>,
     time: Res<Time>,
     mut commands: Commands,
 ) {
     let speed: f64 = 1.0;
     let rotation_speed: f64 = 1.0;
     for (entity, mut transform, mut movementpath) in movables.iter_mut() {
+        println!("following");
         let node: &PathNode;
 
         match movementpath.path.last() {
             Some(n) => node = n,
             None => {
-                commands.entity(entity).remove::<MoveCommand>();
-                commands.entity(entity).remove::<Movable>();
+                // commands.entity(entity).remove::<Movable>();
+                commands.entity(entity).remove::<MovementPath>();
                 continue;
             }
         }
@@ -375,6 +375,7 @@ fn move_units(
             time.delta().as_secs_f64(),
             node,
         ) {
+            commands.entity(entity).remove::<MoveCommand>();
             movementpath.path.pop();
         }
     }

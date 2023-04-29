@@ -15,7 +15,7 @@ use bevy::{
     prelude::*,
 };
 const ICON_BACKGROUND: Color = Color::rgb(12.0 / 256.0, 11.0 / 256.0, 13.0 / 256.0);
-const NORMAL_BUTTON: Color = Color::rgb(12.0 / 256.0, 11.0 / 256.0, 13.0 / 256.0);
+const NORMAL_BUTTON: Color = Color::WHITE;
 const HOVERED_BUTTON: Color = Color::rgb(64.0 / 256.0, 99.0 / 256.0, 64.0 / 256.0);
 const PRESSED_BUTTON: Color = Color::rgb(75.0 / 256.0, 110.0 / 256.0, 75.0 / 256.0);
 const MAIN_UI_BACKGROUND: Color = Color::rgba(
@@ -55,8 +55,8 @@ impl Plugin for GameUI {
 pub struct RayBlock;
 fn initialise_mini_map(commands: &mut Commands, mut images: ResMut<Assets<Image>>) -> Entity {
     let size = Extent3d {
-        width: 512,
-        height: 512,
+        width: 256,
+        height: 256,
         ..default()
     };
     let mut image = Image {
@@ -98,7 +98,7 @@ fn initialise_mini_map(commands: &mut Commands, mut images: ResMut<Assets<Image>
     commands
         .spawn(NodeBundle {
             style: Style {
-                size: Size::new(Val::Percent(65.0), Val::Percent(100.0)),
+                size: Size::new(Val::Percent(65.0), Val::Percent(80.0)),
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Center,
                 ..default()
@@ -151,7 +151,7 @@ fn create_ui_segment(
                     UIContent::Content(ui_type),
                     NodeBundle {
                         style: Style {
-                            size: Size::new(Val::Percent(100.0), Val::Percent(80.0)),
+                            size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
                             position: UiRect {
                                 top: Val::Percent(0.0),
                                 left: Val::Percent(0.0),
@@ -553,36 +553,39 @@ fn catch_interaction(
 fn button_system(
     mut commands: Commands,
     mut interaction_query: Query<
-        (&Interaction, &mut BackgroundColor, &ContextMenuAction),
+        (&Parent, &Interaction, &ContextMenuAction),
         (Changed<Interaction>, With<Button>),
     >,
+    mut button_background: Query<&mut BackgroundColor>,
     player_info: Res<PlayerInfo>,
     selected_entities: Query<&Transform, With<Selected>>,
 ) {
     for transform in selected_entities.iter() {
-        for (interaction, mut color, action) in &mut interaction_query {
-            match *interaction {
-                Interaction::Clicked => {
-                    match action {
-                        ContextMenuAction::BUILD(unit_type) => {
-                            commands.spawn(InstanceSpawnRequest {
-                                location: Vec3 {
-                                    x: transform.translation.x + 2.0,
-                                    y: 2.0,
-                                    z: transform.translation.z + 1.0,
-                                },
-                                unit_type: *unit_type,
-                                civilisation: player_info.civilisation,
-                            });
-                        }
+        for (entity, interaction, action) in &mut interaction_query {
+            if let Some(mut background_color) = button_background.get_mut(entity.get()).ok() {
+                match *interaction {
+                    Interaction::Clicked => {
+                        match action {
+                            ContextMenuAction::BUILD(unit_type) => {
+                                commands.spawn(InstanceSpawnRequest {
+                                    location: Vec3 {
+                                        x: transform.translation.x + 2.0,
+                                        y: 2.0,
+                                        z: transform.translation.z + 1.0,
+                                    },
+                                    unit_type: *unit_type,
+                                    civilisation: player_info.civilisation,
+                                });
+                            }
+                        };
+                        *background_color = PRESSED_BUTTON.into();
                     }
-                    *color = PRESSED_BUTTON.into();
-                }
-                Interaction::Hovered => {
-                    *color = HOVERED_BUTTON.into();
-                }
-                Interaction::None => {
-                    *color = NORMAL_BUTTON.into();
+                    Interaction::Hovered => {
+                        *background_color = HOVERED_BUTTON.into();
+                    }
+                    Interaction::None => {
+                        *background_color = NORMAL_BUTTON.into();
+                    }
                 }
             }
         }
@@ -604,42 +607,55 @@ fn update_context_menu(
                     [&(player_info.civilisation, *unit_type)];
                 buttons.push(
                     commands
-                        .spawn((
-                            ButtonBundle {
-                                style: Style {
-                                    size: Size::new(Val::Px(65.0), Val::Px(65.0)),
-                                    justify_content: JustifyContent::Center,
-                                    align_items: AlignItems::Center,
-                                    ..default()
+                        .spawn(NodeBundle {
+                            style: Style {
+                                size: Size {
+                                    width: Val::Px(60.0),
+                                    height: Val::Px(60.0),
                                 },
-                                image: UiImage {
-                                    texture: asset_server.load(&unit_information.icon_path),
-                                    ..default()
-                                },
-                                background_color: Color::BLACK.into(),
                                 ..default()
                             },
-                            action.clone(),
-                        ))
+                            background_color: ICON_BACKGROUND.into(),
+                            ..default()
+                        })
+                        .with_children(|parent| {
+                            parent.spawn((
+                                ButtonBundle {
+                                    style: Style {
+                                        size: Size::new(Val::Px(65.0), Val::Px(65.0)),
+                                        justify_content: JustifyContent::Center,
+                                        align_items: AlignItems::Center,
+                                        ..default()
+                                    },
+                                    image: UiImage {
+                                        texture: asset_server.load(&unit_information.icon_path),
+                                        ..default()
+                                    },
+                                    background_color: Color::BLACK.into(),
+                                    ..default()
+                                },
+                                action.clone(),
+                            ));
+                        })
                         .id(),
                 );
+                let container = commands
+                    .spawn(NodeBundle {
+                        style: Style {
+                            size: Size::new(Val::Percent(80.0), Val::Percent(80.0)),
+                            align_items: AlignItems::Start,
+                            justify_content: JustifyContent::Start,
+                            flex_direction: FlexDirection::Row,
+                            ..default()
+                        },
+                        ..default()
+                    })
+                    .push_children(&buttons)
+                    .id();
+                commands.entity(context_menu_content).add_child(container);
             }
         }
     }
-    let container = commands
-        .spawn(NodeBundle {
-            style: Style {
-                size: Size::new(Val::Percent(80.0), Val::Percent(100.0)),
-                align_items: AlignItems::Start,
-                justify_content: JustifyContent::Start,
-                flex_direction: FlexDirection::Row,
-                ..default()
-            },
-            ..default()
-        })
-        .push_children(&buttons)
-        .id();
-    commands.entity(context_menu_content).add_child(container);
 }
 fn populate_lower_ui(
     mut commands: Commands,

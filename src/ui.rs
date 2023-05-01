@@ -551,7 +551,6 @@ fn catch_interaction(
     }
 }
 fn button_system(
-    mut commands: Commands,
     mut interaction_query: Query<
         (&Parent, &Interaction, &ContextMenuAction),
         (Changed<Interaction>, With<Button>),
@@ -559,6 +558,7 @@ fn button_system(
     mut button_background: Query<&mut BackgroundColor>,
     player_info: Res<PlayerInfo>,
     selected_entities: Query<&Transform, With<Selected>>,
+    mut spawn_events: EventWriter<InstanceSpawnRequest>,
 ) {
     for transform in selected_entities.iter() {
         for (entity, interaction, action) in &mut interaction_query {
@@ -567,7 +567,7 @@ fn button_system(
                     Interaction::Clicked => {
                         match action {
                             ContextMenuAction::BUILD(unit_type) => {
-                                commands.spawn(InstanceSpawnRequest {
+                                spawn_events.send(InstanceSpawnRequest {
                                     location: Vec3 {
                                         x: transform.translation.x + 2.0,
                                         y: 2.0,

@@ -55,11 +55,12 @@ fn main() {
         .add_plugin(UnitMovement)
         .add_plugin(InstanceSpawner)
         .add_plugin(GameUI)
+        .add_event::<InstanceSpawnRequest>()
         .add_startup_system(setup)
         .run();
 }
 
-fn setup(mut commands: Commands) {
+fn setup(mut commands: Commands, mut spawn_events: EventWriter<InstanceSpawnRequest>) {
     let mut player_info: PlayerInfo = PlayerInfo {
         civilisation: Civilisation::GREEK,
         tech_level: TechLevel::L0,
@@ -72,7 +73,7 @@ fn setup(mut commands: Commands) {
     commands.insert_resource(player_info);
     for x in 0..2 {
         for y in 0..2 {
-            commands.spawn(InstanceSpawnRequest {
+            spawn_events.send(InstanceSpawnRequest {
                 location: Vec3 {
                     x: x as f32 * 2.0,
                     y: 2.0,
@@ -83,7 +84,7 @@ fn setup(mut commands: Commands) {
             });
         }
     }
-    commands.spawn(InstanceSpawnRequest {
+    spawn_events.send(InstanceSpawnRequest {
         location: Vec3 {
             x: -3.0,
             y: 2.0,

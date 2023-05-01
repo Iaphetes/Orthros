@@ -75,6 +75,7 @@ impl Plugin for InstanceSpawner {
     fn build(&self, app: &mut App) {
         app.add_system(spawn)
             .add_event::<(Entity, UnitSpecification)>()
+            .add_event::<InstanceSpawnRequest>()
             .add_system(update_emissiveness.before(spawn));
         populate_units(app);
     }
@@ -123,14 +124,14 @@ struct EntityWrapper {
     entity: Entity,
 }
 fn spawn(
-    spawn_requests: Query<(Entity, &InstanceSpawnRequest)>,
+    mut spawn_requests: EventReader<InstanceSpawnRequest>,
     mut commands: Commands,
     unit_specifications: Res<UnitSpecifications>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     asset_server: Res<AssetServer>,
 ) {
-    for (entity, spawn_request) in spawn_requests.iter() {
+    for spawn_request in spawn_requests.iter() {
         match unit_specifications
             .unit_specifications
             .get(&(spawn_request.civilisation, spawn_request.unit_type))
@@ -180,6 +181,7 @@ fn spawn(
                         RigidBody::KinematicPositionBased,
                         collider,
                         GravityScale(0.0),
+                        RenderLayers::layer(RenderLayerMap::Main as u8),
                         // ContextMenuActions {},
                     ))
                     .with_children(|parent| {
@@ -198,6 +200,7 @@ fn spawn(
                                 ..default()
                             },
                             SelectionCircle,
+                            RenderLayers::layer(RenderLayerMap::Main as u8),
                         ));
                         parent.spawn((
                             MaterialMeshBundle {
@@ -228,7 +231,7 @@ fn spawn(
             }
             None => {}
         }
-        commands.entity(entity).remove::<InstanceSpawnRequest>();
+        // commands.entity(entity).remove::<InstanceSpawnRequest>();
     }
 }
 

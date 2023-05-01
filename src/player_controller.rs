@@ -11,7 +11,7 @@ use bevy::{core_pipeline::bloom::BloomSettings, prelude::*};
 #[repr(u8)]
 pub enum RenderLayerMap {
     General = 0,
-    Grid = 1,
+    Main = 1,
     Minimap = 2,
 }
 use bevy_rapier3d::prelude::*;
@@ -219,7 +219,7 @@ fn camera_setup(mut commands: Commands) {
                 ..default()
             },
             BloomSettings::default(),
-            RenderLayers::from_layers(&[RenderLayerMap::General as u8, RenderLayerMap::Grid as u8]),
+            RenderLayers::from_layers(&[RenderLayerMap::General as u8, RenderLayerMap::Main as u8]),
         ))
         .insert(CameraControllerSettings::default());
 }

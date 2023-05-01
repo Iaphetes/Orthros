@@ -103,7 +103,7 @@ pub fn environment_setup(
             }),
             ..default()
         },
-        RenderLayers::layer(RenderLayerMap::Grid as u8),
+        RenderLayers::layer(RenderLayerMap::Main as u8),
     ));
     commands.spawn((
         Transform::from_xyz(0.0, 2.0, 0.0),

@@ -5,6 +5,7 @@ use crate::{
 };
 use bevy::{prelude::*, render::view::RenderLayers, scene::SceneInstance};
 use bevy_rapier3d::{prelude::*, rapier::prelude::ShapeType};
+use serde_json::Value;
 use std::collections::HashMap;
 use std::fmt;
 use std::fs::File;
@@ -46,6 +47,7 @@ pub struct UnitSpecifications {
 #[derive(Clone, Component)]
 pub struct UnitSpecification {
     file_path: String,
+    scene: String,
     pub icon_path: String,
     unit_name: String,
     movable: bool,
@@ -87,7 +89,8 @@ fn populate_units(app: &mut App) {
     unit_specifications.unit_specifications.insert(
         (Civilisation::GREEK, UnitType::CRUISER),
         UnitSpecification {
-            file_path: "../assets/3d_models/units/greek/fighter_01.gltf#Scene0".into(),
+            file_path: "./assets/3d_models/units/greek/fighter_01.gltf".into(),
+            scene: "Scene0".to_owned(),
             icon_path: "./3d_models/units/greek/greek_cruiser_thumbnail.png".into(),
             unit_name: "Andreia Class Cruiser".into(),
             movable: true,
@@ -103,7 +106,8 @@ fn populate_units(app: &mut App) {
     unit_specifications.unit_specifications.insert(
         (Civilisation::GREEK, UnitType::SPACESTATION),
         UnitSpecification {
-            file_path: "../assets/3d_models/buildings/greek/spacestation.gltf#Scene0".into(),
+            file_path: "./assets/3d_models/buildings/greek/spacestation.gltf".into(),
+            scene: "Scene0".to_owned(),
             icon_path: "./3d_models/buildings/greek/spacestation_thumbnail.png".into(),
             unit_name: "Akinetos Space Station".into(),
             movable: false,
@@ -168,7 +172,14 @@ fn spawn(
                                 spawn_request.location.z,
                             )
                             .with_scale(Vec3::splat(0.2)),
-                            scene: asset_server.load(&unit_specification.file_path),
+                            scene: asset_server.load(
+                                unit_specification
+                                    .file_path
+                                    .clone()
+                                    .replace("./assets/", "")
+                                    + "#"
+                                    + &unit_specification.scene,
+                            ),
                             ..default()
                         },
                         Selectable {},
@@ -221,6 +232,7 @@ fn spawn(
                         ));
                     })
                     .id();
+
                 commands.spawn((
                     EntityWrapper { entity: parent_id },
                     (*unit_specification).clone(),
@@ -234,104 +246,110 @@ fn spawn(
         // commands.entity(entity).remove::<InstanceSpawnRequest>();
     }
 }
+fn read_emissive_color(gltf_material: &Value) -> Option<Color> {
+    let mut emissiveness: u64 = 1;
+    let mut emissive_color: Color = Color::BLACK;
+    if let serde_json::Value::Object(map) = &gltf_material["extensions"] {
+        for (extension_name, extension) in map {
+            if extension_name != "KHR_materials_emissive_strength" {
+                continue;
+            }
+            if let serde_json::Value::Number(num) = &extension["emissiveStrength"] {
+                emissiveness = num.as_u64()? * 10;
+                return gltf_material["emissiveFactor"]
+                    .as_array()
+                    .as_ref()
+                    .map(|emissive_vals| {
+                        Color::rgb_linear(
+                            emissive_vals[0].as_f64().unwrap() as f32 * emissiveness as f32,
+                            emissive_vals[1].as_f64().unwrap() as f32 * emissiveness as f32,
+                            emissive_vals[2].as_f64().unwrap() as f32 * emissiveness as f32,
+                        )
+                    });
+            }
+        }
+    }
+    return None;
+}
 
 fn update_emissiveness(
     mut commands: Commands,
     unit_info: Query<(Entity, &EntityWrapper, &UnitSpecification)>,
-    material_handles: Query<(&Name, &Handle<StandardMaterial>)>,
+    mut material_handles: Query<(&Name, &mut Handle<StandardMaterial>)>,
     mut material_assets: ResMut<Assets<StandardMaterial>>,
     scene_instances: Query<&SceneInstance>,
     scene_spawner: Res<SceneSpawner>,
 ) {
     for (entity, entity_wrapper, info) in unit_info.iter() {
-        let mut file =
-            File::open(&info.file_path.split_once("#").unwrap().0.split_at(1).1).unwrap();
-        let mut contents: String = String::new();
-        match file.read_to_string(&mut contents) {
-            Ok(_) => {
-                let gltf_model: serde_json::Value = serde_json::from_str(&contents).unwrap();
-                let mut material_nr = 0;
-                let mut updated = true;
-                for material_str in gltf_model["materials"].as_array() {
-                    for material in material_str {
-                        let mesh_name: String = gltf_model["meshes"].as_array().unwrap()
-                            [material_nr]["name"]
-                            .to_string();
-                        let mut emissiveness: u64 = 1;
-                        let mut emissive_color: Color = Color::BLACK;
-                        if let serde_json::Value::Object(map) = &material["extensions"] {
-                            for (extension_name, extension) in map {
-                                if extension_name == "KHR_materials_emissive_strength" {
-                                    if let serde_json::Value::Number(num) =
-                                        &extension["emissiveStrength"]
-                                    {
-                                        emissiveness = num.as_u64().expect("No value found for emissiveness, despite KHR_materials_emissive_strength defined") * 10;
-                                        match &material["emissiveFactor"].as_array() {
-                                                    Some(emissive_vals) => {
-                                                        emissive_color = Color::rgb_linear(
-                                                            emissive_vals[0].as_f64().unwrap()
-                                                                as f32
-                                                                * emissiveness as f32,
-                                                            emissive_vals[1].as_f64().unwrap()
-                                                                as f32
-                                                                * emissiveness as f32,
-                                                            emissive_vals[2].as_f64().unwrap()
-                                                                as f32
-                                                                * emissiveness as f32,
-                                                        );
-                                                updated = false;
-                                                    },
-                                                    None => println!("No value found for emissiveness, despite KHR_materials_emissive_strength defined")
-                                                }
-                                    }
-                                }
-                            }
-                        }
-                        if emissiveness > 1 {
-                            match scene_instances.get(entity_wrapper.entity) {
-                                Ok(scene_instance) => {
-                                    // println!("Found scene instance");
-                                    for scene_entity in scene_spawner
-                                        .iter_instance_entities(**scene_instance.to_owned())
-                                    {
-                                        match material_handles.get(scene_entity) {
-                                            Ok((name, material_handle)) => {
-                                                if name.to_string() == mesh_name.trim_matches('"') {
-                                                    match material_assets.get_mut(material_handle) {
-                                                        Some(material) => {
-                                                            println!("{:#?}", material.emissive);
+        println!("{}", info.file_path);
+        let mut file = File::open(&info.file_path).unwrap();
 
-                                                            material.emissive = emissive_color;
-                                                            updated = true;
-                                                        }
-                                                        None => {
-                                                            println!("Invalid shader handle")
-                                                        }
-                                                    }
+        let mut contents: String = String::new();
+        if let Err(error) = file.read_to_string(&mut contents) {
+            debug!("Could not read file content to string due to: {:?}", error);
+            continue;
+        }
+        let gltf_model: serde_json::Value = serde_json::from_str(&contents).unwrap();
+        let mut material_nr = 0;
+        let mut updated = true;
+        if let Some(material_str) = gltf_model["materials"].as_array() {
+            for material in material_str {
+                // println!("{:?}", material);
+                let meshes: Vec<Value> = match gltf_model["meshes"].as_array() {
+                    Some(meshes) => meshes.to_owned(),
+                    None => Vec::new(),
+                };
+                if material_nr >= meshes.len() {
+                    material_nr += 1;
+                    continue;
+                }
+                let mesh_name: String = meshes[material_nr]["name"].to_string();
+                if let Some(emissive_color) = read_emissive_color(material) {
+                    updated = false;
+                    match scene_instances.get(entity_wrapper.entity) {
+                        Ok(scene_instance) => {
+                            for scene_entity in
+                                scene_spawner.iter_instance_entities(**scene_instance.to_owned())
+                            {
+                                match material_handles.get_mut(scene_entity) {
+                                    Ok((name, mut material_handle)) => {
+                                        if name.to_string() == mesh_name.trim_matches('"') {
+                                            match material_assets.get_mut(&material_handle) {
+                                                Some(material) => {
+                                                    println!(
+                                                        "Old material{:#?}",
+                                                        material.emissive
+                                                    );
+
+                                                    let mut new_material: StandardMaterial =
+                                                        material.clone();
+
+                                                    new_material.emissive = emissive_color;
+                                                    *material_handle =
+                                                        material_assets.add(new_material);
+
+                                                    updated = true;
                                                 }
-                                            }
-                                            Err(error) => {
-                                                println!(
-                                                    "No material attached to entity {:?}",
-                                                    error
-                                                )
+                                                None => {
+                                                    println!("Invalid shader handle")
+                                                }
                                             }
                                         }
                                     }
+                                    Err(error) => {
+                                        println!("No material attached to entity {:?}", error)
+                                    }
                                 }
-                                Err(error) => println!("No scene attached to entity {:?}", error),
                             }
                         }
-                        material_nr += 1;
+                        Err(error) => println!("No scene attached to entity {:?}", error),
                     }
                 }
-                if updated {
-                    commands.entity(entity).despawn_recursive();
-                }
-            }
-            Err(error) => {
-                println!("Could not read file {}", error)
+                material_nr += 1;
             }
         }
-    } //
+        if updated {
+            commands.entity(entity).despawn_recursive();
+        }
+    }
 }

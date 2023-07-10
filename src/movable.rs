@@ -357,7 +357,7 @@ fn move_units(
     let speed: f64 = 1.0;
     let rotation_speed: f64 = 1.0;
     for (entity, mut transform, mut movementpath) in movables.iter_mut() {
-        println!("following");
+        // println!("following");
         let node: &PathNode;
 
         match movementpath.path.last() {

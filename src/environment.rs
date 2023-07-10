@@ -2,7 +2,7 @@ use crate::player_controller::RenderLayerMap;
 use crate::skybox::Skybox;
 use bevy::{
     prelude::*,
-    reflect::TypeUuid,
+    reflect::{TypePath, TypeUuid},
     render::{
         render_resource::{AsBindGroup, ShaderRef},
         view::RenderLayers,
@@ -36,7 +36,7 @@ impl Plugin for Environment {
     }
 }
 // This is the struct that will be passed to your shader
-#[derive(AsBindGroup, TypeUuid, Debug, Clone)]
+#[derive(AsBindGroup, TypeUuid, Debug, Clone, TypePath)]
 #[uuid = "f690fdae-d598-45ab-8225-97e2a3f056e0"]
 pub struct CustomMaterial {
     #[uniform(0)]

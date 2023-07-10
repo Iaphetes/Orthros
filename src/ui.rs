@@ -5,6 +5,7 @@ use crate::spawner::{
 };
 use crate::{ContextMenuAction, PlayerInfo};
 use bevy::core_pipeline::clear_color::ClearColorConfig;
+use bevy::diagnostic::DiagnosticsStore;
 use bevy::render::camera::RenderTarget;
 use bevy::render::render_resource::{
     Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
@@ -98,7 +99,8 @@ fn initialise_mini_map(commands: &mut Commands, mut images: ResMut<Assets<Image>
     commands
         .spawn(NodeBundle {
             style: Style {
-                size: Size::new(Val::Percent(65.0), Val::Percent(80.0)),
+                width: Val::Percent(65.0),
+                height: Val::Percent(80.0),
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Center,
                 ..default()
@@ -109,10 +111,8 @@ fn initialise_mini_map(commands: &mut Commands, mut images: ResMut<Assets<Image>
             parent.spawn(ImageBundle {
                 image: UiImage::from(image_handle),
                 style: Style {
-                    size: Size {
-                        width: Val::Percent(100.0),
-                        height: Val::Percent(100.0),
-                    },
+                    width: Val::Percent(100.0),
+                    height: Val::Percent(100.0),
                     ..Default::default()
                 },
                 ..default()
@@ -136,10 +136,11 @@ fn create_ui_segment(
                     UIContent::Decoration(ui_type),
                     NodeBundle {
                         style: Style {
-                            size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                            width: Val::Percent(100.0),
+                            height: Val::Percent(100.0),
+
                             align_items: AlignItems::Center,
                             justify_content: JustifyContent::Center,
-                            // flex_direction: FlexDirection::Row,
                             ..default()
                         },
                         ..default()
@@ -151,16 +152,13 @@ fn create_ui_segment(
                     UIContent::Content(ui_type),
                     NodeBundle {
                         style: Style {
-                            size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
-                            position: UiRect {
-                                top: Val::Percent(0.0),
-                                left: Val::Percent(0.0),
-                                ..default()
-                            },
+                            width: Val::Percent(100.0),
+                            height: Val::Percent(100.0),
+                            top: Val::Percent(0.0),
+                            left: Val::Percent(0.0),
                             position_type: PositionType::Absolute,
                             align_items: AlignItems::Center,
                             justify_content: JustifyContent::Center,
-                            // flex_direction: FlexDirection::Row,
                             ..default()
                         },
                         ..default()
@@ -172,12 +170,10 @@ fn create_ui_segment(
                     UIContent::Decoration(ui_type),
                     NodeBundle {
                         style: Style {
-                            size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
-                            position: UiRect {
-                                top: Val::Percent(0.0),
-                                left: Val::Px(0.0),
-                                ..default()
-                            },
+                            width: Val::Percent(100.0),
+                            height: Val::Percent(100.0),
+                            top: Val::Percent(0.0),
+                            left: Val::Px(0.0),
                             position_type: PositionType::Absolute,
                             align_items: AlignItems::Center,
                             justify_content: JustifyContent::Center,
@@ -201,11 +197,17 @@ fn game_overlay(
         initialise_mini_map(&mut commands, images),
         // commands.spawn(NodeBundle::default()).id(),
     ];
+    let default_column_style: Style = Style {
+        width: Val::Percent(10.0),
+        height: Val::Percent(120.0),
+        ..default()
+    };
     let map_ui_decoration: Vec<Entity> = vec![
         commands
             .spawn(ImageBundle {
                 style: Style {
-                    size: Size::new(Val::Percent(10.0), Val::Percent(120.0)),
+                    width: Val::Percent(10.0),
+                    height: Val::Percent(120.0),
                     ..default()
                 },
                 image: UiImage {
@@ -218,10 +220,8 @@ fn game_overlay(
         commands
             .spawn(ImageBundle {
                 style: Style {
-                    size: Size {
-                        height: Val::Percent(80.0),
-                        width: Val::Percent(65.0),
-                    },
+                    height: Val::Percent(80.0),
+                    width: Val::Percent(65.0),
                     ..default()
                 },
                 image: UiImage {
@@ -233,10 +233,7 @@ fn game_overlay(
             .id(),
         commands
             .spawn(ImageBundle {
-                style: Style {
-                    size: Size::new(Val::Percent(10.0), Val::Percent(120.0)),
-                    ..default()
-                },
+                style: default_column_style.clone(),
                 image: UiImage {
                     texture: asset_server.load("textures/ui/greek/context_menu_decoration_b.png"),
                     ..default()
@@ -248,10 +245,7 @@ fn game_overlay(
     let context_menu_decoration: Vec<Entity> = vec![
         commands
             .spawn(ImageBundle {
-                style: Style {
-                    size: Size::new(Val::Percent(10.0), Val::Percent(120.0)),
-                    ..default()
-                },
+                style: default_column_style.clone(),
                 image: UiImage {
                     texture: asset_server.load("textures/ui/greek/context_menu_decoration_b.png"),
                     ..default()
@@ -262,7 +256,8 @@ fn game_overlay(
         commands
             .spawn(NodeBundle {
                 style: Style {
-                    size: Size::new(Val::Px(1000.0), Val::Percent(80.0)),
+                    width: Val::Px(1000.0),
+                    height: Val::Percent(80.0),
                     ..default()
                 },
                 background_color: MAIN_UI_BACKGROUND.into(),
@@ -271,10 +266,7 @@ fn game_overlay(
             .id(),
         commands
             .spawn(ImageBundle {
-                style: Style {
-                    size: Size::new(Val::Percent(10.0), Val::Percent(120.0)),
-                    ..default()
-                },
+                style: default_column_style.clone(),
                 image: UiImage {
                     texture: asset_server.load("textures/ui/greek/context_menu_decoration_b.png"),
                     ..default()
@@ -286,10 +278,7 @@ fn game_overlay(
     let selection_info_decoration: Vec<Entity> = vec![
         commands
             .spawn(ImageBundle {
-                style: Style {
-                    size: Size::new(Val::Percent(10.0), Val::Percent(120.0)),
-                    ..default()
-                },
+                style: default_column_style.clone(),
                 image: UiImage {
                     texture: asset_server.load("textures/ui/greek/context_menu_decoration_b.png"),
                     ..default()
@@ -300,7 +289,8 @@ fn game_overlay(
         commands
             .spawn(NodeBundle {
                 style: Style {
-                    size: Size::new(Val::Px(1000.0), Val::Percent(80.0)),
+                    width: Val::Px(1000.0),
+                    height: Val::Percent(80.0),
                     ..default()
                 },
                 background_color: MAIN_UI_BACKGROUND.into(),
@@ -309,10 +299,7 @@ fn game_overlay(
             .id(),
         commands
             .spawn(ImageBundle {
-                style: Style {
-                    size: Size::new(Val::Percent(10.0), Val::Percent(120.0)),
-                    ..default()
-                },
+                style: default_column_style.clone(),
                 image: UiImage {
                     texture: asset_server.load("textures/ui/greek/context_menu_decoration_b.png"),
                     ..default()
@@ -324,7 +311,8 @@ fn game_overlay(
     let diagnostics_decoration: Vec<Entity> = vec![commands
         .spawn(NodeBundle {
             style: Style {
-                size: Size::new(Val::Px(800.0), Val::Percent(100.0)),
+                width: Val::Px(800.0),
+                height: Val::Percent(100.0),
                 ..default()
             },
             background_color: MAIN_UI_BACKGROUND.into(),
@@ -348,12 +336,10 @@ fn game_overlay(
     let top_ui_elements: Vec<Entity> = vec![create_ui_segment(
         &mut commands,
         Style {
-            size: Size::new(Val::Percent(10.0), Val::Percent(100.0)),
-            position: UiRect {
-                top: Val::Percent(0.0),
-                left: Val::Px(0.0),
-                ..default()
-            },
+            width: Val::Percent(10.0),
+            height: Val::Percent(100.0),
+            top: Val::Percent(0.0),
+            left: Val::Px(0.0),
             align_items: AlignItems::Start,
             justify_content: JustifyContent::Start,
             ..default()
@@ -367,12 +353,10 @@ fn game_overlay(
         create_ui_segment(
             &mut commands,
             Style {
-                size: Size::new(Val::Percent(30.0), Val::Percent(100.0)),
-                position: UiRect {
-                    top: Val::Percent(0.0),
-                    left: Val::Px(0.0),
-                    ..default()
-                },
+                width: Val::Percent(30.0),
+                height: Val::Percent(100.0),
+                top: Val::Percent(0.0),
+                left: Val::Px(0.0),
                 align_items: AlignItems::Start,
                 justify_content: JustifyContent::Start,
                 ..default()
@@ -385,12 +369,10 @@ fn game_overlay(
         create_ui_segment(
             &mut commands,
             Style {
-                size: Size::new(Val::Percent(30.0), Val::Percent(100.0)),
-                position: UiRect {
-                    top: Val::Percent(0.0),
-                    left: Val::Px(0.0),
-                    ..default()
-                },
+                width: Val::Percent(30.0),
+                height: Val::Percent(100.0),
+                top: Val::Percent(0.0),
+                left: Val::Px(0.0),
                 align_items: AlignItems::Start,
                 justify_content: JustifyContent::Start,
                 ..default()
@@ -403,12 +385,10 @@ fn game_overlay(
         create_ui_segment(
             &mut commands,
             Style {
-                size: Size::new(Val::Percent(20.0), Val::Percent(100.0)),
-                position: UiRect {
-                    top: Val::Percent(0.0),
-                    left: Val::Px(0.0),
-                    ..default()
-                },
+                width: Val::Percent(20.0),
+                height: Val::Percent(100.0),
+                top: Val::Percent(0.0),
+                left: Val::Px(0.0),
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Center,
                 ..default()
@@ -423,7 +403,8 @@ fn game_overlay(
     commands
         .spawn(NodeBundle {
             style: Style {
-                size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
 
                 align_items: AlignItems::Start,
                 justify_content: JustifyContent::Start,
@@ -437,7 +418,8 @@ fn game_overlay(
             parent
                 .spawn(NodeBundle {
                     style: Style {
-                        size: Size::new(Val::Percent(50.0), Val::Percent(5.0)),
+                        width: Val::Percent(50.0),
+                        height: Val::Percent(5.0),
 
                         align_items: AlignItems::Start,
                         justify_content: JustifyContent::Start,
@@ -450,12 +432,10 @@ fn game_overlay(
             parent
                 .spawn(NodeBundle {
                     style: Style {
-                        size: Size::new(Val::Percent(100.0), Val::Percent(15.0)),
-                        position: UiRect {
-                            top: Val::Percent(80.0),
-                            left: Val::Px(0.0),
-                            ..default()
-                        },
+                        width: Val::Percent(100.0),
+                        height: Val::Percent(15.0),
+                        top: Val::Percent(80.0),
+                        left: Val::Px(0.0),
                         justify_content: JustifyContent::SpaceBetween,
                         flex_wrap: FlexWrap::Wrap,
                         align_content: AlignContent::SpaceBetween,
@@ -490,10 +470,8 @@ fn update_selection_info(
     let thumbnail = commands
         .spawn(NodeBundle {
             style: Style {
-                size: Size {
-                    width: Val::Px(60.0),
-                    height: Val::Px(60.0),
-                },
+                width: Val::Px(60.0),
+                height: Val::Px(60.0),
                 ..default()
             },
             background_color: ICON_BACKGROUND.into(),
@@ -502,10 +480,8 @@ fn update_selection_info(
         .with_children(|parent| {
             parent.spawn(ImageBundle {
                 style: Style {
-                    size: Size {
-                        width: Val::Percent(100.0),
-                        height: Val::Percent(100.0),
-                    },
+                    width: Val::Percent(100.0),
+                    height: Val::Percent(100.0),
                     ..Default::default()
                 },
                 image: UiImage {
@@ -519,7 +495,8 @@ fn update_selection_info(
     let container = commands
         .spawn(NodeBundle {
             style: Style {
-                size: Size::new(Val::Percent(75.0), Val::Percent(100.0)),
+                width: Val::Percent(75.0),
+                height: Val::Percent(100.0),
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::SpaceBetween,
                 flex_direction: FlexDirection::Row,
@@ -538,7 +515,7 @@ fn catch_interaction(
 ) {
     for interaction in &mut interaction_query {
         match *interaction {
-            Interaction::Clicked | Interaction::Hovered => {
+            Interaction::Pressed | Interaction::Hovered => {
                 commands.spawn(RayBlock);
                 println!("Catching Rays");
             }
@@ -564,7 +541,7 @@ fn button_system(
         for (entity, interaction, action) in &mut interaction_query {
             if let Some(mut background_color) = button_background.get_mut(entity.get()).ok() {
                 match *interaction {
-                    Interaction::Clicked => {
+                    Interaction::Pressed => {
                         match action {
                             ContextMenuAction::BUILD(unit_type) => {
                                 spawn_events.send(InstanceSpawnRequest {
@@ -609,10 +586,8 @@ fn update_context_menu(
                     commands
                         .spawn(NodeBundle {
                             style: Style {
-                                size: Size {
-                                    width: Val::Px(60.0),
-                                    height: Val::Px(60.0),
-                                },
+                                width: Val::Px(60.0),
+                                height: Val::Px(60.0),
                                 ..default()
                             },
                             background_color: ICON_BACKGROUND.into(),
@@ -622,7 +597,8 @@ fn update_context_menu(
                             parent.spawn((
                                 ButtonBundle {
                                     style: Style {
-                                        size: Size::new(Val::Px(65.0), Val::Px(65.0)),
+                                        width: Val::Px(65.0),
+                                        height: Val::Px(65.0),
                                         justify_content: JustifyContent::Center,
                                         align_items: AlignItems::Center,
                                         ..default()
@@ -642,7 +618,8 @@ fn update_context_menu(
                 let container = commands
                     .spawn(NodeBundle {
                         style: Style {
-                            size: Size::new(Val::Percent(80.0), Val::Percent(80.0)),
+                            width: Val::Percent(80.0),
+                            height: Val::Percent(80.0),
                             align_items: AlignItems::Start,
                             justify_content: JustifyContent::Start,
                             flex_direction: FlexDirection::Row,
@@ -757,7 +734,10 @@ fn clear_ui(
         }
     }
 }
-fn change_text_system(diagnostics: Res<Diagnostics>, mut query: Query<&mut Text, With<UIContent>>) {
+fn change_text_system(
+    diagnostics: Res<DiagnosticsStore>,
+    mut query: Query<&mut Text, With<UIContent>>,
+) {
     for mut text in &mut query {
         let mut fps = 0.0;
         if let Some(fps_diagnostic) = diagnostics.get(FrameTimeDiagnosticsPlugin::FPS) {

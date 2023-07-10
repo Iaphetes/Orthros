@@ -16,6 +16,7 @@ pub enum RenderLayerMap {
 }
 use bevy_rapier3d::prelude::*;
 pub struct PlayerController;
+#[derive(Event)]
 pub struct DeselectEvent;
 impl Plugin for PlayerController {
     fn build(&self, app: &mut App) {
@@ -70,9 +71,9 @@ impl Default for CameraControllerSettings {
             key_back: KeyCode::S,
             key_left: KeyCode::A,
             key_right: KeyCode::D,
-            rotate_key: KeyCode::LControl,
+            rotate_key: KeyCode::ControlLeft,
             rotation_speed: 0.005,
-            key_run: KeyCode::LShift,
+            key_run: KeyCode::ControlLeft,
             mouse_key_enable_mouse: MouseButton::Left,
             mouse_unit_move_button: MouseButton::Right,
             keyboard_key_enable_mouse: KeyCode::M,
@@ -236,19 +237,12 @@ fn mouse_controller(
     if !deselect_event.is_empty() {
         println!("Deselection");
         for (sel_entity, _, children) in selectable.iter() {
-            // let mut deselect: bool = true;
-
-            // if sel_entity == hit.hit_entity {
-            //     deselect = false;
-            // }
-            // if deselect {
             for child in children.iter() {
                 if let Ok(mut selection_visibility) = selection_circle.get_mut(*child) {
                     *selection_visibility = Visibility::Hidden;
                     commands.entity(sel_entity).remove::<Selected>();
                 }
             }
-            // }
         }
     }
     for hit in ray_hit_event.iter() {
@@ -261,7 +255,7 @@ fn mouse_controller(
                     }
                 }
             }
-            if !key_input.pressed(KeyCode::LControl) {
+            if !key_input.pressed(KeyCode::ControlLeft) {
                 for (sel_entity, _, children) in selectable.iter() {
                     let mut deselect: bool = true;
 
@@ -333,6 +327,7 @@ fn ray_from_camera_center(camera: &Camera, camera_transform: &GlobalTransform) -
     (near, dir)
 }
 
+#[derive(Event)]
 pub struct RayHit {
     pub hit_entity: Entity,
     pub mouse_key_enable_mouse: bool,

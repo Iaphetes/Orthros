@@ -47,16 +47,16 @@ fn main() {
             }),
             ..default()
         }))
-        .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
-        .add_plugin(RapierDebugRenderPlugin::default())
+        .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
+        .add_plugins(RapierDebugRenderPlugin::default())
         .insert_resource(Msaa::Sample4)
-        .add_plugin(PlayerController)
-        .add_plugin(Environment)
-        .add_plugin(UnitMovement)
-        .add_plugin(InstanceSpawner)
-        .add_plugin(GameUI)
+        .add_plugins(PlayerController)
+        .add_plugins(Environment)
+        .add_plugins(UnitMovement)
+        .add_plugins(InstanceSpawner)
+        .add_plugins(GameUI)
         .add_event::<InstanceSpawnRequest>()
-        .add_startup_system(setup)
+        .add_systems(Startup, setup)
         .run();
 }
 

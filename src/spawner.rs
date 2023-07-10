@@ -56,7 +56,7 @@ pub struct UnitSpecification {
     _prescaling: f32,
 }
 pub struct InstanceSpawner;
-#[derive(Component)]
+#[derive(Event)]
 pub struct InstanceSpawnRequest {
     pub location: Vec3,
     pub unit_type: UnitType,
@@ -76,7 +76,6 @@ pub struct UnitInformation {
 impl Plugin for InstanceSpawner {
     fn build(&self, app: &mut App) {
         app.add_system(spawn)
-            .add_event::<(Entity, UnitSpecification)>()
             .add_event::<InstanceSpawnRequest>()
             .add_system(update_emissiveness.before(spawn));
         populate_units(app);

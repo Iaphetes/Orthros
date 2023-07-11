@@ -83,6 +83,7 @@ fn calculate_a_star(
             commands.entity(entity).remove::<MoveCommand>();
             continue;
         }
+        println!("Towards: {:?}", movcmd.target);
         let target: UVec2 =
             (movcmd.target / gridmap.settings.cell_size + gridmap.settings.xy_offset).as_uvec2();
         let start: UVec2 = UVec2 {

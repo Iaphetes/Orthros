@@ -2,6 +2,7 @@ use crate::movable::{Movable, MoveCommand};
 use crate::ownable::SelectionCircle;
 use crate::ownable::{Selectable, Selected};
 use crate::ui::RayBlock;
+use bevy::gizmos;
 use bevy::input::mouse::MouseScrollUnit;
 use bevy::input::mouse::MouseWheel;
 use bevy::math::Quat;
@@ -207,8 +208,12 @@ pub fn camera_controller(
     }
 }
 
-fn camera_setup(mut commands: Commands) {
+fn camera_setup(mut commands: Commands, mut config: ResMut<GizmoConfig>) {
     // camera
+    config.depth_bias = 0.0;
+    config.line_perspective == true;
+    config.line_width *= 1.;
+
     commands
         .spawn((
             Camera3dBundle {
@@ -296,6 +301,7 @@ fn ray_from_mouse_position(
     window: &Window,
     camera: &Camera,
     camera_transform: &GlobalTransform,
+    mut gizmos: &mut Gizmos,
 ) -> (Vec3, Vec3) {
     let mouse_position = window.cursor_position().unwrap_or(Vec2::new(0.0, 0.0));
     let x = 2.0 * (mouse_position.x / window.width() as f32) - 1.0;
@@ -308,6 +314,7 @@ fn ray_from_mouse_position(
 
     let near = near.truncate() / near.w;
     let far = far.truncate() / far.w;
+    gizmos.line(far, near, Color::GREEN);
     let dir: Vec3 = far - near;
     (near, dir)
 }
@@ -343,8 +350,10 @@ fn handle_select(
     mouse_unit_move_button: bool,
     mouse_key_enable_mouse: bool,
     deselect_event: &mut EventWriter<DeselectEvent>,
+    mut gizmos: &mut Gizmos,
 ) {
-    let (ray_pos, ray_dir) = ray_from_mouse_position(primary, camera, camera_transform);
+    let (ray_pos, ray_dir) =
+        ray_from_mouse_position(primary, camera, camera_transform, &mut gizmos);
     // println!("{:?}", mouse_unit_move_button);
     // Then cast the ray.
     let hit = rapier_context.cast_ray_and_get_normal(
@@ -376,8 +385,11 @@ fn handle_unit_move_cmd(
     ray_hit_event: &mut EventWriter<RayHit>,
     mouse_unit_move_button: bool,
     mouse_key_enable_mouse: bool,
+
+    mut gizmos: &mut Gizmos,
 ) {
-    let (ray_pos, ray_dir) = ray_from_mouse_position(primary, camera, camera_transform);
+    let (ray_pos, ray_dir) =
+        ray_from_mouse_position(primary, camera, camera_transform, &mut gizmos);
 
     let hit = rapier_context.cast_ray_and_get_normal(
         ray_pos,
@@ -404,6 +416,8 @@ fn process_mouse(
     primary_query: Query<&Window, With<PrimaryWindow>>,
     rapier_context: Res<RapierContext>,
     rayblock: Query<Entity, With<RayBlock>>,
+
+    mut gizmos: Gizmos,
 ) {
     let Ok(primary) = primary_query.get_single() else {
         return;
@@ -431,6 +445,7 @@ fn process_mouse(
                 mouse_unit_move_button,
                 mouse_key_enable_mouse,
                 &mut deselect_event,
+                &mut gizmos,
             )
         }
         if mouse_unit_move_button {
@@ -442,6 +457,7 @@ fn process_mouse(
                 &mut ray_hit_event,
                 mouse_unit_move_button,
                 mouse_key_enable_mouse,
+                &mut gizmos,
             )
         }
     }

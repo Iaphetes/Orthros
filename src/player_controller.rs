@@ -303,22 +303,6 @@ fn ray_from_mouse_position(
     camera_transform: &GlobalTransform,
     mut gizmos: &mut Gizmos,
 ) -> (Vec3, Vec3) {
-    // let mouse_position = window.cursor_position().unwrap_or(Vec2::new(0.0, 0.0));
-    // let x = 2.0 * (mouse_position.x / window.width() as f32) - 1.0;
-    // let y = 2.0 * (mouse_position.y / window.height() as f32) - 1.0;
-
-    // let camera_inverse_matrix =
-    //     camera_transform.compute_matrix() * camera.projection_matrix().inverse();
-    // let near = camera_inverse_matrix * Vec3::new(x, y, -1.0).extend(1.0);
-    // let far = camera_inverse_matrix * Vec3::new(x, y, 1.0).extend(1.0);
-
-    // let near = near.truncate() / near.w;
-    // let far = far.truncate() / far.w;
-    // gizmos.line(far, near, Color::GREEN);
-    // println!("Near: {:?}, Far {:?}", near, far);
-    // let dir: Vec3 = far - near;
-    // (near, dir)
-
     let mouse_position = window.cursor_position().unwrap_or(Vec2::new(0.0, 0.0));
     let ray: Ray = camera
         .viewport_to_world(camera_transform, mouse_position)
@@ -327,18 +311,11 @@ fn ray_from_mouse_position(
 }
 
 fn ray_from_camera_center(camera: &Camera, camera_transform: &GlobalTransform) -> (Vec3, Vec3) {
-    let x = 0.0;
-    let y = 0.0;
-    println!("x{}, y{}", x, y);
-    let camera_inverse_matrix =
-        camera_transform.compute_matrix() * camera.projection_matrix().inverse();
-    let near = camera_inverse_matrix * Vec3::new(x, y, -1.0).extend(1.0);
-    let far = camera_inverse_matrix * Vec3::new(x, y, 1.0).extend(1.0);
-
-    let near = near.truncate() / near.w;
-    let far = far.truncate() / far.w;
-    let dir: Vec3 = far - near;
-    (near, dir)
+    let mouse_position = Vec2::new(0.0, 0.0);
+    let ray: Ray = camera
+        .viewport_to_world(camera_transform, mouse_position)
+        .unwrap();
+    return (ray.origin, ray.direction);
 }
 
 #[derive(Event)]

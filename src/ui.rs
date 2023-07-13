@@ -11,10 +11,7 @@ use bevy::render::render_resource::{
     Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
 };
 use bevy::render::view::RenderLayers;
-use bevy::{
-    diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin},
-    prelude::*,
-};
+use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, prelude::*};
 const ICON_BACKGROUND: Color = Color::rgb(12.0 / 256.0, 11.0 / 256.0, 13.0 / 256.0);
 const NORMAL_BUTTON: Color = Color::WHITE;
 const HOVERED_BUTTON: Color = Color::rgb(64.0 / 256.0, 99.0 / 256.0, 64.0 / 256.0);
@@ -41,15 +38,15 @@ enum UIContent {
 pub struct GameUI;
 impl Plugin for GameUI {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(game_overlay)
+        app.add_systems(Startup, game_overlay)
             .add_event::<RayHit>()
             .add_event::<DeselectEvent>()
-            .add_system(change_text_system)
-            .add_system(populate_lower_ui)
-            .add_plugin(FrameTimeDiagnosticsPlugin)
-            .add_system(clear_ui.before(populate_lower_ui))
-            .add_system(catch_interaction)
-            .add_system(button_system);
+            .add_systems(Update, change_text_system)
+            .add_systems(Update, populate_lower_ui)
+            .add_plugins(FrameTimeDiagnosticsPlugin)
+            .add_systems(Update, clear_ui.before(populate_lower_ui))
+            .add_systems(Update, catch_interaction)
+            .add_systems(Update, button_system);
     }
 }
 #[derive(Component)]
@@ -323,7 +320,7 @@ fn game_overlay(
         .spawn((
             UIContent::Content(UIType::Diagnostics),
             TextBundle::from_section(
-                format!("FPS"),
+                "FPS".to_string(),
                 TextStyle {
                     font: asset_server
                         .load("fonts/android-insomnia-font/AndroidInsomniaRegular.ttf"),
@@ -457,8 +454,8 @@ fn update_selection_info(
             format!(
                 "{}\n{}\n{}",
                 unit_information.unit_name,
-                unit_information.civilisation.to_string(),
-                unit_information.unit_type.to_string()
+                unit_information.civilisation,
+                unit_information.unit_type
             ),
             TextStyle {
                 font: asset_server.load("fonts/android-insomnia-font/AndroidInsomniaRegular.ttf"),
@@ -539,11 +536,11 @@ fn button_system(
 ) {
     for transform in selected_entities.iter() {
         for (entity, interaction, action) in &mut interaction_query {
-            if let Some(mut background_color) = button_background.get_mut(entity.get()).ok() {
+            if let Ok(mut background_color) = button_background.get_mut(entity.get()) {
                 match *interaction {
                     Interaction::Pressed => {
                         match action {
-                            ContextMenuAction::BUILD(unit_type) => {
+                            ContextMenuAction::Build(unit_type) => {
                                 spawn_events.send(InstanceSpawnRequest {
                                     location: Vec3 {
                                         x: transform.translation.x + 2.0,
@@ -579,7 +576,7 @@ fn update_context_menu(
     let mut buttons: Vec<Entity> = Vec::new();
     for action in context_menu_actions {
         match action {
-            ContextMenuAction::BUILD(unit_type) => {
+            ContextMenuAction::Build(unit_type) => {
                 let unit_information: &UnitSpecification = &unit_specifications.unit_specifications
                     [&(player_info.civilisation, *unit_type)];
                 buttons.push(
@@ -652,11 +649,8 @@ fn populate_lower_ui(
                 .unwrap();
             for &child in children.iter() {
                 println!("{:#?}", child);
-                match ui_children.get(child) {
-                    Ok(child) => {
-                        commands.entity(child).despawn_recursive();
-                    }
-                    Err(_) => {}
+                if let Ok(child) = ui_children.get(child) {
+                    commands.entity(child).despawn_recursive();
                 }
             }
             let (context_menu_content, _, children): (Entity, _, &Children) = ui_elements
@@ -665,33 +659,29 @@ fn populate_lower_ui(
                 .unwrap();
             for &child in children.iter() {
                 println!("{:#?}", child);
-                match ui_children.get(child) {
-                    Ok(child) => {
-                        commands.entity(child).despawn_recursive();
-                    }
-                    Err(_) => {}
+                if let Ok(child) = ui_children.get(child) {
+                    commands.entity(child).despawn_recursive();
                 }
             }
             if let Ok(unit_information) = unit_info.get_mut(hit.hit_entity) {
                 update_selection_info(
                     &mut commands,
-                    &unit_information,
+                    unit_information,
                     &asset_server,
                     selection_info_content,
                 );
-                match player_info
+                if let Some(contex_menu_actions) = player_info
                     .context_menu_actions
                     .get(&unit_information.unit_type)
                 {
-                    Some(contex_menu_actions) => update_context_menu(
+                    update_context_menu(
                         &mut commands,
                         &asset_server,
                         context_menu_content,
-                        &contex_menu_actions,
+                        contex_menu_actions,
                         &unit_specifications,
                         &player_info,
-                    ),
-                    None => {}
+                    );
                 }
             } else {
                 commands.entity(selection_info_content).push_children(&[]);
@@ -712,11 +702,8 @@ fn clear_ui(
             .find(|(content, _)| **content == UIContent::Content(UIType::SelectionInfo))
             .unwrap();
         for &child in children.iter() {
-            match ui_children.get(child) {
-                Ok(child) => {
-                    commands.entity(child).despawn_recursive();
-                }
-                Err(_) => {}
+            if let Ok(child) = ui_children.get(child) {
+                commands.entity(child).despawn_recursive();
             }
         }
         let (_, children): (_, &Children) = ui_elements
@@ -725,11 +712,8 @@ fn clear_ui(
             .unwrap();
         for &child in children.iter() {
             println!("{:#?}", child);
-            match ui_children.get(child) {
-                Ok(child) => {
-                    commands.entity(child).despawn_recursive();
-                }
-                Err(_) => {}
+            if let Ok(child) = ui_children.get(child) {
+                commands.entity(child).despawn_recursive();
             }
         }
     }

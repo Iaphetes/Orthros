@@ -13,28 +13,28 @@ use std::io::prelude::*;
 // Create some sort of unit map with regards to civ
 #[derive(Eq, Hash, PartialEq, Clone, Copy)]
 pub enum Civilisation {
-    GREEK,
+    Greek,
     // ROMAN,
     // JAPANESE,
 }
 impl fmt::Display for Civilisation {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Civilisation::GREEK => write!(f, "Greek"),
+            Civilisation::Greek => write!(f, "Greek"),
         }
     }
 }
 #[derive(Eq, Hash, PartialEq, Clone, Copy)]
 pub enum UnitType {
-    CRUISER,
-    SPACESTATION,
+    Cruiser,
+    Spacestation,
 }
 impl fmt::Display for UnitType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            UnitType::CRUISER => write!(f, "Cruiser"),
+            UnitType::Cruiser => write!(f, "Cruiser"),
 
-            UnitType::SPACESTATION => write!(f, "Space Station"),
+            UnitType::Spacestation => write!(f, "Space Station"),
         }
     }
 }
@@ -75,9 +75,9 @@ pub struct UnitInformation {
 }
 impl Plugin for InstanceSpawner {
     fn build(&self, app: &mut App) {
-        app.add_system(spawn)
+        app.add_systems(Update, spawn)
             .add_event::<InstanceSpawnRequest>()
-            .add_system(update_emissiveness.before(spawn));
+            .add_systems(Update, update_emissiveness.before(spawn));
         populate_units(app);
     }
 }
@@ -86,7 +86,7 @@ fn populate_units(app: &mut App) {
         unit_specifications: HashMap::new(),
     };
     unit_specifications.unit_specifications.insert(
-        (Civilisation::GREEK, UnitType::CRUISER),
+        (Civilisation::Greek, UnitType::Cruiser),
         UnitSpecification {
             file_path: "./assets/3d_models/units/greek/fighter_01.gltf".into(),
             scene: "Scene0".to_owned(),
@@ -103,7 +103,7 @@ fn populate_units(app: &mut App) {
         },
     );
     unit_specifications.unit_specifications.insert(
-        (Civilisation::GREEK, UnitType::SPACESTATION),
+        (Civilisation::Greek, UnitType::Spacestation),
         UnitSpecification {
             file_path: "./assets/3d_models/buildings/greek/spacestation.gltf".into(),
             scene: "Scene0".to_owned(),
@@ -135,126 +135,116 @@ fn spawn(
     asset_server: Res<AssetServer>,
 ) {
     for spawn_request in spawn_requests.iter() {
-        match unit_specifications
+        if let Some(unit_specification) = unit_specifications
             .unit_specifications
             .get(&(spawn_request.civilisation, spawn_request.unit_type))
         {
-            Some(unit_specification) => {
-                let texture_handle = asset_server.load("textures/selection_texture.png");
-                let material_handle = materials.add(StandardMaterial {
-                    base_color_texture: Some(texture_handle),
-                    alpha_mode: AlphaMode::Blend,
-                    ..default()
-                });
-                let collider: Collider;
-                match unit_specification.shape {
-                    ShapeType::Ball => {
-                        collider = Collider::ball(unit_specification.dimensions.max_element());
-                    }
-                    ShapeType::Capsule => {
-                        collider = Collider::capsule_z(
-                            unit_specification.dimensions.max_element() / 2.0,
-                            unit_specification.dimensions.min_element(),
-                        );
-                    }
-                    shape => {
-                        println!("Shape {:?} not supported", shape);
-                        continue;
-                    }
+            let texture_handle = asset_server.load("textures/selection_texture.png");
+            let material_handle = materials.add(StandardMaterial {
+                base_color_texture: Some(texture_handle),
+                alpha_mode: AlphaMode::Blend,
+                ..default()
+            });
+            let collider: Collider = match unit_specification.shape {
+                ShapeType::Ball => Collider::ball(unit_specification.dimensions.max_element()),
+                ShapeType::Capsule => Collider::capsule_z(
+                    unit_specification.dimensions.max_element() / 2.0,
+                    unit_specification.dimensions.min_element(),
+                ),
+                shape => {
+                    println!("Shape {:?} not supported", shape);
+                    continue;
                 }
-                let parent_id = commands
-                    .spawn((
-                        SceneBundle {
-                            transform: Transform::from_xyz(
-                                spawn_request.location.x,
-                                spawn_request.location.y,
-                                spawn_request.location.z,
-                            )
-                            .with_scale(Vec3::splat(0.2)),
-                            scene: asset_server.load(
-                                unit_specification
-                                    .file_path
-                                    .clone()
-                                    .replace("./assets/", "")
-                                    + "#"
-                                    + &unit_specification.scene,
+            };
+            let parent_id = commands
+                .spawn((
+                    SceneBundle {
+                        transform: Transform::from_xyz(
+                            spawn_request.location.x,
+                            spawn_request.location.y,
+                            spawn_request.location.z,
+                        )
+                        .with_scale(Vec3::splat(0.2)),
+                        scene: asset_server.load(
+                            unit_specification
+                                .file_path
+                                .clone()
+                                .replace("./assets/", "")
+                                + "#"
+                                + &unit_specification.scene,
+                        ),
+                        ..default()
+                    },
+                    Selectable {},
+                    UnitInformation {
+                        unit_name: unit_specification.unit_name.clone(),
+                        unit_type: spawn_request.unit_type,
+                        civilisation: spawn_request.civilisation,
+                        thumbnail: unit_specification.icon_path.clone(),
+                    },
+                    RigidBody::KinematicPositionBased,
+                    collider,
+                    GravityScale(0.0),
+                    RenderLayers::layer(RenderLayerMap::Main as u8),
+                    // ContextMenuActions {},
+                ))
+                .with_children(|parent| {
+                    parent.spawn((
+                        MaterialMeshBundle {
+                            mesh: meshes.add(
+                                shape::Plane {
+                                    size: 2.5 * unit_specification.dimensions.max_element(),
+                                    subdivisions: 1,
+                                }
+                                .into(),
                             ),
+                            material: material_handle,
+                            transform: Transform::from_scale(Vec3::splat(1.0)),
+                            visibility: Visibility::Hidden,
                             ..default()
                         },
-                        Selectable {},
-                        UnitInformation {
-                            unit_name: unit_specification.unit_name.clone(),
-                            unit_type: spawn_request.unit_type,
-                            civilisation: spawn_request.civilisation,
-                            thumbnail: unit_specification.icon_path.clone(),
-                        },
-                        RigidBody::KinematicPositionBased,
-                        collider,
-                        GravityScale(0.0),
+                        SelectionCircle,
                         RenderLayers::layer(RenderLayerMap::Main as u8),
-                        // ContextMenuActions {},
-                    ))
-                    .with_children(|parent| {
-                        parent.spawn((
-                            MaterialMeshBundle {
-                                mesh: meshes.add(
-                                    shape::Plane {
-                                        size: 2.5 * unit_specification.dimensions.max_element(),
-                                        subdivisions: 1,
-                                    }
-                                    .into(),
-                                ),
-                                material: material_handle,
-                                transform: Transform::from_scale(Vec3::splat(1.0)),
-                                visibility: Visibility::Hidden,
-                                ..default()
-                            },
-                            SelectionCircle,
-                            RenderLayers::layer(RenderLayerMap::Main as u8),
-                        ));
-                        parent.spawn((
-                            MaterialMeshBundle {
-                                mesh: meshes.add(
-                                    shape::Plane {
-                                        size: 10.0,
-                                        subdivisions: 1,
-                                    }
-                                    .into(),
-                                ),
-                                material: materials.add(StandardMaterial {
-                                    base_color: Color::rgba(0.0, 1.0, 0.0, 0.5),
-                                    ..Default::default()
-                                }),
-                                ..default()
-                            },
-                            RenderLayers::layer(RenderLayerMap::Minimap as u8),
-                        ));
-                    })
-                    .id();
+                    ));
+                    parent.spawn((
+                        MaterialMeshBundle {
+                            mesh: meshes.add(
+                                shape::Plane {
+                                    size: 10.0,
+                                    subdivisions: 1,
+                                }
+                                .into(),
+                            ),
+                            material: materials.add(StandardMaterial {
+                                base_color: Color::rgba(0.0, 1.0, 0.0, 0.5),
+                                ..Default::default()
+                            }),
+                            ..default()
+                        },
+                        RenderLayers::layer(RenderLayerMap::Minimap as u8),
+                    ));
+                })
+                .id();
 
-                commands.spawn((
-                    EntityWrapper { entity: parent_id },
-                    (*unit_specification).clone(),
-                ));
-                if unit_specification.movable {
-                    commands.entity(parent_id).insert(Movable {});
-                }
+            commands.spawn((
+                EntityWrapper { entity: parent_id },
+                (*unit_specification).clone(),
+            ));
+            if unit_specification.movable {
+                commands.entity(parent_id).insert(Movable {});
             }
-            None => {}
         }
         // commands.entity(entity).remove::<InstanceSpawnRequest>();
     }
 }
 fn read_emissive_color(gltf_material: &Value) -> Option<Color> {
-    let mut emissiveness: u64 = 1;
-    let mut emissive_color: Color = Color::BLACK;
     if let serde_json::Value::Object(map) = &gltf_material["extensions"] {
         for (extension_name, extension) in map {
             if extension_name != "KHR_materials_emissive_strength" {
                 continue;
             }
             if let serde_json::Value::Number(num) = &extension["emissiveStrength"] {
-                emissiveness = num.as_u64()? * 10;
+                let emissiveness = num.as_u64()? * 10;
                 return gltf_material["emissiveFactor"]
                     .as_array()
                     .as_ref()
@@ -268,7 +258,7 @@ fn read_emissive_color(gltf_material: &Value) -> Option<Color> {
             }
         }
     }
-    return None;
+    None
 }
 
 fn update_emissiveness(

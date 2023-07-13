@@ -21,10 +21,10 @@ use bevy::{
 pub struct Skybox;
 impl Plugin for Skybox {
     fn build(&self, app: &mut App) {
-        app.add_plugin(MaterialPlugin::<CubemapMaterial>::default())
-            .add_startup_system(setup_skybox)
-            .add_system(cycle_cubemap_asset)
-            .add_system(asset_loaded.after(cycle_cubemap_asset));
+        app.add_plugins(MaterialPlugin::<CubemapMaterial>::default())
+            .add_systems(Startup, setup_skybox)
+            .add_systems(Update, cycle_cubemap_asset)
+            .add_systems(Update, asset_loaded.after(cycle_cubemap_asset));
     }
 }
 const CUBEMAPS: &[(&str, CompressedImageFormats)] =
@@ -89,7 +89,7 @@ fn asset_loaded(
         && asset_server.get_load_state(cubemap.image_handle.clone_weak()) == LoadState::Loaded
     {
         info!("Swapping to {}...", CUBEMAPS[cubemap.index].0);
-        let mut image = images.get_mut(&cubemap.image_handle).unwrap();
+        let image = images.get_mut(&cubemap.image_handle).unwrap();
         // NOTE: PNGs do not have any metadata that could indicate they contain a cubemap texture,
         // so they appear as one texture. The following code reconfigures the texture as necessary.
         if image.texture_descriptor.array_layer_count() == 1 {

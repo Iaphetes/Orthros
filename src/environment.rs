@@ -15,14 +15,9 @@ pub struct Environment;
 
 impl Plugin for Environment {
     fn build(&self, app: &mut App) {
-        app.add_plugin(MaterialPlugin::<CustomMaterial>::default())
-            .add_plugin(Skybox)
-            .add_startup_system(environment_setup)
-            .add_startup_system(setup_movement_grid)
-            // .add_startup_system_to_stage(
-            //     bevy::app::StartupStage::PostStartup,
-            //     generate_obstacles.after(setup_movement_grid),
-            // )
+        app.add_plugins(MaterialPlugin::<CustomMaterial>::default())
+            .add_plugins(Skybox)
+            .add_systems(Startup, (environment_setup, setup_movement_grid))
             .insert_resource(MovementGrid {
                 settings: GridSettings {
                     cell_size: 0.2,

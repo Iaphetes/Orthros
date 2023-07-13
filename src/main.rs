@@ -28,13 +28,12 @@ enum TechLevel {
 // }
 #[derive(Component, Clone)]
 enum ContextMenuAction {
-    BUILD(UnitType),
+    Build(UnitType),
 }
 #[derive(Resource)]
 struct PlayerInfo {
     civilisation: Civilisation,
     tech_level: TechLevel,
-
     context_menu_actions: HashMap<UnitType, Vec<ContextMenuAction>>,
 }
 fn main() {
@@ -62,25 +61,25 @@ fn main() {
 
 fn setup(mut commands: Commands, mut spawn_events: EventWriter<InstanceSpawnRequest>) {
     let mut player_info: PlayerInfo = PlayerInfo {
-        civilisation: Civilisation::GREEK,
+        civilisation: Civilisation::Greek,
         tech_level: TechLevel::L0,
         context_menu_actions: HashMap::new(),
     };
     player_info.context_menu_actions.insert(
-        UnitType::SPACESTATION,
-        vec![ContextMenuAction::BUILD(UnitType::CRUISER)],
+        UnitType::Spacestation,
+        vec![ContextMenuAction::Build(UnitType::Cruiser)],
     );
     commands.insert_resource(player_info);
-    for x in 0..2 {
-        for y in 0..2 {
+    for x in 0..10 {
+        for y in 0..10 {
             spawn_events.send(InstanceSpawnRequest {
                 location: Vec3 {
                     x: x as f32 * 2.0,
                     y: 2.0,
                     z: y as f32 * 2.0,
                 },
-                unit_type: UnitType::CRUISER,
-                civilisation: Civilisation::GREEK,
+                unit_type: UnitType::Cruiser,
+                civilisation: Civilisation::Greek,
             });
         }
     }
@@ -90,7 +89,7 @@ fn setup(mut commands: Commands, mut spawn_events: EventWriter<InstanceSpawnRequ
             y: 2.0,
             z: -3.0,
         },
-        unit_type: UnitType::SPACESTATION,
-        civilisation: Civilisation::GREEK,
+        unit_type: UnitType::Spacestation,
+        civilisation: Civilisation::Greek,
     });
 }

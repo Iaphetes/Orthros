@@ -5,10 +5,7 @@ use bevy::math::Vec3;
 use bevy::prelude::*;
 use bevy::transform::components::Transform;
 use std::f32::consts::PI;
-use std::{
-    collections::{HashMap, HashSet},
-    time::Duration,
-};
+use std::time::Duration;
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 pub struct UnitMovement;

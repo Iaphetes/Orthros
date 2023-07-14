@@ -158,7 +158,7 @@ pub fn calculate_a_star(
         let neighbours = get_neighbours(current.xy, &gridmap);
         let target: UVec2 = params.target;
         for neighbour in neighbours {
-            let mut neighbour_node: &mut AStarNode = params.movement_grid[neighbour.xy.x as usize]
+            let neighbour_node: &mut AStarNode = params.movement_grid[neighbour.xy.x as usize]
                 [neighbour.xy.y as usize]
                 .get_mut(&neighbour.h.unwrap_or_default())
                 .unwrap();

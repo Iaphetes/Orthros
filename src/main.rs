@@ -1,4 +1,5 @@
 #![feature(let_chains)]
+mod a_star;
 mod environment;
 mod movable;
 mod ownable;

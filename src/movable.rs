@@ -1,7 +1,7 @@
+use crate::a_star::{a_star, calculate_a_star};
 use crate::environment::MovementGrid;
 use bevy::ecs::component::Component;
 use bevy::math::Vec3;
-use bevy::prelude::shape::Quad;
 use bevy::prelude::*;
 use bevy::transform::components::Transform;
 use std::f32::consts::PI;
@@ -11,12 +11,11 @@ use std::{
 };
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
-
 pub struct UnitMovement;
 
 impl Plugin for UnitMovement {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, calculate_a_star)
+        app.add_systems(Update, (a_star, calculate_a_star))
             .add_systems(Update, move_units)
             .insert_resource(MovementTimer(Timer::new(
                 Duration::from_millis(1500),
@@ -24,19 +23,19 @@ impl Plugin for UnitMovement {
             )));
     }
 }
-const DISTANCE_FACTOR: f32 = 100.0;
+pub const DISTANCE_FACTOR: f32 = 1.0;
 #[derive(Debug, Eq, PartialEq, Hash, Clone, Copy)]
 pub struct NodeCoords {
-    xy: UVec2,
-    h: Option<Heading>,
+    pub xy: UVec2,
+    pub h: Option<Heading>,
 }
 #[derive(Debug, Clone, Copy)]
 pub struct PathNode {
-    xy: Vec2,
-    h: Heading,
+    pub xy: Vec2,
+    pub h: Heading,
 }
 #[derive(Eq, PartialEq, Hash, Clone, Copy, EnumIter, Debug, Default)]
-enum Heading {
+pub enum Heading {
     #[default]
     N,
     // NNE,
@@ -63,179 +62,28 @@ pub struct Movable {}
 
 #[derive(Resource)]
 struct MovementTimer(Timer);
-#[derive(Hash, Eq, PartialEq, Clone, Copy, Debug)]
-struct AStarNode {
-    f_score: i32,
-    g_score: i32,
-    came_from: Option<UVec2>,
-}
 #[derive(Component)]
-struct MovementPath {
+pub struct MovementPath {
     pub path: Vec<PathNode>,
 }
-fn calculate_a_star(
-    movables: Query<(Entity, &mut Transform, &mut MoveCommand), Without<MovementPath>>,
-    gridmap: Res<MovementGrid>,
-    mut commands: Commands,
-    mut gizmos: Gizmos,
-) {
-    for (entity, transform, movcmd) in movables.iter() {
-        if transform.translation.x == movcmd.target.x && transform.translation.y == movcmd.target.y
-        {
-            commands.entity(entity).remove::<MoveCommand>();
-            continue;
-        }
-        let target: UVec2 =
-            (movcmd.target / gridmap.settings.cell_size + gridmap.settings.xy_offset).as_uvec2();
-        let start: UVec2 = UVec2 {
-            x: (transform.translation.x / gridmap.settings.cell_size + gridmap.settings.xy_offset.x)
-                as u32,
-            y: (transform.translation.z / gridmap.settings.cell_size + gridmap.settings.xy_offset.y)
-                as u32,
-        };
-        let mut movement_grid: Vec<Vec<HashMap<Heading, AStarNode>>> = vec![
-            vec![
-                Heading::iter()
-                    .map(|x| (
-                        x,
-                        AStarNode {
-                            f_score: -1,
-                            g_score: -1,
-                            came_from: None
-                        }
-                    ))
-                    .collect();
-                gridmap.grid.len()
-            ];
-            gridmap.grid[0].len()
-        ];
-        let mut came_from: HashMap<NodeCoords, NodeCoords> = HashMap::new();
-        let mut open_set: HashSet<NodeCoords> = HashSet::from([NodeCoords {
-            xy: start,
-            h: Some(Heading::N),
-        }]);
-        movement_grid[start.x as usize][start.y as usize]
-            .get_mut(&Heading::N)
-            .unwrap()
-            .g_score = 0;
-        while !open_set.is_empty() {
-            let mut current: NodeCoords = NodeCoords {
-                xy: UVec2::ZERO,
-                h: Some(Heading::N),
-            };
-            let mut current_cost = 0;
-            for open_cell in &open_set {
-                let cell: &AStarNode = movement_grid[open_cell.xy.x as usize]
-                    [open_cell.xy.y as usize]
-                    .get_mut(&open_cell.h.unwrap_or_default())
-                    .unwrap();
-                let cell_f_score: i32 = cell.f_score;
-                if current_cost == 0 || cell_f_score < current_cost {
-                    current = *open_cell;
-                    current_cost = cell_f_score;
-                }
-            }
 
-            let current_real: Vec2 =
-                (current.xy.as_vec2() - gridmap.settings.xy_offset) * gridmap.settings.cell_size;
-            gizmos.rect(
-                Vec3::new(current_real.x, 5.0, current_real.y),
-                Quat::IDENTITY,
-                Vec2::ONE * 10.0,
-                Color::YELLOW,
-            );
-            let current_node: AStarNode = movement_grid[current.xy.x as usize]
-                [current.xy.y as usize]
-                .get(&current.h.unwrap_or_default())
-                .unwrap()
-                .to_owned();
-
-            if current.xy == target {
-                let mut movementpath: MovementPath = MovementPath { path: Vec::new() };
-
-                reconstruct_path(&came_from, current, &gridmap)
-                    .iter()
-                    .enumerate()
-                    .for_each(|(i, x)| {
-                        if i != 0 {
-                            movementpath.path.push(*x);
-                        }
-                    });
-                commands.entity(entity).insert(movementpath);
-
-                return;
-            }
-            open_set.remove(&current);
-            let neighbours = get_neighbours(current.xy, &gridmap);
-            for neighbour in neighbours {
-                let neighbour_node: &mut AStarNode = movement_grid[neighbour.xy.x as usize]
-                    [neighbour.xy.y as usize]
-                    .get_mut(&neighbour.h.unwrap_or_default())
-                    .unwrap();
-                let tentative_g_score: i32 = current_node.g_score
-                    + (inertia_based_inter_cell_movement(current, neighbour) * DISTANCE_FACTOR)
-                        as i32;
-
-                if tentative_g_score < neighbour_node.g_score || neighbour_node.g_score == -1 {
-                    neighbour_node.g_score = tentative_g_score;
-                    neighbour_node.f_score = tentative_g_score
-                        + (heuristical_distance(
-                            neighbour,
-                            NodeCoords {
-                                xy: target,
-                                h: None,
-                            },
-                        ) * DISTANCE_FACTOR) as i32;
-                    came_from.insert(neighbour, current);
-                    open_set.insert(neighbour);
-                }
-            }
-        }
-    }
-}
-fn reconstruct_path(
-    came_from: &HashMap<NodeCoords, NodeCoords>,
-    end: NodeCoords,
-    gridmap: &MovementGrid,
-) -> Vec<PathNode> {
-    let mut total_path: Vec<PathNode> = vec![];
-
-    let mut current: NodeCoords = end;
-    current = came_from[&current];
-    let endnode: PathNode = PathNode {
-        xy: current.xy.as_vec2() - gridmap.settings.xy_offset,
-        h: end.h.unwrap_or_default(),
-    };
-
-    total_path.push(endnode);
-    while came_from.contains_key(&current) {
-        current = came_from[&current];
-        total_path.push(PathNode {
-            xy: (current.xy.as_vec2() - gridmap.settings.xy_offset) * gridmap.settings.cell_size,
-            h: current.h.unwrap_or_default(),
-        });
-    }
-    total_path
-}
 fn calculate_base_inertia(start: &NodeCoords, end: &NodeCoords) -> u32 {
-    // println!("Heading in {:?}, Heading out {:?}", heading_in, heading_out);
     let mut penalty: u32 = 0;
-    let difference: i32 =
-        (start.h.unwrap_or_default() as i32 - end.h.unwrap_or(Heading::N) as i32).abs();
+    let difference: i32 = (start.h.unwrap() as i32 - end.h.unwrap() as i32).abs();
     let half_headings: i32 = (Heading::iter().len() as f32 / 2.0).ceil() as i32;
     penalty += (half_headings - (difference - half_headings).abs()) as u32;
     penalty
 }
-fn inertia_based_inter_cell_movement(from: NodeCoords, to: NodeCoords) -> f32 {
-    let inertia: f32 = 20.0;
+pub fn inertia_based_inter_cell_movement(from: NodeCoords, to: NodeCoords) -> f32 {
+    let inertia: f32 = 1.0;
     let penalty: f32 = calculate_base_inertia(&from, &to) as f32;
     let cost: f32 = from.xy.as_vec2().distance(to.xy.as_vec2()).abs() + (penalty * inertia);
     cost
 }
-fn heuristical_distance(from: NodeCoords, to: NodeCoords) -> f32 {
+pub fn heuristical_distance(from: NodeCoords, to: NodeCoords) -> f32 {
     from.xy.as_vec2().distance(to.xy.as_vec2())
 }
-fn calculate_heading(from: &UVec2, to: &UVec2) -> Heading {
+pub fn calculate_heading(from: &UVec2, to: &UVec2) -> Heading {
     let diff: IVec2 = to.as_ivec2() - from.as_ivec2();
     let heading: Heading;
     if diff.x == -1 && diff.y == 0 {
@@ -257,7 +105,7 @@ fn calculate_heading(from: &UVec2, to: &UVec2) -> Heading {
     }
     heading
 }
-fn check_path_width(current: UVec2, target: UVec2, gridmap: &MovementGrid) -> bool {
+pub fn check_path_width(current: UVec2, target: UVec2, gridmap: &MovementGrid) -> bool {
     if current.x != target.x
         && current.y != target.y
         && gridmap.grid[current.x as usize][target.y as usize] != 0
@@ -268,7 +116,7 @@ fn check_path_width(current: UVec2, target: UVec2, gridmap: &MovementGrid) -> bo
 
     true
 }
-fn get_neighbours(current: UVec2, gridmap: &MovementGrid) -> Vec<NodeCoords> {
+pub fn get_neighbours(current: UVec2, gridmap: &MovementGrid) -> Vec<NodeCoords> {
     let mut neighbours: Vec<NodeCoords> = Vec::new();
     for x in -1..2 {
         for y in -1..2 {
@@ -317,7 +165,6 @@ fn move_towards(
     let mut directional_euler_fraction: f32 =
         (Heading::iter().len() as u32 - target.h as u32) as f32 / (Heading::iter().len() as f32);
     directional_euler_fraction *= 2.0 * PI;
-    // println!("{}", directional_euler_fraction);
     directional_euler_fraction = (directional_euler_fraction + 2.0 * PI) % (2.0 * PI);
     if directional_euler_fraction > PI {
         directional_euler_fraction -= 2.0 * PI;
@@ -362,19 +209,26 @@ fn move_units(
     mut movables: Query<(Entity, &mut Transform, &mut MovementPath)>,
     time: Res<Time>,
     mut commands: Commands,
+
+    mut gizmos: Gizmos,
 ) {
     let speed: f64 = 1.0;
     let rotation_speed: f64 = 1.0;
-    let mut node: &PathNode;
     for (entity, mut transform, mut movementpath) in movables.iter_mut() {
-        match movementpath.path.last() {
-            Some(n) => node = n,
+        let node: &PathNode = match movementpath.path.last() {
+            Some(n) => n,
             None => {
                 // commands.entity(entity).remove::<Movable>();
                 commands.entity(entity).remove::<MovementPath>();
                 continue;
             }
-        }
+        };
+        gizmos.rect(
+            Vec3::new(node.xy.x, 10.0, node.xy.y),
+            Quat::from_rotation_x((90.0_f32).to_degrees()),
+            Vec2::ONE,
+            Color::DARK_GREEN,
+        );
         if move_towards(
             &mut transform,
             speed,

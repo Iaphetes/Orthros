@@ -46,14 +46,14 @@ pub struct UnitSpecifications {
 //TODO specify modifications to model (e.g #update_emissiveness)
 #[derive(Clone, Component)]
 pub struct UnitSpecification {
-    file_path: String,
-    scene: String,
+    pub file_path: String,
+    pub scene: String,
     pub icon_path: String,
-    unit_name: String,
-    movable: bool,
-    shape: ShapeType,
-    dimensions: Vec3,
-    _prescaling: f32,
+    pub unit_name: String,
+    pub movable: bool,
+    pub shape: ShapeType,
+    pub dimensions: Vec3,
+    pub _prescaling: f32,
 }
 pub struct InstanceSpawner;
 #[derive(Event)]
@@ -123,8 +123,8 @@ fn populate_units(app: &mut App) {
     app.insert_resource(unit_specifications);
 }
 #[derive(Component)]
-struct EntityWrapper {
-    entity: Entity,
+pub struct EntityWrapper {
+    pub entity: Entity,
 }
 fn spawn(
     mut spawn_requests: EventReader<InstanceSpawnRequest>,

@@ -27,5 +27,5 @@ fn fragment(
        green += (-(grid_y - grid_shift) * (grid_y - grid_shift) + grid_scale) / grid_scale * 1.0;
        alpha = 0.5;
     }
-    return vec4<f32>(0.0, green, 0.0, alpha) ;
+    return vec4<f32>(green / 2.0, green / 2.0, green / 2.0, alpha) ;
 }

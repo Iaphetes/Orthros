@@ -71,8 +71,8 @@ fn setup(mut commands: Commands, mut spawn_events: EventWriter<InstanceSpawnRequ
         vec![ContextMenuAction::Build(UnitType::Cruiser)],
     );
     commands.insert_resource(player_info);
-    for x in 0..10 {
-        for y in 0..10 {
+    for x in 0..2 {
+        for y in 0..2 {
             spawn_events.send(InstanceSpawnRequest {
                 location: Vec3 {
                     x: x as f32 * 2.0,

@@ -8,8 +8,11 @@ use bevy::{
         view::RenderLayers,
     },
 };
-use bevy_rapier3d::geometry::Collider;
 use bevy_rapier3d::geometry::Sensor;
+use bevy_rapier3d::{
+    geometry::Collider,
+    prelude::{GravityScale, RigidBody},
+};
 
 pub struct Environment;
 
@@ -69,6 +72,7 @@ pub fn environment_setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut custom_materials: ResMut<Assets<CustomMaterial>>,
+    asset_server: Res<AssetServer>,
 ) {
     // directional 'sun' light
     commands.spawn(DirectionalLightBundle {
@@ -93,7 +97,7 @@ pub fn environment_setup(
                 .into(),
             ),
             material: custom_materials.add(CustomMaterial {
-                color: Color::GREEN,
+                color: Color::GRAY,
                 alpha_mode: AlphaMode::Blend,
             }),
             ..default()
@@ -106,6 +110,18 @@ pub fn environment_setup(
         Sensor,
     ));
 
+    commands.spawn((
+        SceneBundle {
+            scene: asset_server.load("3d_models/environment/planet.gltf#Scene0"),
+            transform: Transform::from_xyz(-5.0, 2.0, 0.0).with_scale(Vec3::splat(0.001)),
+            // transform: Transform::from_scale(Vec3::splat(0.5)),
+            ..default()
+        },
+        RigidBody::KinematicPositionBased,
+        GravityScale(0.0),
+        RenderLayers::layer(RenderLayerMap::Main as u8),
+        // ContextMenuActions {},
+    ));
     // ambient light
     // NOTE: The ambient light is used to scale how bright the environment map is so with a bright
     // environment map, use an appropriate colour and brightness to match

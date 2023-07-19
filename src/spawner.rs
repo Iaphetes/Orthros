@@ -164,7 +164,7 @@ fn spawn(
                             spawn_request.location.y,
                             spawn_request.location.z,
                         )
-                        .with_scale(Vec3::splat(0.2)),
+                        .with_scale(Vec3::splat(0.10)),
                         scene: asset_server.load(
                             unit_specification
                                 .file_path

@@ -3,6 +3,7 @@ use crate::ownable::SelectionCircle;
 use crate::ownable::{Selectable, Selected};
 use crate::ui::RayBlock;
 
+use bevy::core_pipeline::tonemapping::Tonemapping;
 use bevy::input::mouse::MouseScrollUnit;
 use bevy::input::mouse::MouseWheel;
 use bevy::math::Quat;
@@ -85,7 +86,7 @@ impl Default for CameraControllerSettings {
             pan_speed: 4.0,
             zoom_speed: 50.0,
             zoom_min: 5.0,
-            zoom_max: 100.0,
+            zoom_max: 100000.0,
         }
     }
 }
@@ -219,8 +220,10 @@ fn camera_setup(mut commands: Commands, mut config: ResMut<GizmoConfig>) {
             Camera3dBundle {
                 camera: Camera {
                     hdr: true,
+
                     ..default()
                 },
+                tonemapping: Tonemapping::BlenderFilmic,
                 transform: Transform::from_xyz(0.0, 15.0, 0.0).looking_at(Vec3::ZERO, Vec3::Z),
                 ..default()
             },

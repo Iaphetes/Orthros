@@ -114,7 +114,8 @@ pub fn environment_setup(
     commands.spawn((
         SceneBundle {
             scene: asset_server.load("3d_models/environment/planet.gltf#Scene0"),
-            transform: Transform::from_xyz(-5.0, 2.0, 0.0).with_scale(Vec3::splat(0.001)),
+            transform: Transform::from_xyz(0.0, 2.0, 6372.0)
+                .with_rotation(Quat::from_rotation_y((90.0_f32).to_radians())),
             // transform: Transform::from_scale(Vec3::splat(0.5)),
             ..default()
         },
@@ -154,8 +155,21 @@ pub fn environment_setup(
     // NOTE: The ambient light is used to scale how bright the environment map is so with a bright
     // environment map, use an appropriate colour and brightness to match
     commands.insert_resource(AmbientLight {
-        color: Color::rgba(1.0, 1.0, 1.0, 1.0),
+        color: Color::ANTIQUE_WHITE,
         brightness: 1.0,
+    });
+    commands.spawn(SpotLightBundle {
+        transform: Transform::from_xyz(-1.0, 20.0, 0.0)
+            .looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Z),
+        spot_light: SpotLight {
+            intensity: 1600000.0, // lumens - roughly a 100W non-halogen incandescent bulb
+            color: Color::DARK_GRAY,
+            shadows_enabled: true,
+            // inner_angle: 0.6,
+            // outer_angle: 0.8,
+            ..default()
+        },
+        ..default()
     });
 }
 fn setup_movement_grid(mut movement_grid: ResMut<MovementGrid>) {

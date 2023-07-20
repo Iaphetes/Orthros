@@ -324,7 +324,7 @@ fn game_overlay(
                 TextStyle {
                     font: asset_server
                         .load("fonts/android-insomnia-font/AndroidInsomniaRegular.ttf"),
-                    font_size: 10.0,
+                    font_size: 20.0,
                     color: MAIN_UI_TEXT,
                 },
             ),

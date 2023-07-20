@@ -15,7 +15,7 @@ use crate::ui::GameUI;
 use bevy::{
     prelude::*,
     utils::HashMap,
-    window::{PresentMode, WindowMode, WindowPlugin},
+    window::{PresentMode, WindowMode, WindowPlugin, WindowResolution},
 };
 use bevy_rapier3d::prelude::*;
 use spawner::{Civilisation, InstanceSpawnRequest, UnitType};
@@ -42,6 +42,7 @@ fn main() {
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 present_mode: PresentMode::Immediate,
+                resolution: WindowResolution::default().with_scale_factor_override(1.0),
                 mode: WindowMode::Fullscreen,
                 ..default()
             }),

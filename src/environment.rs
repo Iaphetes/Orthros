@@ -114,8 +114,8 @@ pub fn environment_setup(
     commands.spawn((
         SceneBundle {
             scene: asset_server.load("3d_models/environment/planet.gltf#Scene0"),
-            transform: Transform::from_xyz(0.0, 2.0, 6372.0)
-                .with_rotation(Quat::from_rotation_y((90.0_f32).to_radians())),
+            transform: Transform::from_xyz(0.0, 2.0, 6772.0)
+                .with_rotation(Quat::from_rotation_y((75.0_f32).to_radians())),
             // transform: Transform::from_scale(Vec3::splat(0.5)),
             ..default()
         },

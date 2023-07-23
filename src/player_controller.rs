@@ -3,10 +3,13 @@ use crate::ownable::SelectionCircle;
 use crate::ownable::{Selectable, Selected};
 use crate::ui::RayBlock;
 
+use bevy::asset::LoadState;
 use bevy::core_pipeline::tonemapping::Tonemapping;
+use bevy::core_pipeline::Skybox;
 use bevy::input::mouse::MouseScrollUnit;
 use bevy::input::mouse::MouseWheel;
 use bevy::math::Quat;
+use bevy::render::render_resource::{TextureViewDescriptor, TextureViewDimension};
 use bevy::render::view::RenderLayers;
 use bevy::window::PrimaryWindow;
 use bevy::{core_pipeline::bloom::BloomSettings, prelude::*};
@@ -25,11 +28,21 @@ impl Plugin for PlayerController {
         app.add_plugins(CameraController)
             .add_event::<RayHit>()
             .add_event::<DeselectEvent>()
-            .add_systems(Update, process_mouse)
-            .add_systems(Update, mouse_controller.after(process_mouse));
+            .add_systems(
+                Update,
+                (
+                    process_mouse,
+                    mouse_controller.after(process_mouse),
+                    asset_loaded,
+                ),
+            );
     }
 }
-
+#[derive(Resource)]
+struct Cubemap {
+    is_loaded: bool,
+    image_handle: Handle<Image>,
+}
 struct CameraController;
 impl Plugin for CameraController {
     fn build(&self, app: &mut App) {
@@ -209,12 +222,16 @@ pub fn camera_controller(
     }
 }
 
-fn camera_setup(mut commands: Commands, mut config: ResMut<GizmoConfig>) {
+fn camera_setup(
+    mut commands: Commands,
+    mut config: ResMut<GizmoConfig>,
+    asset_server: Res<AssetServer>,
+) {
     // camera
     config.depth_bias = 0.0;
     config.line_perspective = true;
     config.line_width *= 1.;
-
+    let skybox_handle: Handle<Image> = asset_server.load("textures/skybox/stacked.png");
     commands
         .spawn((
             Camera3dBundle {
@@ -224,14 +241,49 @@ fn camera_setup(mut commands: Commands, mut config: ResMut<GizmoConfig>) {
                     ..default()
                 },
                 tonemapping: Tonemapping::BlenderFilmic,
-                transform: Transform::from_xyz(0.0, 15.0, 0.0).looking_at(Vec3::ZERO, Vec3::Z),
+                transform: Transform::from_xyz(0.0, 10.0, 0.0).looking_at(Vec3::ZERO, Vec3::Z),
                 ..default()
             },
+            Skybox(skybox_handle.clone()),
             BloomSettings::default(),
             RenderLayers::from_layers(&[RenderLayerMap::General as u8, RenderLayerMap::Main as u8]),
         ))
         .insert(CameraControllerSettings::default());
+    commands.insert_resource(Cubemap {
+        is_loaded: false,
+        image_handle: skybox_handle,
+    });
 }
+fn asset_loaded(
+    asset_server: Res<AssetServer>,
+    mut images: ResMut<Assets<Image>>,
+    mut cubemap: ResMut<Cubemap>,
+    mut skyboxes: Query<&mut Skybox>,
+) {
+    if !cubemap.is_loaded
+        && asset_server.get_load_state(cubemap.image_handle.clone_weak()) == LoadState::Loaded
+    {
+        let image = images.get_mut(&cubemap.image_handle).unwrap();
+        // NOTE: PNGs do not have any metadata that could indicate they contain a cubemap texture,
+        // so they appear as one texture. The following code reconfigures the texture as necessary.
+        if image.texture_descriptor.array_layer_count() == 1 {
+            image.reinterpret_stacked_2d_as_array(
+                image.texture_descriptor.size.height / image.texture_descriptor.size.width,
+            );
+            image.texture_view_descriptor = Some(TextureViewDescriptor {
+                dimension: Some(TextureViewDimension::Cube),
+                ..default()
+            });
+        }
+
+        for mut skybox in &mut skyboxes {
+            skybox.0 = cubemap.image_handle.clone();
+        }
+
+        cubemap.is_loaded = true;
+    }
+}
+
 fn mouse_controller(
     mut selectable: Query<(Entity, &mut Selectable, &Children)>,
     mut selection_circle: Query<&mut Visibility, With<SelectionCircle>>,

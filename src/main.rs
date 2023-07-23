@@ -4,7 +4,6 @@ mod environment;
 mod movable;
 mod ownable;
 mod player_controller;
-mod skybox;
 mod spawner;
 mod ui;
 use crate::environment::Environment;

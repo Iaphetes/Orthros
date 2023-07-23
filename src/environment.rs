@@ -1,4 +1,3 @@
-use crate::skybox::Skybox;
 use crate::spawner::UnitSpecification;
 use crate::{player_controller::RenderLayerMap, spawner::EntityWrapper};
 use bevy::{
@@ -20,7 +19,6 @@ pub struct Environment;
 impl Plugin for Environment {
     fn build(&self, app: &mut App) {
         app.add_plugins(MaterialPlugin::<CustomMaterial>::default())
-            .add_plugins(Skybox)
             .add_systems(Startup, (environment_setup, setup_movement_grid))
             .insert_resource(MovementGrid {
                 settings: GridSettings {
@@ -145,6 +143,35 @@ pub fn environment_setup(
             scene: "Scene0".to_owned(),
             icon_path: "".to_owned(),
             unit_name: "Asteroid".to_owned(),
+            movable: true,
+            shape: bevy_rapier3d::rapier::prelude::ShapeType::Ball,
+            dimensions: Vec3::splat(1.0),
+            _prescaling: 1.0,
+        },
+    ));
+    let parent: Entity = commands
+        .spawn((
+            SceneBundle {
+                scene: asset_server.load("3d_models/environment/sun.gltf#Scene0"),
+                transform: Transform::from_xyz(150_000_000_000.0, 2.0, 5.0)
+                    .with_scale(Vec3::splat(100000.0)),
+
+                // transform: Transform::from_scale(Vec3::splat(0.5)),
+                ..default()
+            },
+            RigidBody::KinematicPositionBased,
+            GravityScale(0.0),
+            RenderLayers::layer(RenderLayerMap::Main as u8),
+            // ContextMenuActions {},
+        ))
+        .id();
+    commands.spawn((
+        EntityWrapper { entity: parent },
+        UnitSpecification {
+            file_path: "assets/3d_models/environment/sun.gltf".to_owned(),
+            scene: "Scene0".to_owned(),
+            icon_path: "".to_owned(),
+            unit_name: "Sun".to_owned(),
             movable: true,
             shape: bevy_rapier3d::rapier::prelude::ShapeType::Ball,
             dimensions: Vec3::splat(1.0),

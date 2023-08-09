@@ -64,17 +64,16 @@ pub struct MovementPath {
     pub path: Vec<PathNode>,
 }
 
-fn calculate_base_inertia(start: &NodeCoords, end: &NodeCoords) -> u32 {
-    let mut penalty: u32 = 0;
+fn calculate_course_deflection(start: &NodeCoords, end: &NodeCoords) -> u32 {
     let difference: i32 = (start.h.unwrap() as i32 - end.h.unwrap() as i32).abs();
     let half_headings: i32 = (Heading::iter().len() as f32 / 2.0).ceil() as i32;
-    penalty += (half_headings - (difference - half_headings).abs()) as u32;
-    penalty
+    (half_headings - (difference - half_headings).abs()) as u32
 }
 pub fn inertia_based_inter_cell_movement(from: NodeCoords, to: NodeCoords) -> f32 {
     let inertia: f32 = 1.0;
-    let penalty: f32 = calculate_base_inertia(&from, &to) as f32;
-    let cost: f32 = from.xy.as_vec2().distance(to.xy.as_vec2()).abs() + (penalty * inertia);
+    let course_deflection: f32 = calculate_course_deflection(&from, &to) as f32;
+    let cost: f32 =
+        from.xy.as_vec2().distance(to.xy.as_vec2()).abs() + (course_deflection * inertia);
     cost
 }
 pub fn heuristical_distance(from: NodeCoords, to: NodeCoords) -> f32 {

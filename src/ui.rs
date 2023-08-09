@@ -28,6 +28,7 @@ enum UIType {
     MapUI,
     SelectionInfo,
     ContextMenu,
+    Resources,
     Diagnostics,
 }
 #[derive(Component, PartialEq, Eq, Clone, Copy)]
@@ -41,7 +42,7 @@ impl Plugin for GameUI {
         app.add_systems(Startup, game_overlay)
             .add_event::<RayHit>()
             .add_event::<DeselectEvent>()
-            .add_systems(Update, change_text_system)
+            .add_systems(Update, update_fps)
             .add_systems(Update, populate_lower_ui)
             .add_plugins(FrameTimeDiagnosticsPlugin)
             .add_systems(Update, clear_ui.before(populate_lower_ui))
@@ -330,22 +331,85 @@ fn game_overlay(
             ),
         ))
         .id()];
-    let top_ui_elements: Vec<Entity> = vec![create_ui_segment(
-        &mut commands,
-        Style {
-            width: Val::Percent(10.0),
-            height: Val::Percent(100.0),
-            top: Val::Percent(0.0),
-            left: Val::Px(0.0),
-            align_items: AlignItems::Start,
-            justify_content: JustifyContent::Start,
+    let resources_decoration: Vec<Entity> = vec![commands
+        .spawn(NodeBundle {
+            style: Style {
+                width: Val::Px(800.0),
+                height: Val::Percent(100.0),
+                ..default()
+            },
+            background_color: MAIN_UI_BACKGROUND.into(),
             ..default()
-        },
-        UIType::Diagnostics,
-        diagnostics_decoration,
-        diagnostics_content,
-        Vec::new(),
-    )];
+        })
+        .id()];
+
+    let resources_content: Vec<Entity> = vec![
+        commands
+            .spawn((
+                UIContent::Content(UIType::Resources),
+                ImageBundle {
+                    style: Style {
+                        width: Val::Px(100.0),
+                        height: Val::Px(100.0),
+                        ..Default::default()
+                    },
+                    image: UiImage {
+                        texture: asset_server.load("textures/ui/resources/resource_a.png"),
+                        ..default()
+                    },
+                    ..Default::default()
+                },
+            ))
+            .id(),
+        commands
+            .spawn((
+                UIContent::Content(UIType::Resources),
+                TextBundle::from_section(
+                    "".to_string(),
+                    TextStyle {
+                        font: asset_server
+                            .load("fonts/android-insomnia-font/AndroidInsomniaRegular.ttf"),
+                        font_size: 20.0,
+                        color: MAIN_UI_TEXT,
+                    },
+                ),
+            ))
+            .id(),
+    ];
+    let top_ui_elements: Vec<Entity> = vec![
+        create_ui_segment(
+            &mut commands,
+            Style {
+                width: Val::Percent(10.0),
+                height: Val::Percent(100.0),
+                top: Val::Percent(0.0),
+                left: Val::Px(0.0),
+                align_items: AlignItems::Start,
+                justify_content: JustifyContent::Start,
+                ..default()
+            },
+            UIType::Diagnostics,
+            diagnostics_decoration,
+            diagnostics_content,
+            Vec::new(),
+        ),
+        create_ui_segment(
+            &mut commands,
+            Style {
+                width: Val::Percent(10.0),
+                height: Val::Percent(100.0),
+                top: Val::Percent(0.0),
+                left: Val::Px(0.0),
+                align_items: AlignItems::Start,
+                justify_content: JustifyContent::Start,
+                ..default()
+            },
+            UIType::Diagnostics,
+            resources_decoration,
+            resources_content,
+            Vec::new(),
+        ),
+    ];
     let lower_ui_elements: Vec<Entity> = vec![
         create_ui_segment(
             &mut commands,
@@ -718,18 +782,17 @@ fn clear_ui(
         }
     }
 }
-fn change_text_system(
-    diagnostics: Res<DiagnosticsStore>,
-    mut query: Query<&mut Text, With<UIContent>>,
-) {
-    for mut text in &mut query {
-        let mut fps = 0.0;
-        if let Some(fps_diagnostic) = diagnostics.get(FrameTimeDiagnosticsPlugin::FPS) {
-            if let Some(fps_smoothed) = fps_diagnostic.smoothed() {
-                fps = fps_smoothed;
+fn update_fps(diagnostics: Res<DiagnosticsStore>, mut query: Query<(&mut Text, &UIContent)>) {
+    for (mut text, ui_content) in &mut query {
+        if let UIContent::Content(UIType::Diagnostics) = ui_content {
+            let mut fps = 0.0;
+            if let Some(fps_diagnostic) = diagnostics.get(FrameTimeDiagnosticsPlugin::FPS) {
+                if let Some(fps_smoothed) = fps_diagnostic.smoothed() {
+                    fps = fps_smoothed;
+                }
             }
-        }
 
-        text.sections[0].value = format!("{fps:.1} fps",);
+            text.sections[0].value = format!("{fps:.1} fps",);
+        }
     }
 }

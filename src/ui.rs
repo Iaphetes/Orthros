@@ -1,9 +1,10 @@
 use crate::ownable::{Selectable, Selected};
 use crate::player_controller::{DeselectEvent, RayHit, RenderLayerMap};
+use crate::resources::{ResourceType, ResourceUpdateEvent};
 use crate::spawner::{
     InstanceSpawnRequest, UnitInformation, UnitSpecification, UnitSpecifications,
 };
-use crate::{ContextMenuAction, PlayerInfo};
+use crate::{ActivePlayer, ContextMenuAction, PlayerInfo};
 use bevy::core_pipeline::clear_color::ClearColorConfig;
 use bevy::diagnostic::DiagnosticsStore;
 use bevy::render::camera::RenderTarget;
@@ -28,7 +29,7 @@ enum UIType {
     MapUI,
     SelectionInfo,
     ContextMenu,
-    Resources,
+    Resources(ResourceType),
     Diagnostics,
 }
 #[derive(Component, PartialEq, Eq, Clone, Copy)]
@@ -40,14 +41,21 @@ pub struct GameUI;
 impl Plugin for GameUI {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, game_overlay)
+            .add_systems(
+                Update,
+                (
+                    update_fps,
+                    populate_lower_ui,
+                    clear_ui.before(populate_lower_ui),
+                    catch_interaction,
+                    button_system,
+                    update_resources,
+                ),
+            )
             .add_event::<RayHit>()
             .add_event::<DeselectEvent>()
-            .add_systems(Update, update_fps)
-            .add_systems(Update, populate_lower_ui)
-            .add_plugins(FrameTimeDiagnosticsPlugin)
-            .add_systems(Update, clear_ui.before(populate_lower_ui))
-            .add_systems(Update, catch_interaction)
-            .add_systems(Update, button_system);
+            .add_event::<ResourceUpdateEvent>()
+            .add_plugins(FrameTimeDiagnosticsPlugin);
     }
 }
 #[derive(Component)]
@@ -346,11 +354,11 @@ fn game_overlay(
     let resources_content: Vec<Entity> = vec![
         commands
             .spawn((
-                UIContent::Content(UIType::Resources),
+                UIContent::Content(UIType::Resources(ResourceType::Plotanium)),
                 ImageBundle {
                     style: Style {
-                        width: Val::Px(100.0),
-                        height: Val::Px(100.0),
+                        width: Val::Px(50.0),
+                        height: Val::Px(50.0),
                         ..Default::default()
                     },
                     image: UiImage {
@@ -363,9 +371,9 @@ fn game_overlay(
             .id(),
         commands
             .spawn((
-                UIContent::Content(UIType::Resources),
+                UIContent::Content(UIType::Resources(ResourceType::Plotanium)),
                 TextBundle::from_section(
-                    "".to_string(),
+                    "0".to_string(),
                     TextStyle {
                         font: asset_server
                             .load("fonts/android-insomnia-font/AndroidInsomniaRegular.ttf"),
@@ -594,35 +602,37 @@ fn button_system(
         (Changed<Interaction>, With<Button>),
     >,
     mut button_background: Query<&mut BackgroundColor>,
-    player_info: Res<PlayerInfo>,
+    player_info: Query<&PlayerInfo, With<ActivePlayer>>,
     selected_entities: Query<&Transform, With<Selected>>,
     mut spawn_events: EventWriter<InstanceSpawnRequest>,
 ) {
-    for transform in selected_entities.iter() {
-        for (entity, interaction, action) in &mut interaction_query {
-            if let Ok(mut background_color) = button_background.get_mut(entity.get()) {
-                match *interaction {
-                    Interaction::Pressed => {
-                        match action {
-                            ContextMenuAction::Build(unit_type) => {
-                                spawn_events.send(InstanceSpawnRequest {
-                                    location: Vec3 {
-                                        x: transform.translation.x + 2.0,
-                                        y: 2.0,
-                                        z: transform.translation.z + 1.0,
-                                    },
-                                    unit_type: *unit_type,
-                                    civilisation: player_info.civilisation,
-                                });
-                            }
-                        };
-                        *background_color = PRESSED_BUTTON.into();
-                    }
-                    Interaction::Hovered => {
-                        *background_color = HOVERED_BUTTON.into();
-                    }
-                    Interaction::None => {
-                        *background_color = NORMAL_BUTTON.into();
+    if let Ok(player_info) = player_info.get_single() {
+        for transform in selected_entities.iter() {
+            for (entity, interaction, action) in &mut interaction_query {
+                if let Ok(mut background_color) = button_background.get_mut(entity.get()) {
+                    match *interaction {
+                        Interaction::Pressed => {
+                            match action {
+                                ContextMenuAction::Build(unit_type) => {
+                                    spawn_events.send(InstanceSpawnRequest {
+                                        location: Vec3 {
+                                            x: transform.translation.x + 2.0,
+                                            y: 2.0,
+                                            z: transform.translation.z + 1.0,
+                                        },
+                                        unit_type: *unit_type,
+                                        civilisation: player_info.civilisation,
+                                    });
+                                }
+                            };
+                            *background_color = PRESSED_BUTTON.into();
+                        }
+                        Interaction::Hovered => {
+                            *background_color = HOVERED_BUTTON.into();
+                        }
+                        Interaction::None => {
+                            *background_color = NORMAL_BUTTON.into();
+                        }
                     }
                 }
             }
@@ -635,7 +645,7 @@ fn update_context_menu(
     context_menu_content: Entity,
     context_menu_actions: &Vec<ContextMenuAction>,
     unit_specifications: &Res<UnitSpecifications>,
-    player_info: &Res<PlayerInfo>,
+    player_info: &PlayerInfo,
 ) {
     let mut buttons: Vec<Entity> = Vec::new();
     for action in context_menu_actions {
@@ -702,53 +712,55 @@ fn populate_lower_ui(
     mut unit_info: Query<&UnitInformation, With<Selectable>>,
     ui_elements: Query<(Entity, &UIContent, &Children)>,
     ui_children: Query<Entity, With<Style>>,
-    player_info: Res<PlayerInfo>,
+    player_info: Query<&PlayerInfo, With<ActivePlayer>>,
     unit_specifications: Res<UnitSpecifications>,
 ) {
-    for hit in ray_hit_event.iter() {
-        if hit.mouse_key_enable_mouse {
-            let (selection_info_content, _, children): (Entity, _, &Children) = ui_elements
-                .into_iter()
-                .find(|(_, content, _)| **content == UIContent::Content(UIType::SelectionInfo))
-                .unwrap();
-            for &child in children.iter() {
-                println!("{:#?}", child);
-                if let Ok(child) = ui_children.get(child) {
-                    commands.entity(child).despawn_recursive();
+    if let Ok(player_info) = player_info.get_single() {
+        for hit in ray_hit_event.iter() {
+            if hit.mouse_key_enable_mouse {
+                let (selection_info_content, _, children): (Entity, _, &Children) = ui_elements
+                    .into_iter()
+                    .find(|(_, content, _)| **content == UIContent::Content(UIType::SelectionInfo))
+                    .unwrap();
+                for &child in children.iter() {
+                    println!("{:#?}", child);
+                    if let Ok(child) = ui_children.get(child) {
+                        commands.entity(child).despawn_recursive();
+                    }
                 }
-            }
-            let (context_menu_content, _, children): (Entity, _, &Children) = ui_elements
-                .into_iter()
-                .find(|(_, content, _)| **content == UIContent::Content(UIType::ContextMenu))
-                .unwrap();
-            for &child in children.iter() {
-                println!("{:#?}", child);
-                if let Ok(child) = ui_children.get(child) {
-                    commands.entity(child).despawn_recursive();
+                let (context_menu_content, _, children): (Entity, _, &Children) = ui_elements
+                    .into_iter()
+                    .find(|(_, content, _)| **content == UIContent::Content(UIType::ContextMenu))
+                    .unwrap();
+                for &child in children.iter() {
+                    println!("{:#?}", child);
+                    if let Ok(child) = ui_children.get(child) {
+                        commands.entity(child).despawn_recursive();
+                    }
                 }
-            }
-            if let Ok(unit_information) = unit_info.get_mut(hit.hit_entity) {
-                update_selection_info(
-                    &mut commands,
-                    unit_information,
-                    &asset_server,
-                    selection_info_content,
-                );
-                if let Some(contex_menu_actions) = player_info
-                    .context_menu_actions
-                    .get(&unit_information.unit_type)
-                {
-                    update_context_menu(
+                if let Ok(unit_information) = unit_info.get_mut(hit.hit_entity) {
+                    update_selection_info(
                         &mut commands,
+                        unit_information,
                         &asset_server,
-                        context_menu_content,
-                        contex_menu_actions,
-                        &unit_specifications,
-                        &player_info,
+                        selection_info_content,
                     );
+                    if let Some(contex_menu_actions) = player_info
+                        .context_menu_actions
+                        .get(&unit_information.unit_type)
+                    {
+                        update_context_menu(
+                            &mut commands,
+                            &asset_server,
+                            context_menu_content,
+                            contex_menu_actions,
+                            &unit_specifications,
+                            player_info,
+                        );
+                    }
+                } else {
+                    commands.entity(selection_info_content).push_children(&[]);
                 }
-            } else {
-                commands.entity(selection_info_content).push_children(&[]);
             }
         }
     }
@@ -793,6 +805,21 @@ fn update_fps(diagnostics: Res<DiagnosticsStore>, mut query: Query<(&mut Text, &
             }
 
             text.sections[0].value = format!("{fps:.1} fps",);
+        }
+    }
+}
+
+fn update_resources(
+    mut resource_update_events: EventReader<ResourceUpdateEvent>,
+    mut ui_elements: Query<(&mut Text, &UIContent)>,
+) {
+    for resource_update in resource_update_events.iter() {
+        for (mut text, ui_content) in &mut ui_elements {
+            if let UIContent::Content(UIType::Resources(resource_type)) = ui_content {
+                if *resource_type == resource_update.0.resource_type {
+                    text.sections[0].value = format!("{}", resource_update.0.amount);
+                }
+            }
         }
     }
 }

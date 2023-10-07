@@ -4,6 +4,7 @@ mod environment;
 mod movable;
 mod ownable;
 mod player_controller;
+mod resources;
 mod spawner;
 mod ui;
 use crate::environment::Environment;
@@ -17,6 +18,7 @@ use bevy::{
     window::{PresentMode, WindowMode, WindowPlugin, WindowResolution},
 };
 use bevy_rapier3d::prelude::*;
+use resources::{ResourceLevel, ResourceLevels, ResourceType, ResourceUpdateEvent};
 use spawner::{Civilisation, InstanceSpawnRequest, UnitType};
 enum TechLevel {
     L0,
@@ -30,12 +32,14 @@ enum TechLevel {
 enum ContextMenuAction {
     Build(UnitType),
 }
-#[derive(Resource)]
+#[derive(Component)]
 struct PlayerInfo {
     civilisation: Civilisation,
     tech_level: TechLevel,
     context_menu_actions: HashMap<UnitType, Vec<ContextMenuAction>>,
 }
+#[derive(Component)]
+struct ActivePlayer;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
@@ -56,11 +60,16 @@ fn main() {
         .add_plugins(InstanceSpawner)
         .add_plugins(GameUI)
         .add_event::<InstanceSpawnRequest>()
+        .add_event::<ResourceUpdateEvent>()
         .add_systems(Startup, setup)
         .run();
 }
 
-fn setup(mut commands: Commands, mut spawn_events: EventWriter<InstanceSpawnRequest>) {
+fn setup(
+    mut commands: Commands,
+    mut spawn_events: EventWriter<InstanceSpawnRequest>,
+    mut resource_update_events: EventWriter<ResourceUpdateEvent>,
+) {
     let mut player_info: PlayerInfo = PlayerInfo {
         civilisation: Civilisation::Greek,
         tech_level: TechLevel::L0,
@@ -70,7 +79,14 @@ fn setup(mut commands: Commands, mut spawn_events: EventWriter<InstanceSpawnRequ
         UnitType::Spacestation,
         vec![ContextMenuAction::Build(UnitType::Cruiser)],
     );
-    commands.insert_resource(player_info);
+    commands.spawn((
+        ActivePlayer,
+        player_info,
+        ResourceLevels(vec![ResourceLevel {
+            resource_type: ResourceType::Plotanium,
+            amount: 0,
+        }]),
+    ));
     for x in 0..2 {
         for y in 0..2 {
             spawn_events.send(InstanceSpawnRequest {
@@ -93,4 +109,8 @@ fn setup(mut commands: Commands, mut spawn_events: EventWriter<InstanceSpawnRequ
         unit_type: UnitType::Spacestation,
         civilisation: Civilisation::Greek,
     });
+    resource_update_events.send(ResourceUpdateEvent(ResourceLevel {
+        resource_type: resources::ResourceType::Plotanium,
+        amount: 69,
+    }));
 }

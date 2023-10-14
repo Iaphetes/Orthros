@@ -111,6 +111,6 @@ fn setup(
     });
     resource_update_events.send(ResourceUpdateEvent(ResourceLevel {
         resource_type: resources::ResourceType::Plotanium,
-        amount: 69,
+        amount: 420,
     }));
 }

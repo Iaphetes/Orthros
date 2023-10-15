@@ -77,7 +77,10 @@ fn setup(
     };
     player_info.context_menu_actions.insert(
         UnitType::Spacestation,
-        vec![ContextMenuAction::Build(UnitType::Cruiser)],
+        vec![
+            ContextMenuAction::Build(UnitType::Cruiser),
+            ContextMenuAction::Build(UnitType::MiningStation),
+        ],
     );
     commands.spawn((
         ActivePlayer,

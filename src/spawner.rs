@@ -28,13 +28,14 @@ impl fmt::Display for Civilisation {
 pub enum UnitType {
     Cruiser,
     Spacestation,
+    MiningStation,
 }
 impl fmt::Display for UnitType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             UnitType::Cruiser => write!(f, "Cruiser"),
-
             UnitType::Spacestation => write!(f, "Space Station"),
+            UnitType::MiningStation => write!(f, "Mining Station"),
         }
     }
 }
@@ -88,10 +89,27 @@ fn populate_units(app: &mut App) {
     unit_specifications.unit_specifications.insert(
         (Civilisation::Greek, UnitType::Cruiser),
         UnitSpecification {
-            file_path: "./assets/3d_models/units/greek/fighter_01.gltf".into(),
+            file_path: "./assets/3d_models/units/greek/cruiser/greek_cruiser.gltf".into(),
             scene: "Scene0".to_owned(),
-            icon_path: "./3d_models/units/greek/greek_cruiser_thumbnail.png".into(),
+            icon_path: "./3d_models/units/greek/cruiser/greek_cruiser_thumbnail.png".into(),
             unit_name: "Andreia Class Cruiser".into(),
+            movable: true,
+            shape: ShapeType::Capsule,
+            dimensions: Vec3 {
+                x: 1.0,
+                y: 1.0,
+                z: 2.0,
+            },
+            _prescaling: 0.2,
+        },
+    );
+    unit_specifications.unit_specifications.insert(
+        (Civilisation::Greek, UnitType::MiningStation),
+        UnitSpecification {
+            file_path: "./assets/3d_models/units/greek/mining_rig/mining_rig.gltf".into(),
+            scene: "Scene0".to_owned(),
+            icon_path: "./3d_models/units/greek/mining_rig/mining_rig_thumbnail.png".into(),
+            unit_name: "Porus Class Mining Rig".into(),
             movable: true,
             shape: ShapeType::Capsule,
             dimensions: Vec3 {

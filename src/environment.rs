@@ -146,7 +146,7 @@ pub fn environment_setup(
             movable: true,
             shape: bevy_rapier3d::rapier::prelude::ShapeType::Ball,
             dimensions: Vec3::splat(1.0),
-            _prescaling: 1.0,
+            prescaling: 1.0,
         },
     ));
     let parent: Entity = commands
@@ -175,7 +175,7 @@ pub fn environment_setup(
             movable: true,
             shape: bevy_rapier3d::rapier::prelude::ShapeType::Ball,
             dimensions: Vec3::splat(1.0),
-            _prescaling: 1.0,
+            prescaling: 1.0,
         },
     ));
     // ambient light

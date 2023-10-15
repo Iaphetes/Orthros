@@ -124,15 +124,15 @@ pub fn calculate_a_star(
 
         let current_real: Vec2 =
             (current.xy.as_vec2() - gridmap.settings.xy_offset) * gridmap.settings.cell_size;
-        commands.spawn(PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Plane {
-                size: 0.5,
-                subdivisions: 1,
-            })),
-            material: materials.add(Color::YELLOW.into()),
-            transform: Transform::from_xyz(current_real.x, 0.5, current_real.y),
-            ..default()
-        });
+        //        commands.spawn(PbrBundle {
+        //            mesh: meshes.add(Mesh::from(shape::Plane {
+        //                size: 0.5,
+        //                subdivisions: 1,
+        //            })),
+        //            material: materials.add(Color::YELLOW.into()),
+        //            transform: Transform::from_xyz(current_real.x, 0.5, current_real.y),
+        //            ..default()
+        //        });
         let current_node: AStarNode = params.movement_grid[current.xy.x as usize]
             [current.xy.y as usize]
             .get(&current.h.unwrap_or_default())

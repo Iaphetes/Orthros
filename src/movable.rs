@@ -219,12 +219,7 @@ fn move_units(
                 continue;
             }
         };
-        gizmos.rect(
-            Vec3::new(node.xy.x, 10.0, node.xy.y),
-            Quat::from_rotation_x((90.0_f32).to_degrees()),
-            Vec2::ONE,
-            Color::DARK_GREEN,
-        );
+
         if move_towards(
             &mut transform,
             speed,

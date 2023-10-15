@@ -54,7 +54,7 @@ pub struct UnitSpecification {
     pub movable: bool,
     pub shape: ShapeType,
     pub dimensions: Vec3,
-    pub _prescaling: f32,
+    pub prescaling: f32,
 }
 pub struct InstanceSpawner;
 #[derive(Event)]
@@ -100,7 +100,7 @@ fn populate_units(app: &mut App) {
                 y: 1.0,
                 z: 2.0,
             },
-            _prescaling: 0.2,
+            prescaling: 0.1,
         },
     );
     unit_specifications.unit_specifications.insert(
@@ -117,7 +117,7 @@ fn populate_units(app: &mut App) {
                 y: 1.0,
                 z: 2.0,
             },
-            _prescaling: 0.2,
+            prescaling: 0.05,
         },
     );
     unit_specifications.unit_specifications.insert(
@@ -134,7 +134,7 @@ fn populate_units(app: &mut App) {
                 y: 15.0,
                 z: 10.0,
             },
-            _prescaling: 0.2,
+            prescaling: 0.2,
         },
     );
 
@@ -182,7 +182,7 @@ fn spawn(
                             spawn_request.location.y,
                             spawn_request.location.z,
                         )
-                        .with_scale(Vec3::splat(0.10)),
+                        .with_scale(Vec3::splat(unit_specification.prescaling)),
                         scene: asset_server.load(
                             unit_specification
                                 .file_path

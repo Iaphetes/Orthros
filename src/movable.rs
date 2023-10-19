@@ -205,8 +205,6 @@ fn move_units(
     mut movables: Query<(Entity, &mut Transform, &mut MovementPath)>,
     time: Res<Time>,
     mut commands: Commands,
-
-    mut gizmos: Gizmos,
 ) {
     let speed: f64 = 1.0;
     let rotation_speed: f64 = 1.0;
@@ -214,7 +212,6 @@ fn move_units(
         let node: &PathNode = match movementpath.path.last() {
             Some(n) => n,
             None => {
-                // commands.entity(entity).remove::<Movable>();
                 commands.entity(entity).remove::<MovementPath>();
                 continue;
             }

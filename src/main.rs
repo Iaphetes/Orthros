@@ -4,6 +4,7 @@ mod environment;
 mod movable;
 mod ownable;
 mod player_controller;
+mod resource_collection;
 mod resources;
 mod spawner;
 mod ui;
@@ -18,6 +19,7 @@ use bevy::{
     window::{PresentMode, WindowMode, WindowPlugin, WindowResolution},
 };
 use bevy_rapier3d::prelude::*;
+use resource_collection::ResourceCollection;
 use resources::{ResourceLevel, ResourceLevels, ResourceType, ResourceUpdateEvent};
 use spawner::{Civilisation, InstanceSpawnRequest, UnitType};
 enum TechLevel {
@@ -54,11 +56,14 @@ fn main() {
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugins(RapierDebugRenderPlugin::default())
         .insert_resource(Msaa::Sample4)
-        .add_plugins(PlayerController)
-        .add_plugins(Environment)
-        .add_plugins(UnitMovement)
-        .add_plugins(InstanceSpawner)
-        .add_plugins(GameUI)
+        .add_plugins((
+            PlayerController,
+            Environment,
+            UnitMovement,
+            InstanceSpawner,
+            GameUI,
+            ResourceCollection,
+        ))
         .add_event::<InstanceSpawnRequest>()
         .add_event::<ResourceUpdateEvent>()
         .add_systems(Startup, setup)

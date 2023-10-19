@@ -1,3 +1,4 @@
+use crate::resources::{ResourceLevel, ResourceSource, ResourceType};
 use crate::spawner::UnitSpecification;
 use crate::{player_controller::RenderLayerMap, spawner::EntityWrapper};
 use bevy::{
@@ -133,7 +134,12 @@ pub fn environment_setup(
             RigidBody::KinematicPositionBased,
             GravityScale(0.0),
             RenderLayers::layer(RenderLayerMap::Main as u8),
-            // ContextMenuActions {},
+            Collider::ball(1.0),
+            ResourceSource,
+            ResourceLevel {
+                resource_type: ResourceType::Plotanium,
+                amount: 42_000,
+            }, // ContextMenuActions {},
         ))
         .id();
     commands.spawn((

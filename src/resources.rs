@@ -12,3 +12,5 @@ pub struct ResourceLevel {
 }
 #[derive(Component)]
 pub struct ResourceLevels(pub Vec<ResourceLevel>);
+#[derive(Component)]
+pub struct ResourceSource;

@@ -349,7 +349,6 @@ fn mouse_controller(
     }
 }
 
-// Credit to @doomy on discord.
 fn ray_from_mouse_position(
     window: &Window,
     camera: &Camera,

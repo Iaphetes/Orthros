@@ -1,6 +1,7 @@
 use crate::resources::{ResourceLevel, ResourceSource, ResourceType};
 use crate::spawner::UnitSpecification;
 use crate::{player_controller::RenderLayerMap, spawner::EntityWrapper};
+use bevy::pbr::MaterialExtension;
 use bevy::{
     prelude::*,
     reflect::{TypePath, TypeUuid},
@@ -98,7 +99,7 @@ pub fn environment_setup(
             ),
             material: custom_materials.add(CustomMaterial {
                 color: Color::GRAY,
-                alpha_mode: AlphaMode::Blend,
+                alpha_mode: AlphaMode::Add,
             }),
             ..default()
         },

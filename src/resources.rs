@@ -1,5 +1,5 @@
-use bevy::prelude::*;
-#[derive(PartialEq, Eq, Clone, Copy)]
+use bevy::{prelude::*, utils::HashMap};
+#[derive(PartialEq, Eq, Clone, Copy, Hash)]
 pub enum ResourceType {
     Plotanium,
 }
@@ -11,6 +11,6 @@ pub struct ResourceLevel {
     pub amount: i32,
 }
 #[derive(Component)]
-pub struct ResourceLevels(pub Vec<ResourceLevel>);
+pub struct ResourceLevels(pub HashMap<ResourceType, i32>);
 #[derive(Component)]
 pub struct ResourceSource;

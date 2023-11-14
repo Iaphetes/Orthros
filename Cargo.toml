@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 bevy = { version = "0.12", features = ["dynamic_linking"]}
-bevy_rapier3d = { version = "0.22", git= "https://github.com/devil-ira/bevy_rapier.git", branch="bevy-0.12", features = [  "debug-render-3d" ] }
+bevy_rapier3d = { version = "0.23", features = [  "debug-render-3d" ] }
 strum = "*"
 strum_macros = "*"
 noise = "0.8.2"

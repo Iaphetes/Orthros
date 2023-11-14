@@ -64,9 +64,6 @@ pub struct InstanceSpawnRequest {
     pub civilisation: Civilisation,
 }
 
-pub struct _CustomMaterialInformation {
-    emissiveness: f32,
-}
 #[derive(Component)]
 pub struct UnitInformation {
     pub unit_name: String,
@@ -244,10 +241,10 @@ fn spawn(
                 })
                 .id();
 
-            commands.spawn((
-                EntityWrapper { entity: parent_id },
-                (*unit_specification).clone(),
-            ));
+            // commands.spawn((
+            //     EntityWrapper { entity: parent_id },
+            //     (*unit_specification).clone(),
+            // ));
             if unit_specification.movable {
                 commands.entity(parent_id).insert(Movable {});
             }

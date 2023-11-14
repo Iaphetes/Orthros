@@ -90,10 +90,7 @@ fn setup(
     commands.spawn((
         ActivePlayer,
         player_info,
-        ResourceLevels(vec![ResourceLevel {
-            resource_type: ResourceType::Plotanium,
-            amount: 0,
-        }]),
+        ResourceLevels(HashMap::from([(ResourceType::Plotanium, 0)])),
     ));
     for x in 0..2 {
         for y in 0..2 {

@@ -178,13 +178,13 @@ pub fn calculate_a_star(
                 params.came_from.insert(neighbour, current);
                 params.open_set.insert(neighbour);
             }
-            println!(
-                "F Score {}",
-                params.movement_grid[neighbour.xy.x as usize][neighbour.xy.y as usize]
-                    .get_mut(&neighbour.h.unwrap_or_default())
-                    .unwrap()
-                    .f_score
-            );
+            // println!(
+            //     "F Score {}",
+            //     params.movement_grid[neighbour.xy.x as usize][neighbour.xy.y as usize]
+            //         .get_mut(&neighbour.h.unwrap_or_default())
+            //         .unwrap()
+            //         .f_score
+            // );
         }
     }
 }

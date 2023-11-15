@@ -133,6 +133,7 @@ pub fn environment_setup(
                 ..default()
             },
             RigidBody::KinematicPositionBased,
+            Sensor,
             GravityScale(0.0),
             RenderLayers::layer(RenderLayerMap::Main as u8),
             Collider::ball(1.0),

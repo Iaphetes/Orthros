@@ -18,8 +18,10 @@ struct CollectionTick {
 #[derive(Component)]
 struct Collector {
     resource: ResourceType,
+    resource_entity: EntityWrapper,
     rate: f32,
     player: EntityWrapper,
+    collecting: bool,
 }
 
 pub struct ResourceCollection;
@@ -41,18 +43,22 @@ fn start_collecting(
     main_player: Query<Entity, With<ActivePlayer>>,
 ) {
     let main_player_entity: Entity = main_player.get_single().unwrap();
-    for hit in ray_hit_event.iter() {
-        if let Ok(source) = resource_sources.get(hit.hit_entity) {
-            println!("Hit gold");
+    for hit in ray_hit_event.read() {
+        if let Ok(_) = resource_sources.get(hit.hit_entity) {
             for (entity, unit_information) in selected_entities.iter() {
                 match unit_information.unit_type {
                     UnitType::MiningStation => {
                         commands.entity(entity).insert(Collector {
                             resource: ResourceType::Plotanium, //TODO make adaptive
+                            resource_entity: EntityWrapper {
+                                entity: hit.hit_entity,
+                            },
                             rate: 24.1,
+
                             player: EntityWrapper {
                                 entity: main_player_entity,
                             },
+                            collecting: false,
                         });
                     }
                     _ => {}
@@ -64,20 +70,27 @@ fn start_collecting(
 
 fn collect(
     time: Res<Time>,
-    collectors: Query<&Collector>,
+    collectors: Query<(&Collector, &Transform)>,
     mut resource_levels: Query<&mut ResourceLevels>,
+    resource_location: Query<&Transform, With<ResourceLevel>>,
     mut stopwatch: Local<Stopwatch>,
     mut resource_update_events: EventWriter<ResourceUpdateEvent>,
 ) {
     stopwatch.tick(time.delta());
     if stopwatch.elapsed().as_secs() >= 1 {
         stopwatch.reset();
-        for collector in collectors.iter() {
-            println!("Tick");
+        for (collector, collector_transform) in collectors.iter() {
+            let mut dist = 0.0;
+            if let Ok(resource_transform) = resource_location.get(collector.resource_entity.entity)
+            {
+                dist = collector_transform
+                    .translation
+                    .distance(resource_transform.translation);
+            }
+
             match resource_levels.get_mut(collector.player.entity) {
                 Ok(mut resource_level) => {
                     if let Some(mut resource) = resource_level.0.get_mut(&collector.resource) {
-                        println!("Found resource");
                         *resource += collector.rate as i32;
 
                         resource_update_events.send(ResourceUpdateEvent(ResourceLevel {

@@ -2,6 +2,7 @@ use crate::{
     movable::Movable,
     ownable::{Selectable, SelectionCircle},
     player_controller::RenderLayerMap,
+    resources::ResourceType,
 };
 use bevy::{prelude::*, render::view::RenderLayers, scene::SceneInstance};
 use bevy_rapier3d::{prelude::*, rapier::prelude::ShapeType};
@@ -23,6 +24,12 @@ impl fmt::Display for Civilisation {
             Civilisation::Greek => write!(f, "Greek"),
         }
     }
+}
+
+struct MiningStationStats {
+    max_dist: f32,
+    base_mining_rate: f32,
+    bonus_mining_rates: HashMap<ResourceType, f32>,
 }
 #[derive(Eq, Hash, PartialEq, Clone, Copy)]
 pub enum UnitType {

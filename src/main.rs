@@ -1,5 +1,6 @@
 #![feature(let_chains)]
 mod a_star;
+mod civilisation;
 mod environment;
 mod movable;
 mod ownable;
@@ -8,6 +9,7 @@ mod resource_collection;
 mod resources;
 mod spawner;
 mod ui;
+
 use crate::environment::Environment;
 use crate::movable::UnitMovement;
 use crate::player_controller::PlayerController;
@@ -19,6 +21,7 @@ use bevy::{
     window::{PresentMode, WindowMode, WindowPlugin, WindowResolution},
 };
 use bevy_rapier3d::prelude::*;
+use civilisation::CivilisationPlugin;
 use resource_collection::ResourceCollection;
 use resources::{ResourceLevel, ResourceLevels, ResourceType, ResourceUpdateEvent};
 use spawner::{Civilisation, InstanceSpawnRequest, UnitType};
@@ -53,8 +56,7 @@ fn main() {
             }),
             ..default()
         }))
-        .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
-        .add_plugins(RapierDebugRenderPlugin::default())
+        // .add_plugins((RapierPhysicsPlugin::<NoUserData>::default(), CivilisationPlugin, RapierDebugRenderPlugin::default()))
         .insert_resource(Msaa::Sample4)
         .add_plugins((
             PlayerController,
@@ -63,6 +65,9 @@ fn main() {
             InstanceSpawner,
             GameUI,
             ResourceCollection,
+            RapierPhysicsPlugin::<NoUserData>::default(),
+            CivilisationPlugin,
+            RapierDebugRenderPlugin::default(),
         ))
         .add_event::<InstanceSpawnRequest>()
         .add_event::<ResourceUpdateEvent>()
@@ -80,6 +85,7 @@ fn setup(
         tech_level: TechLevel::L0,
         context_menu_actions: HashMap::new(),
     };
+
     player_info.context_menu_actions.insert(
         UnitType::Spacestation,
         vec![

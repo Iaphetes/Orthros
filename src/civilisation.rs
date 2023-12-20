@@ -4,14 +4,14 @@ use bevy::prelude::*;
 
 use crate::{resources::ResourceType, spawner::Civilisation};
 
-struct EcoBoni {
-    mining_boni: HashMap<ResourceType, f32>,
+pub struct EcoBoni {
+    resource_boni: HashMap<ResourceType, f32>,
 }
-struct CivilisationBoni {
+pub struct CivilisationBoni {
     eco_boni: EcoBoni,
 }
 #[derive(Resource)]
-struct CivilisationBoniMap {
+pub struct CivilisationBoniMap {
     map: HashMap<Civilisation, CivilisationBoni>,
 }
 
@@ -23,7 +23,7 @@ fn setup_civilisations(mut commands: Commands) {
         Civilisation::Greek,
         CivilisationBoni {
             eco_boni: EcoBoni {
-                mining_boni: HashMap::from_iter([(ResourceType::Plotanium, 1.2)]),
+                resource_boni: HashMap::from_iter([(ResourceType::Plotanium, 1.2)]),
             },
         },
     );

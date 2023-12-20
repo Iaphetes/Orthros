@@ -620,7 +620,7 @@ fn button_system(
                                             y: 2.0,
                                             z: transform.translation.z + 1.0,
                                         },
-                                        unit_type: *unit_type,
+                                        unit_type: unit_type.clone(),
                                         civilisation: player_info.civilisation,
                                     });
                                 }
@@ -652,7 +652,7 @@ fn update_context_menu(
         match action {
             ContextMenuAction::Build(unit_type) => {
                 let unit_information: &UnitSpecification = &unit_specifications.unit_specifications
-                    [&(player_info.civilisation, *unit_type)];
+                    [&(player_info.civilisation, unit_type.clone())];
                 buttons.push(
                     commands
                         .spawn(NodeBundle {

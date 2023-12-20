@@ -4,10 +4,11 @@ use crate::{
     player_controller::RenderLayerMap,
     resources::ResourceType,
 };
-use bevy::{prelude::*, render::view::RenderLayers, scene::SceneInstance};
+use bevy::{prelude::*, render::view::RenderLayers, scene::SceneInstance, utils::HashMap};
 use bevy_rapier3d::{prelude::*, rapier::prelude::ShapeType};
 use serde_json::Value;
-use std::collections::HashMap;
+use std::ops::{Deref, DerefMut};
+// use std::collections::HashMap;
 use std::fmt;
 use std::fs::File;
 use std::io::prelude::*;
@@ -25,13 +26,29 @@ impl fmt::Display for Civilisation {
         }
     }
 }
-
-struct MiningStationStats {
-    max_dist: f32,
-    base_mining_rate: f32,
-    bonus_mining_rates: HashMap<ResourceType, f32>,
+#[derive(Clone, Copy)]
+pub enum UnitStat {
+    MaxMiningDist(f32),
+    BaseMiningRate(f32),
+    BonusMiningRate((ResourceType, f32)),
 }
-#[derive(Eq, Hash, PartialEq, Clone, Copy)]
+#[derive(Clone)]
+pub struct UnitStats(pub Vec<UnitStat>);
+impl Deref for UnitStats {
+    type Target = Vec<UnitStat>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for UnitStats {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+#[derive(Eq, Hash, PartialEq, Clone)]
 pub enum UnitType {
     Cruiser,
     Spacestation,
@@ -62,6 +79,7 @@ pub struct UnitSpecification {
     pub shape: ShapeType,
     pub dimensions: Vec3,
     pub prescaling: f32,
+    pub base_stats: UnitStats,
 }
 pub struct InstanceSpawner;
 #[derive(Event)]
@@ -77,6 +95,7 @@ pub struct UnitInformation {
     pub unit_type: UnitType,
     pub civilisation: Civilisation,
     pub thumbnail: String,
+    pub stats: UnitStats,
 }
 impl Plugin for InstanceSpawner {
     fn build(&self, app: &mut App) {
@@ -105,6 +124,7 @@ fn populate_units(app: &mut App) {
                 z: 2.0,
             },
             prescaling: 0.1,
+            base_stats: UnitStats(Vec::new()),
         },
     );
     unit_specifications.unit_specifications.insert(
@@ -122,6 +142,7 @@ fn populate_units(app: &mut App) {
                 z: 2.0,
             },
             prescaling: 0.05,
+            base_stats: UnitStats(vec![UnitStat::MaxMiningDist(1.5)]),
         },
     );
     unit_specifications.unit_specifications.insert(
@@ -139,6 +160,7 @@ fn populate_units(app: &mut App) {
                 z: 10.0,
             },
             prescaling: 0.2,
+            base_stats: UnitStats(Vec::new()),
         },
     );
 
@@ -159,7 +181,7 @@ fn spawn(
     for spawn_request in spawn_requests.iter() {
         if let Some(unit_specification) = unit_specifications
             .unit_specifications
-            .get(&(spawn_request.civilisation, spawn_request.unit_type))
+            .get(&(spawn_request.civilisation, spawn_request.unit_type.clone()))
         {
             let texture_handle = asset_server.load("textures/selection_texture.png");
             let material_handle = materials.add(StandardMaterial {
@@ -200,9 +222,10 @@ fn spawn(
                     Selectable {},
                     UnitInformation {
                         unit_name: unit_specification.unit_name.clone(),
-                        unit_type: spawn_request.unit_type,
+                        unit_type: spawn_request.unit_type.clone(),
                         civilisation: spawn_request.civilisation,
                         thumbnail: unit_specification.icon_path.clone(),
+                        stats: unit_specification.base_stats.clone(),
                     },
                     RigidBody::KinematicPositionBased,
                     collider,

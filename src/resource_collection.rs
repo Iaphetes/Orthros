@@ -1,10 +1,11 @@
 use std::time::Duration;
 
 use crate::{
+    civilisation::{CivilisationBoni, CivilisationBoniMap},
     ownable::Selected,
     player_controller::RayHit,
     resources::{ResourceLevel, ResourceLevels, ResourceSource, ResourceType, ResourceUpdateEvent},
-    spawner::{EntityWrapper, UnitInformation, UnitType},
+    spawner::{EntityWrapper, UnitInformation, UnitStat, UnitType},
     ActivePlayer, PlayerInfo,
 };
 
@@ -70,16 +71,18 @@ fn start_collecting(
 
 fn collect(
     time: Res<Time>,
-    collectors: Query<(&Collector, &Transform)>,
+    mut collectors: Query<(Entity, &mut Collector, &Transform, &UnitInformation)>,
     mut resource_levels: Query<&mut ResourceLevels>,
     resource_location: Query<&Transform, With<ResourceLevel>>,
     mut stopwatch: Local<Stopwatch>,
     mut resource_update_events: EventWriter<ResourceUpdateEvent>,
+    mut commands: Commands,
 ) {
     stopwatch.tick(time.delta());
     if stopwatch.elapsed().as_secs() >= 1 {
         stopwatch.reset();
-        for (collector, collector_transform) in collectors.iter() {
+        for (entity, mut collector, collector_transform, unit_information) in collectors.iter_mut()
+        {
             let mut dist = 0.0;
             if let Ok(resource_transform) = resource_location.get(collector.resource_entity.entity)
             {
@@ -88,19 +91,33 @@ fn collect(
                     .distance(resource_transform.translation);
             }
 
-            match resource_levels.get_mut(collector.player.entity) {
-                Ok(mut resource_level) => {
-                    if let Some(mut resource) = resource_level.0.get_mut(&collector.resource) {
-                        *resource += collector.rate as i32;
-
-                        resource_update_events.send(ResourceUpdateEvent(ResourceLevel {
-                            resource_type: ResourceType::Plotanium,
-                            amount: *resource,
-                        }));
-                    }
+            let mut max_mining_dist: f32 = 0.0;
+            for stat in &unit_information.stats.0 {
+                if let UnitStat::MaxMiningDist(m) = stat {
+                    max_mining_dist = *m;
                 }
-                Err(_) => {
-                    println!("Could not find player")
+            }
+            if collector.collecting && max_mining_dist < dist {
+                commands.entity(entity).remove::<Collector>();
+            } else if !collector.collecting && max_mining_dist > dist {
+                collector.collecting = true;
+            }
+            println!("dist: {dist}, max_dist: {max_mining_dist}");
+            if collector.collecting {
+                match resource_levels.get_mut(collector.player.entity) {
+                    Ok(mut resource_level) => {
+                        if let Some(mut resource) = resource_level.0.get_mut(&collector.resource) {
+                            *resource += collector.rate as i32;
+
+                            resource_update_events.send(ResourceUpdateEvent(ResourceLevel {
+                                resource_type: ResourceType::Plotanium,
+                                amount: *resource,
+                            }));
+                        }
+                    }
+                    Err(_) => {
+                        println!("Could not find player")
+                    }
                 }
             }
         }

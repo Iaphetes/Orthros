@@ -1,5 +1,5 @@
 use crate::resources::{ResourceLevel, ResourceSource, ResourceType};
-use crate::spawner::UnitSpecification;
+use crate::spawner::{UnitSpecification, UnitStats};
 use crate::{player_controller::RenderLayerMap, spawner::EntityWrapper};
 use bevy::pbr::MaterialExtension;
 use bevy::{
@@ -155,6 +155,7 @@ pub fn environment_setup(
             shape: bevy_rapier3d::rapier::prelude::ShapeType::Ball,
             dimensions: Vec3::splat(1.0),
             prescaling: 1.0,
+            base_stats: UnitStats(Vec::new()),
         },
     ));
     let parent: Entity = commands
@@ -184,6 +185,7 @@ pub fn environment_setup(
             shape: bevy_rapier3d::rapier::prelude::ShapeType::Ball,
             dimensions: Vec3::splat(1.0),
             prescaling: 1.0,
+            base_stats: UnitStats(Vec::new()),
         },
     ));
     // ambient light

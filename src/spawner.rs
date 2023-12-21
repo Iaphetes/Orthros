@@ -142,7 +142,11 @@ fn populate_units(app: &mut App) {
                 z: 2.0,
             },
             prescaling: 0.05,
-            base_stats: UnitStats(vec![UnitStat::MaxMiningDist(1.5)]),
+            base_stats: UnitStats(vec![
+                UnitStat::MaxMiningDist(1.5),
+                UnitStat::BaseMiningRate(24.0),
+                UnitStat::BonusMiningRate((ResourceType::Plotanium, 5.0)),
+            ]),
         },
     );
     unit_specifications.unit_specifications.insert(

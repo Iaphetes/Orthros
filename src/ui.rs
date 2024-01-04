@@ -1,10 +1,12 @@
+use std::process;
+
 use crate::ownable::{Selectable, Selected};
 use crate::player_controller::{DeselectEvent, RayHit, RenderLayerMap};
-use crate::resources::{ResourceType, ResourceUpdateEvent};
+use crate::resources::{ResourceLevel, ResourceStockpiles, ResourceType};
 use crate::spawner::{
     InstanceSpawnRequest, UnitInformation, UnitSpecification, UnitSpecifications,
 };
-use crate::{ActivePlayer, ContextMenuAction, PlayerInfo};
+use crate::{ContextMenuAction, LocalPlayer, PlayerInfo};
 use bevy::core_pipeline::clear_color::ClearColorConfig;
 use bevy::diagnostic::DiagnosticsStore;
 use bevy::render::camera::RenderTarget;
@@ -37,6 +39,8 @@ enum UIContent {
     Content(UIType),
     Decoration(UIType),
 }
+#[derive(Event)]
+pub struct UIResourceUpdateEvent(pub ResourceLevel);
 pub struct GameUI;
 impl Plugin for GameUI {
     fn build(&self, app: &mut App) {
@@ -54,7 +58,6 @@ impl Plugin for GameUI {
             )
             .add_event::<RayHit>()
             .add_event::<DeselectEvent>()
-            .add_event::<ResourceUpdateEvent>()
             .add_plugins(FrameTimeDiagnosticsPlugin);
     }
 }
@@ -602,7 +605,7 @@ fn button_system(
         (Changed<Interaction>, With<Button>),
     >,
     mut button_background: Query<&mut BackgroundColor>,
-    player_info: Query<&PlayerInfo, With<ActivePlayer>>,
+    player_info: Query<&PlayerInfo, With<LocalPlayer>>,
     selected_entities: Query<&Transform, With<Selected>>,
     mut spawn_events: EventWriter<InstanceSpawnRequest>,
 ) {
@@ -712,7 +715,7 @@ fn populate_lower_ui(
     mut unit_info: Query<&UnitInformation, With<Selectable>>,
     ui_elements: Query<(Entity, &UIContent, &Children)>,
     ui_children: Query<Entity, With<Style>>,
-    player_info: Query<&PlayerInfo, With<ActivePlayer>>,
+    player_info: Query<&PlayerInfo, With<LocalPlayer>>,
     unit_specifications: Res<UnitSpecifications>,
 ) {
     if let Ok(player_info) = player_info.get_single() {
@@ -810,16 +813,19 @@ fn update_fps(diagnostics: Res<DiagnosticsStore>, mut query: Query<(&mut Text, &
 }
 
 fn update_resources(
-    mut resource_update_events: EventReader<ResourceUpdateEvent>,
+    localplayer: Query<&ResourceStockpiles, With<LocalPlayer>>,
     mut ui_elements: Query<(&mut Text, &UIContent)>,
 ) {
-    for resource_update in resource_update_events.iter() {
+    if let Ok(resource_stockpiles) = localplayer.get_single() {
         for (mut text, ui_content) in &mut ui_elements {
             if let UIContent::Content(UIType::Resources(resource_type)) = ui_content {
-                if *resource_type == resource_update.0.resource_type {
-                    text.sections[0].value = format!("{}", resource_update.0.amount);
+                if let Some(resource_amount) = resource_stockpiles.get(&resource_type) {
+                    text.sections[0].value = format!("{}", *resource_amount);
                 }
             }
         }
+    }else{
+        error!("No local player found");
+        process::exit(1);
     }
 }

@@ -127,7 +127,7 @@ pub fn environment_setup(
     let parent: Entity = commands
         .spawn((
             SceneBundle {
-                scene: asset_server.load("3d_models/environment/asteroid_01.gltf#Scene0"),
+                scene: asset_server.load("3d_models/environment/asteroid_01.glb#Scene0"),
                 transform: Transform::from_xyz(-5.0, 2.0, 5.0), //.with_scale(Vec3::splat(0.001)),
                 // transform: Transform::from_scale(Vec3::splat(0.5)),
                 ..default()
@@ -140,14 +140,14 @@ pub fn environment_setup(
             ResourceSource,
             ResourceLevel {
                 resource_type: ResourceType::Plotanium,
-                amount: 42_000,
+                resource_amount: 42_000,
             }, // ContextMenuActions {},
         ))
         .id();
     commands.spawn((
         EntityWrapper { entity: parent },
         UnitSpecification {
-            file_path: "assets/3d_models/environment/asteroid_01.gltf".to_owned(),
+            file_path: "assets/3d_models/environment/asteroid_01.glb".to_owned(),
             scene: "Scene0".to_owned(),
             icon_path: "".to_owned(),
             unit_name: "Asteroid".to_owned(),

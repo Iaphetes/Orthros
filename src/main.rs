@@ -23,7 +23,7 @@ use bevy::{
 use bevy_rapier3d::prelude::*;
 use civilisation::CivilisationPlugin;
 use resource_collection::ResourceCollection;
-use resources::{ResourceLevel, ResourceLevels, ResourceType, ResourceUpdateEvent};
+use resources::{ResourceStockpiles, ResourceType};
 use spawner::{Civilisation, InstanceSpawnRequest, UnitType};
 enum TechLevel {
     L0,
@@ -44,7 +44,7 @@ struct PlayerInfo {
     context_menu_actions: HashMap<UnitType, Vec<ContextMenuAction>>,
 }
 #[derive(Component)]
-struct ActivePlayer;
+struct LocalPlayer;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
@@ -70,7 +70,6 @@ fn main() {
             RapierDebugRenderPlugin::default(),
         ))
         .add_event::<InstanceSpawnRequest>()
-        .add_event::<ResourceUpdateEvent>()
         .add_systems(Startup, setup)
         .run();
 }
@@ -78,7 +77,6 @@ fn main() {
 fn setup(
     mut commands: Commands,
     mut spawn_events: EventWriter<InstanceSpawnRequest>,
-    mut resource_update_events: EventWriter<ResourceUpdateEvent>,
 ) {
     let mut player_info: PlayerInfo = PlayerInfo {
         civilisation: Civilisation::Greek,
@@ -94,9 +92,9 @@ fn setup(
         ],
     );
     commands.spawn((
-        ActivePlayer,
+        LocalPlayer,
         player_info,
-        ResourceLevels(HashMap::from([(ResourceType::Plotanium, 0)])),
+        ResourceStockpiles(HashMap::from([(ResourceType::Plotanium, 0)])),
     ));
     for x in 0..2 {
         for y in 0..2 {
@@ -120,8 +118,4 @@ fn setup(
         unit_type: UnitType::Spacestation,
         civilisation: Civilisation::Greek,
     });
-    resource_update_events.send(ResourceUpdateEvent(ResourceLevel {
-        resource_type: resources::ResourceType::Plotanium,
-        amount: 420,
-    }));
 }

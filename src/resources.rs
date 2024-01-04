@@ -3,14 +3,19 @@ use bevy::{prelude::*, utils::HashMap};
 pub enum ResourceType {
     Plotanium,
 }
-#[derive(Event)]
-pub struct ResourceUpdateEvent(pub ResourceLevel);
 #[derive(Component)]
 pub struct ResourceLevel {
     pub resource_type: ResourceType,
-    pub amount: i32,
+    pub resource_amount: i32,
 }
 #[derive(Component)]
-pub struct ResourceLevels(pub HashMap<ResourceType, i32>);
+pub struct ResourceStockpiles(pub HashMap<ResourceType, i32>);
+
+impl ResourceStockpiles {
+    pub fn get(&self, resource_type: &ResourceType) -> Option<&i32> {
+        self.0.get(resource_type)
+    }
+}
+
 #[derive(Component)]
 pub struct ResourceSource;

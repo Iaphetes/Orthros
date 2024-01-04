@@ -1,13 +1,14 @@
 use crate::{
-    civilisation::{CivilisationBoni, CivilisationBoniMap},
+    civilisation::CivilisationBoniMap,
     ownable::Selected,
     player_controller::RayHit,
-    resources::{ResourceLevel, ResourceLevels, ResourceSource, ResourceType, ResourceUpdateEvent},
+    resources::{ResourceLevel, ResourceStockpiles, ResourceType},
     spawner::{EntityWrapper, UnitInformation, UnitStat, UnitType},
-    ActivePlayer, PlayerInfo,
+    ui::UIResourceUpdateEvent,
+    LocalPlayer, PlayerInfo,
 };
 
-use bevy::{prelude::*, time::Stopwatch, transform::commands};
+use bevy::{prelude::*, time::Stopwatch};
 
 //#[derive(Resource)]
 //struct CollectionTick {
@@ -33,26 +34,26 @@ pub struct DeselectEvent;
 impl Plugin for ResourceCollection {
     fn build(&self, app: &mut App) {
         app.add_event::<RayHit>()
-            .add_systems(Update, (start_collecting, collect))
-            .add_event::<ResourceUpdateEvent>();
+            .add_systems(Update, (process_collection_command, collect))
+            .add_event::<UIResourceUpdateEvent>();
     }
 }
 
-fn start_collecting(
+fn process_collection_command(
     mut commands: Commands,
-    mut selected_entities: Query<(Entity, &UnitInformation), With<Selected>>,
+    selected_entities: Query<(Entity, &UnitInformation), With<Selected>>,
     mut ray_hit_event: EventReader<RayHit>,
-    mut resource_sources: Query<(Entity, &ResourceLevel)>,
-    main_player: Query<Entity, With<ActivePlayer>>,
+    resource_sources: Query<&ResourceLevel>,
+    main_player: Query<Entity, With<LocalPlayer>>,
 ) {
     let main_player_entity: Entity = main_player.get_single().unwrap();
     for hit in ray_hit_event.read() {
-        if let Ok(_) = resource_sources.get(hit.hit_entity) {
+        if let Ok(resource_level) = resource_sources.get(hit.hit_entity) {
             for (entity, unit_information) in selected_entities.iter() {
                 match unit_information.unit_type {
                     UnitType::MiningStation => {
                         commands.entity(entity).insert(Collector {
-                            resource: ResourceType::Plotanium, //TODO make adaptive
+                            resource: resource_level.resource_type, //TODO make adaptive
                             resource_entity: EntityWrapper {
                                 entity: hit.hit_entity,
                             },
@@ -69,8 +70,8 @@ fn start_collecting(
         }
     }
 }
+
 fn check_collection_state(
-    collector_entity: Entity,
     collector: &Collector,
     collector_transform: &Transform,
     resource_location: &Query<&Transform, With<ResourceLevel>>,
@@ -96,13 +97,14 @@ fn check_collection_state(
     }
     return collector.collecting;
 }
+
 fn collect(
     time: Res<Time>,
     mut collectors: Query<(Entity, &mut Collector, &Transform, &UnitInformation)>,
-    mut resource_levels: Query<&mut ResourceLevels>,
+    mut resource_levels: Query<&mut ResourceStockpiles>,
     resource_location: Query<&Transform, With<ResourceLevel>>,
     mut stopwatch: Local<Stopwatch>,
-    mut resource_update_events: EventWriter<ResourceUpdateEvent>,
+    // mut resource_update_events: EventWriter<UIResourceUpdateEvent>,
     mut commands: Commands,
     player_infos: Query<&PlayerInfo>,
     civilisation_boni_map: Res<CivilisationBoniMap>,
@@ -114,13 +116,11 @@ fn collect(
             collectors.iter_mut()
         {
             collector.collecting = check_collection_state(
-                collector_entity,
                 &collector,
                 collector_transform,
                 &resource_location,
                 unit_information,
             );
-
             // Calculate collection rate
             let mut rate = 0.0;
             for stat in &unit_information.stats.0 {
@@ -154,11 +154,6 @@ fn collect(
                     Ok(mut resource_level) => {
                         if let Some(resource) = resource_level.0.get_mut(&collector.resource) {
                             *resource += rate as i32; //collector.rate as i32;
-
-                            resource_update_events.send(ResourceUpdateEvent(ResourceLevel {
-                                resource_type: ResourceType::Plotanium,
-                                amount: *resource,
-                            }));
                         }
                     }
                     Err(_) => {

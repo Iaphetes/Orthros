@@ -4,13 +4,11 @@ use crate::{
     player_controller::RenderLayerMap,
     resources::ResourceType,
 };
-use bevy::{prelude::*, render::view::RenderLayers, scene::SceneInstance, utils::HashMap};
+use bevy::{prelude::*, render::view::RenderLayers, utils::HashMap};
 use bevy_rapier3d::{prelude::*, rapier::prelude::ShapeType};
 use std::ops::{Deref, DerefMut};
 // use std::collections::HashMap;
 use std::fmt;
-use std::fs::File;
-use std::io::prelude::*;
 // Create some sort of unit map with regards to civ
 #[derive(Eq, Hash, PartialEq, Clone, Copy)]
 pub enum Civilisation {
@@ -132,7 +130,7 @@ fn populate_units(app: &mut App) {
             file_path: "./assets/3d_models/units/greek/mining_rig/mining_rig.gltf".into(),
             scene: "Scene0".to_owned(),
             icon_path: "./3d_models/units/greek/mining_rig/mining_rig_thumbnail.png".into(),
-            unit_name: "Porus Class Mining Rig".into(),
+            unit_name: "Hephaestus Mining Station".into(),
             movable: true,
             shape: ShapeType::Capsule,
             dimensions: Vec3 {
@@ -274,10 +272,6 @@ fn spawn(
                 })
                 .id();
 
-            // commands.spawn((
-            //     EntityWrapper { entity: parent_id },
-            //     (*unit_specification).clone(),
-            // ));
             if unit_specification.movable {
                 commands.entity(parent_id).insert(Movable {});
             }

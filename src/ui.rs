@@ -7,7 +7,7 @@ use crate::spawner::{
     InstanceSpawnRequest, UnitInformation, UnitSpecification, UnitSpecifications,
 };
 use crate::{ContextMenuAction, LocalPlayer, PlayerInfo};
-use bevy::core_pipeline::clear_color::ClearColorConfig;
+use bevy::render::camera::ClearColorConfig;
 use bevy::diagnostic::DiagnosticsStore;
 use bevy::render::camera::RenderTarget;
 use bevy::render::render_resource::{
@@ -89,10 +89,10 @@ fn initialise_mini_map(commands: &mut Commands, mut images: ResMut<Assets<Image>
     commands.spawn((
         Camera3dBundle {
             camera_3d: Camera3d {
-                clear_color: ClearColorConfig::Custom(Color::WHITE),
                 ..default()
             },
             camera: Camera {
+                clear_color: ClearColorConfig::Custom(Color::WHITE),
                 // render before the "main pass" camera
                 order: -1,
                 target: RenderTarget::Image(image_handle.clone()),
@@ -102,7 +102,7 @@ fn initialise_mini_map(commands: &mut Commands, mut images: ResMut<Assets<Image>
                 .looking_at(Vec3::ZERO, Vec3::Z),
             ..default()
         },
-        UiCameraConfig { show_ui: false },
+        // UiCameraConfig { show_ui: false },
         RenderLayers::from_layers(&[RenderLayerMap::General as u8, RenderLayerMap::Minimap as u8]),
     ));
     commands
@@ -719,7 +719,7 @@ fn populate_lower_ui(
     unit_specifications: Res<UnitSpecifications>,
 ) {
     if let Ok(player_info) = player_info.get_single() {
-        for hit in ray_hit_event.iter() {
+        for hit in ray_hit_event.read() {
             if hit.mouse_key_enable_mouse {
                 let (selection_info_content, _, children): (Entity, _, &Children) = ui_elements
                     .into_iter()
@@ -801,7 +801,7 @@ fn update_fps(diagnostics: Res<DiagnosticsStore>, mut query: Query<(&mut Text, &
     for (mut text, ui_content) in &mut query {
         if let UIContent::Content(UIType::Diagnostics) = ui_content {
             let mut fps = 0.0;
-            if let Some(fps_diagnostic) = diagnostics.get(FrameTimeDiagnosticsPlugin::FPS) {
+            if let Some(fps_diagnostic) = diagnostics.get(&FrameTimeDiagnosticsPlugin::FPS) {
                 if let Some(fps_smoothed) = fps_diagnostic.smoothed() {
                     fps = fps_smoothed;
                 }

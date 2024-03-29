@@ -179,7 +179,7 @@ fn spawn(
     mut materials: ResMut<Assets<StandardMaterial>>,
     asset_server: Res<AssetServer>,
 ) {
-    for spawn_request in spawn_requests.iter() {
+    for spawn_request in spawn_requests.read() {
         if let Some(unit_specification) = unit_specifications
             .unit_specifications
             .get(&(spawn_request.civilisation, spawn_request.unit_type.clone()))
@@ -238,11 +238,10 @@ fn spawn(
                     parent.spawn((
                         MaterialMeshBundle {
                             mesh: meshes.add(
-                                shape::Plane {
-                                    size: 2.5 * unit_specification.dimensions.max_element(),
-                                    subdivisions: 1,
-                                }
-                                .into(),
+                                Plane3d::default().mesh().size(
+                                    2.5 * unit_specification.dimensions.max_element(),
+                                    2.5 * unit_specification.dimensions.max_element(),
+                                )
                             ),
                             material: material_handle,
                             transform: Transform::from_scale(Vec3::splat(1.0)),
@@ -255,12 +254,7 @@ fn spawn(
                     parent.spawn((
                         MaterialMeshBundle {
                             mesh: meshes.add(
-                                shape::Plane {
-                                    size: 10.0,
-                                    subdivisions: 1,
-                                }
-                                .into(),
-                            ),
+                                Plane3d::default().mesh().size(10.0, 10.0)                             ),
                             material: materials.add(StandardMaterial {
                                 base_color: Color::rgba(0.0, 1.0, 0.0, 0.5),
                                 ..Default::default()

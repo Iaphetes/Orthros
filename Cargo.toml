@@ -6,12 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = { version = "0.12", features = ["dynamic_linking"]}
-bevy_rapier3d = { version = "0.23", features = [  "debug-render-3d" ] }
+bevy = { version = "0.13", features = ["dynamic_linking"]}
+bevy_rapier3d = { version = "0.25", features = [  "debug-render-3d" ] }
 strum = "*"
 strum_macros = "*"
-noise = "0.8.2"
-# bevy-inspector-egui = "0.17.0"
 serde_json = "1.0"
 # Enable a small amount of optimization in debug mode
 [profile.dev]

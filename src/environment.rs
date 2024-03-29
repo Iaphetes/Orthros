@@ -4,7 +4,7 @@ use crate::{player_controller::RenderLayerMap, spawner::EntityWrapper};
 use bevy::pbr::MaterialExtension;
 use bevy::{
     prelude::*,
-    reflect::{TypePath, TypeUuid},
+    reflect::{TypePath},
     render::{
         render_resource::{AsBindGroup, ShaderRef},
         view::RenderLayers,
@@ -35,8 +35,8 @@ impl Plugin for Environment {
     }
 }
 // This is the struct that will be passed to your shader
-#[derive(Asset, AsBindGroup, TypeUuid, Debug, Clone, TypePath)]
-#[uuid = "f690fdae-d598-45ab-8225-97e2a3f056e0"]
+#[derive(Asset, AsBindGroup, Debug, Clone, TypePath)]
+// #[uuid = "f690fdae-d598-45ab-8225-97e2a3f056e0"]
 pub struct CustomMaterial {
     #[uniform(0)]
     color: Color,
@@ -91,12 +91,7 @@ pub fn environment_setup(
     commands.spawn((
         MaterialMeshBundle {
             mesh: meshes.add(
-                shape::Plane {
-                    size: 200.,
-                    subdivisions: 1,
-                }
-                .into(),
-            ),
+                Plane3d::default().mesh().size(200.0, 200.0)            ),
             material: custom_materials.add(CustomMaterial {
                 color: Color::GRAY,
                 alpha_mode: AlphaMode::Add,

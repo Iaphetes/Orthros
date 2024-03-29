@@ -82,16 +82,16 @@ impl Default for CameraControllerSettings {
             enabled: true,
             initialized: false,
             sensitivity: 0.5,
-            key_forward: KeyCode::W,
-            key_back: KeyCode::S,
-            key_left: KeyCode::A,
-            key_right: KeyCode::D,
+            key_forward: KeyCode::KeyW,
+            key_back: KeyCode::KeyS,
+            key_left: KeyCode::KeyA,
+            key_right: KeyCode::KeyD,
             rotate_key: KeyCode::ControlLeft,
             rotation_speed: 0.005,
             key_run: KeyCode::ControlLeft,
             mouse_key_enable_mouse: MouseButton::Left,
             mouse_unit_move_button: MouseButton::Right,
-            keyboard_key_enable_mouse: KeyCode::M,
+            keyboard_key_enable_mouse: KeyCode::KeyM,
             friction: 0.5,
             pitch: 0.0,
             yaw: 0.0,
@@ -106,7 +106,7 @@ impl Default for CameraControllerSettings {
 
 pub fn camera_controller(
     time: Res<Time>,
-    key_input: Res<Input<KeyCode>>,
+    key_input: Res<ButtonInput<KeyCode>>,
     mut mouse_wheel: EventReader<MouseWheel>,
     mut move_toggled: Local<bool>,
     cameras: Query<(&Camera, &GlobalTransform)>,
@@ -163,7 +163,7 @@ pub fn camera_controller(
         if key_input.just_pressed(options.keyboard_key_enable_mouse) {
             *move_toggled = !*move_toggled;
         }
-        for evt in mouse_wheel.iter() {
+        for evt in mouse_wheel.read() {
             match evt.unit {
                 MouseScrollUnit::Line => {
                     if (transform.translation.y > options.zoom_min || evt.y < 0.0)
@@ -192,7 +192,7 @@ pub fn camera_controller(
         }
         let right = transform.right();
 
-        transform.translation += options.velocity.x * dt * right
+        transform.translation += options.velocity.x * dt * *right
             + options.velocity.y * dt * Vec3::Y
             + options.velocity.z * dt * Vec3::Z;
         if key_input.pressed(options.rotate_key) {
@@ -224,13 +224,13 @@ pub fn camera_controller(
 
 fn camera_setup(
     mut commands: Commands,
-    mut config: ResMut<GizmoConfig>,
+    // mut config: ResMut<GizmoConfig>,
     asset_server: Res<AssetServer>,
 ) {
     // camera
-    config.depth_bias = 0.0;
-    config.line_perspective = true;
-    config.line_width *= 1.;
+    // config.depth_bias = 0.0;
+    // config.line_perspective = true;
+    // config.line_width *= 1.;
     let skybox_handle: Handle<Image> = asset_server.load("textures/skybox/stacked.png");
     commands
         .spawn((
@@ -244,7 +244,7 @@ fn camera_setup(
                 transform: Transform::from_xyz(0.0, 10.0, 0.0).looking_at(Vec3::ZERO, Vec3::Z),
                 ..default()
             },
-            Skybox(skybox_handle.clone()),
+            Skybox{image: skybox_handle.clone(), brightness: 1000.0},
             BloomSettings::default(),
             RenderLayers::from_layers(&[RenderLayerMap::General as u8, RenderLayerMap::Main as u8]),
         ))
@@ -277,7 +277,7 @@ fn asset_loaded(
         }
 
         for mut skybox in &mut skyboxes {
-            skybox.0 = cubemap.image_handle.clone();
+            skybox.image = cubemap.image_handle.clone();
         }
 
         cubemap.is_loaded = true;
@@ -292,7 +292,7 @@ fn mouse_controller(
     mut commands: Commands,
     mut ray_hit_event: EventReader<RayHit>,
     deselect_event: EventReader<DeselectEvent>,
-    key_input: Res<Input<KeyCode>>,
+    key_input: Res<ButtonInput<KeyCode>>,
 ) {
     if !deselect_event.is_empty() {
         println!("Deselection");
@@ -305,7 +305,7 @@ fn mouse_controller(
             }
         }
     }
-    for hit in ray_hit_event.iter() {
+    for hit in ray_hit_event.read() {
         if hit.mouse_key_enable_mouse && selected_entities.get_mut(hit.hit_entity).is_err() {
             if let Ok((_, _select, children)) = selectable.get_mut(hit.hit_entity) {
                 for child in children.iter() {
@@ -355,18 +355,18 @@ fn ray_from_mouse_position(
     camera_transform: &GlobalTransform,
 ) -> (Vec3, Vec3) {
     let mouse_position = window.cursor_position().unwrap_or(Vec2::new(0.0, 0.0));
-    let ray: Ray = camera
+    let ray: Ray3d = camera
         .viewport_to_world(camera_transform, mouse_position)
         .unwrap();
-    (ray.origin, ray.direction)
+    (ray.origin, *ray.direction)
 }
 
 fn ray_from_camera_center(camera: &Camera, camera_transform: &GlobalTransform) -> (Vec3, Vec3) {
     let mouse_position = Vec2::new(0.0, 0.0);
-    let ray: Ray = camera
+    let ray: Ray3d = camera
         .viewport_to_world(camera_transform, mouse_position)
         .unwrap();
-    (ray.origin, ray.direction)
+    (ray.origin, *ray.direction)
 }
 
 #[derive(Event)]
@@ -405,7 +405,7 @@ fn handle_select(
             mouse_unit_move_button,
             mouse_key_enable_mouse,
             ray_intersection,
-        })
+        });
     } else {
         deselect_event.send(DeselectEvent);
     }
@@ -435,13 +435,13 @@ fn handle_unit_move_cmd(
             mouse_unit_move_button,
             mouse_key_enable_mouse,
             ray_intersection,
-        })
+        });
     }
 }
 fn process_mouse(
     mut ray_hit_event: EventWriter<RayHit>,
     mut deselect_event: EventWriter<DeselectEvent>,
-    mouse_button_input: Res<Input<MouseButton>>,
+    mouse_button_input: Res<ButtonInput<MouseButton>>,
     camera_options: Query<(&CameraControllerSettings, &Camera, &GlobalTransform)>,
     primary_query: Query<&Window, With<PrimaryWindow>>,
     rapier_context: Res<RapierContext>,

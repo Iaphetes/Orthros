@@ -1061,6 +1061,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "bgel"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dd9f7c5f48736d54d7df4d1ac2f00d4fe286b861129fd0eb17e49778e7205bb0"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
 name = "bindgen"
 version = "0.69.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2744,6 +2753,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy_rapier3d",
+ "bgel",
  "serde_json",
  "strum",
  "strum_macros",

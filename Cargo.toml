@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 bevy = { version = "0.13", features = ["dynamic_linking"]}
 bevy_rapier3d = { version = "0.25", features = [  "debug-render-3d" ] }
+bgel = "*"
 strum = "*"
 strum_macros = "*"
 serde_json = "1.0"

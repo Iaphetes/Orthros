@@ -25,6 +25,7 @@ use civilisation::CivilisationPlugin;
 use resource_collection::ResourceCollection;
 use resources::{ResourceStockpiles, ResourceType};
 use spawner::{Civilisation, InstanceSpawnRequest, UnitType};
+use bevy_gltf_extended_loader::GLTFExtender;
 enum TechLevel {
     L0,
 }
@@ -59,6 +60,7 @@ fn main() {
         // .add_plugins((RapierPhysicsPlugin::<NoUserData>::default(), CivilisationPlugin, RapierDebugRenderPlugin::default()))
         .insert_resource(Msaa::Sample4)
         .add_plugins((
+            GLTFExtender,
             PlayerController,
             Environment,
             UnitMovement,

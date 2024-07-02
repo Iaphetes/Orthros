@@ -16,6 +16,7 @@ use bevy_rapier3d::{
     prelude::{GravityScale, RigidBody},
 };
 
+use bgel::SpawnAsset;
 pub struct Environment;
 
 impl Plugin for Environment {
@@ -39,7 +40,7 @@ impl Plugin for Environment {
 // #[uuid = "f690fdae-d598-45ab-8225-97e2a3f056e0"]
 pub struct CustomMaterial {
     #[uniform(0)]
-    color: Color,
+    color: LinearRgba,
     alpha_mode: AlphaMode,
 }
 
@@ -74,6 +75,7 @@ pub fn environment_setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut custom_materials: ResMut<Assets<CustomMaterial>>,
     asset_server: Res<AssetServer>,
+
 ) {
     // directional 'sun' light
     commands.spawn(DirectionalLightBundle {
@@ -93,12 +95,12 @@ pub fn environment_setup(
             mesh: meshes.add(
                 Plane3d::default().mesh().size(200.0, 200.0)            ),
             material: custom_materials.add(CustomMaterial {
-                color: Color::GRAY,
+                color: LinearRgba::new(0.5, 0.5, 0.5, 1.0),
                 alpha_mode: AlphaMode::Add,
             }),
             ..default()
         },
-        RenderLayers::layer(RenderLayerMap::Main as u8),
+        RenderLayers::layer(RenderLayerMap::Main as usize),
     ));
     commands.spawn((
         Transform::from_xyz(0.0, 2.0, 0.0),
@@ -108,7 +110,7 @@ pub fn environment_setup(
 
     commands.spawn((
         SceneBundle {
-            scene: asset_server.load("3d_models/environment/planet.gltf#Scene0"),
+            scene: asset_server.load("3d_models/environment/planet.glb#Scene0"),
             transform: Transform::from_xyz(0.0, 2.0, 6772.0)
                 .with_rotation(Quat::from_rotation_y((75.0_f32).to_radians())),
             // transform: Transform::from_scale(Vec3::splat(0.5)),
@@ -116,9 +118,11 @@ pub fn environment_setup(
         },
         RigidBody::KinematicPositionBased,
         GravityScale(0.0),
-        RenderLayers::layer(RenderLayerMap::Main as u8),
+        RenderLayers::layer(RenderLayerMap::Main as usize),
         // ContextMenuActions {},
     ));
+    let my_gltf = asset_server.load("3d_models/environment/planet.glb#Scene0");
+    commands.spawn(SpawnAsset { handle: my_gltf });
     let parent: Entity = commands
         .spawn((
             SceneBundle {
@@ -130,7 +134,7 @@ pub fn environment_setup(
             RigidBody::KinematicPositionBased,
             Sensor,
             GravityScale(0.0),
-            RenderLayers::layer(RenderLayerMap::Main as u8),
+            RenderLayers::layer(RenderLayerMap::Main as usize),
             Collider::ball(1.0),
             ResourceSource,
             ResourceLevel {
@@ -139,6 +143,8 @@ pub fn environment_setup(
             }, // ContextMenuActions {},
         ))
         .id();
+    let my_gltf = asset_server.load("3d_models/environment/asteroid_01.glb");
+    commands.spawn(SpawnAsset { handle: my_gltf });
     commands.spawn((
         EntityWrapper { entity: parent },
         UnitSpecification {
@@ -153,10 +159,11 @@ pub fn environment_setup(
             base_stats: UnitStats(Vec::new()),
         },
     ));
+
     let parent: Entity = commands
         .spawn((
             SceneBundle {
-                scene: asset_server.load("3d_models/environment/sun.gltf#Scene0"),
+                scene: asset_server.load("3d_models/environment/sun.glb#Scene0"),
                 transform: Transform::from_xyz(150_000_000_000.0, 2.0, 5.0)
                     .with_scale(Vec3::splat(100000.0)),
 
@@ -165,14 +172,16 @@ pub fn environment_setup(
             },
             RigidBody::KinematicPositionBased,
             GravityScale(0.0),
-            RenderLayers::layer(RenderLayerMap::Main as u8),
+            RenderLayers::layer(RenderLayerMap::Main as usize),
             // ContextMenuActions {},
         ))
         .id();
+    let my_gltf = asset_server.load("3d_models/environment/sun.glb");
+    commands.spawn(SpawnAsset { handle: my_gltf });
     commands.spawn((
         EntityWrapper { entity: parent },
         UnitSpecification {
-            file_path: "assets/3d_models/environment/sun.gltf".to_owned(),
+            file_path: "assets/3d_models/environment/sun.glb".to_owned(),
             scene: "Scene0".to_owned(),
             icon_path: "".to_owned(),
             unit_name: "Sun".to_owned(),

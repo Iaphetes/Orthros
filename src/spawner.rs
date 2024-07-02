@@ -9,6 +9,7 @@ use bevy_rapier3d::{prelude::*, rapier::prelude::ShapeType};
 use std::ops::{Deref, DerefMut};
 // use std::collections::HashMap;
 use std::fmt;
+use bgel::SpawnAsset;
 // Create some sort of unit map with regards to civ
 #[derive(Eq, Hash, PartialEq, Clone, Copy)]
 pub enum Civilisation {
@@ -96,13 +97,18 @@ pub struct UnitInformation {
 }
 impl Plugin for InstanceSpawner {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, spawn)
+        app.add_systems(Startup, populate_units)
+            .add_systems(Update, spawn)
             .add_event::<InstanceSpawnRequest>();
         // .add_systems(Update, update_emissiveness.before(spawn));
-        populate_units(app);
+        // populate_units(app);
     }
 }
-fn populate_units(app: &mut App) {
+fn populate_units(
+    // app: &mut App, 
+    asset_server: Res<AssetServer>,
+    mut commands: Commands,
+) {
     let mut unit_specifications: UnitSpecifications = UnitSpecifications {
         unit_specifications: HashMap::new(),
     };
@@ -124,6 +130,8 @@ fn populate_units(app: &mut App) {
             base_stats: UnitStats(Vec::new()),
         },
     );
+    let my_gltf = asset_server.load("3d_models/units/greek/cruiser/greek_cruiser.gltf");
+    commands.spawn(SpawnAsset { handle: my_gltf });
     unit_specifications.unit_specifications.insert(
         (Civilisation::Greek, UnitType::MiningStation),
         UnitSpecification {
@@ -146,26 +154,28 @@ fn populate_units(app: &mut App) {
             ]),
         },
     );
+    let my_gltf = asset_server.load("3d_models/buildings/greek/spacestation.glb");
+    commands.spawn(SpawnAsset { handle: my_gltf });
     unit_specifications.unit_specifications.insert(
         (Civilisation::Greek, UnitType::Spacestation),
         UnitSpecification {
-            file_path: "./assets/3d_models/buildings/greek/spacestation.gltf".into(),
+            file_path: "./assets/3d_models/buildings/greek/spacestation.glb".into(),
             scene: "Scene0".to_owned(),
             icon_path: "./3d_models/buildings/greek/spacestation_thumbnail.png".into(),
             unit_name: "Akinetos Space Station".into(),
             movable: false,
-            shape: ShapeType::Capsule,
+            shape: ShapeType::Ball,
             dimensions: Vec3 {
-                x: 10.0,
-                y: 15.0,
-                z: 10.0,
+                x: 50.0,
+                y: 50.0,
+                z: 30.0,
             },
-            prescaling: 0.2,
+            prescaling: 0.02,
             base_stats: UnitStats(Vec::new()),
         },
     );
 
-    app.insert_resource(unit_specifications);
+    commands.insert_resource(unit_specifications);
 }
 #[derive(Component)]
 pub struct EntityWrapper {

@@ -13,13 +13,14 @@ use bevy::render::render_resource::{TextureViewDescriptor, TextureViewDimension}
 use bevy::render::view::RenderLayers;
 use bevy::window::PrimaryWindow;
 use bevy::{core_pipeline::bloom::BloomSettings, prelude::*};
+use bevy_rapier3d::prelude::*;
+
 #[repr(u8)]
 pub enum RenderLayerMap {
     General = 0,
     Main = 1,
     Minimap = 2,
 }
-use bevy_rapier3d::prelude::*;
 pub struct PlayerController;
 #[derive(Event)]
 pub struct DeselectEvent;
@@ -97,7 +98,7 @@ impl Default for CameraControllerSettings {
             yaw: 0.0,
             velocity: Vec3::ZERO,
             pan_speed: 4.0,
-            zoom_speed: 50.0,
+            zoom_speed: 500.0,
             zoom_min: 5.0,
             zoom_max: 100000.0,
         }

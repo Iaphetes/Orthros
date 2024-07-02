@@ -15,17 +15,17 @@ use bevy::render::render_resource::{
 };
 use bevy::render::view::RenderLayers;
 use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, prelude::*};
-const ICON_BACKGROUND: Color = Color::rgb(12.0 / 256.0, 11.0 / 256.0, 13.0 / 256.0);
+const ICON_BACKGROUND: Color = Color::srgb(12.0 / 256.0, 11.0 / 256.0, 13.0 / 256.0);
 const NORMAL_BUTTON: Color = Color::WHITE;
-const HOVERED_BUTTON: Color = Color::rgb(64.0 / 256.0, 99.0 / 256.0, 64.0 / 256.0);
-const PRESSED_BUTTON: Color = Color::rgb(75.0 / 256.0, 110.0 / 256.0, 75.0 / 256.0);
-const MAIN_UI_BACKGROUND: Color = Color::rgba(
+const HOVERED_BUTTON: Color = Color::srgb(64.0 / 256.0, 99.0 / 256.0, 64.0 / 256.0);
+const PRESSED_BUTTON: Color = Color::srgb(75.0 / 256.0, 110.0 / 256.0, 75.0 / 256.0);
+const MAIN_UI_BACKGROUND: Color = Color::srgba(
     0x81 as f32 / 256.0,
     0xC1 as f32 / 256.0,
     0x14 as f32 / 256.0,
     0xF0 as f32 / 256.0,
 );
-const MAIN_UI_TEXT: Color = Color::rgb(12.0 / 256.0, 11.0 / 256.0, 13.0 / 256.0);
+const MAIN_UI_TEXT: Color = Color::srgb(12.0 / 256.0, 11.0 / 256.0, 13.0 / 256.0);
 #[derive(PartialEq, Eq, Clone, Copy)]
 enum UIType {
     MapUI,

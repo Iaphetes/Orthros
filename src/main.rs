@@ -25,7 +25,7 @@ use civilisation::CivilisationPlugin;
 use resource_collection::ResourceCollection;
 use resources::{ResourceStockpiles, ResourceType};
 use spawner::{Civilisation, InstanceSpawnRequest, UnitType};
-use bevy_gltf_extended_loader::GLTFExtender;
+use bgel::GLTFExtender;
 enum TechLevel {
     L0,
 }

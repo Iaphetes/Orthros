@@ -8,8 +8,8 @@ use bevy::{prelude::*, render::view::RenderLayers, utils::HashMap};
 use bevy_rapier3d::{prelude::*, rapier::prelude::ShapeType};
 use std::ops::{Deref, DerefMut};
 // use std::collections::HashMap;
+// use bgel::SpawnAsset;
 use std::fmt;
-use bgel::SpawnAsset;
 // Create some sort of unit map with regards to civ
 #[derive(Eq, Hash, PartialEq, Clone, Copy)]
 pub enum Civilisation {
@@ -105,7 +105,7 @@ impl Plugin for InstanceSpawner {
     }
 }
 fn populate_units(
-    // app: &mut App, 
+    // app: &mut App,
     asset_server: Res<AssetServer>,
     mut commands: Commands,
 ) {
@@ -130,8 +130,8 @@ fn populate_units(
             base_stats: UnitStats(Vec::new()),
         },
     );
-    let my_gltf = asset_server.load("3d_models/units/greek/cruiser/greek_cruiser.gltf");
-    commands.spawn(SpawnAsset { handle: my_gltf });
+    // let my_gltf = asset_server.load("3d_models/units/greek/cruiser/greek_cruiser.gltf");
+    // commands.spawn(SpawnAsset { handle: my_gltf });
     unit_specifications.unit_specifications.insert(
         (Civilisation::Greek, UnitType::MiningStation),
         UnitSpecification {
@@ -154,8 +154,8 @@ fn populate_units(
             ]),
         },
     );
-    let my_gltf = asset_server.load("3d_models/buildings/greek/spacestation.glb");
-    commands.spawn(SpawnAsset { handle: my_gltf });
+    // let my_gltf = asset_server.load("3d_models/buildings/greek/spacestation.glb");
+    // commands.spawn(SpawnAsset { handle: my_gltf });
     unit_specifications.unit_specifications.insert(
         (Civilisation::Greek, UnitType::Spacestation),
         UnitSpecification {
@@ -241,37 +241,34 @@ fn spawn(
                     RigidBody::KinematicPositionBased,
                     collider,
                     GravityScale(0.0),
-                    RenderLayers::layer(RenderLayerMap::Main as u8),
+                    RenderLayers::layer(RenderLayerMap::Main as usize),
                     // ContextMenuActions {},
                 ))
                 .with_children(|parent| {
                     parent.spawn((
                         MaterialMeshBundle {
-                            mesh: meshes.add(
-                                Plane3d::default().mesh().size(
-                                    2.5 * unit_specification.dimensions.max_element(),
-                                    2.5 * unit_specification.dimensions.max_element(),
-                                )
-                            ),
+                            mesh: meshes.add(Plane3d::default().mesh().size(
+                                2.5 * unit_specification.dimensions.max_element(),
+                                2.5 * unit_specification.dimensions.max_element(),
+                            )),
                             material: material_handle,
                             transform: Transform::from_scale(Vec3::splat(1.0)),
                             visibility: Visibility::Hidden,
                             ..default()
                         },
                         SelectionCircle,
-                        RenderLayers::layer(RenderLayerMap::Main as u8),
+                        RenderLayers::layer(RenderLayerMap::Main as usize),
                     ));
                     parent.spawn((
                         MaterialMeshBundle {
-                            mesh: meshes.add(
-                                Plane3d::default().mesh().size(10.0, 10.0)                             ),
+                            mesh: meshes.add(Plane3d::default().mesh().size(10.0, 10.0)),
                             material: materials.add(StandardMaterial {
-                                base_color: Color::rgba(0.0, 1.0, 0.0, 0.5),
+                                base_color: Color::srgba(0.0, 1.0, 0.0, 0.5),
                                 ..Default::default()
                             }),
                             ..default()
                         },
-                        RenderLayers::layer(RenderLayerMap::Minimap as u8),
+                        RenderLayers::layer(RenderLayerMap::Minimap as usize),
                     ));
                 })
                 .id();

@@ -15,7 +15,7 @@ use bevy::window::PrimaryWindow;
 use bevy::{core_pipeline::bloom::BloomSettings, prelude::*};
 use bevy_rapier3d::prelude::*;
 
-#[repr(u8)]
+#[repr(usize)]
 pub enum RenderLayerMap {
     General = 0,
     Main = 1,
@@ -245,9 +245,15 @@ fn camera_setup(
                 transform: Transform::from_xyz(0.0, 10.0, 0.0).looking_at(Vec3::ZERO, Vec3::Z),
                 ..default()
             },
-            Skybox{image: skybox_handle.clone(), brightness: 1000.0},
+            Skybox {
+                image: skybox_handle.clone(),
+                brightness: 1000.0,
+            },
             BloomSettings::default(),
-            RenderLayers::from_layers(&[RenderLayerMap::General as u8, RenderLayerMap::Main as u8]),
+            RenderLayers::from_layers(&[
+                RenderLayerMap::General as usize,
+                RenderLayerMap::Main as usize,
+            ]),
         ))
         .insert(CameraControllerSettings::default());
     commands.insert_resource(Cubemap {
@@ -262,7 +268,7 @@ fn asset_loaded(
     mut skyboxes: Query<&mut Skybox>,
 ) {
     if !cubemap.is_loaded
-        && asset_server.get_load_state(cubemap.image_handle.clone_weak()) == Some(LoadState::Loaded)
+        && asset_server.get_load_state(&cubemap.image_handle) == Some(LoadState::Loaded)
     {
         let image = images.get_mut(&cubemap.image_handle).unwrap();
         // NOTE: PNGs do not have any metadata that could indicate they contain a cubemap texture,

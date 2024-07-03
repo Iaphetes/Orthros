@@ -1,10 +1,9 @@
 use crate::resources::{ResourceLevel, ResourceSource, ResourceType};
 use crate::spawner::{UnitSpecification, UnitStats};
 use crate::{player_controller::RenderLayerMap, spawner::EntityWrapper};
-use bevy::pbr::MaterialExtension;
 use bevy::{
     prelude::*,
-    reflect::{TypePath},
+    reflect::TypePath,
     render::{
         render_resource::{AsBindGroup, ShaderRef},
         view::RenderLayers,
@@ -16,7 +15,6 @@ use bevy_rapier3d::{
     prelude::{GravityScale, RigidBody},
 };
 
-use bgel::SpawnAsset;
 pub struct Environment;
 
 impl Plugin for Environment {
@@ -75,12 +73,11 @@ pub fn environment_setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut custom_materials: ResMut<Assets<CustomMaterial>>,
     asset_server: Res<AssetServer>,
-
 ) {
     // directional 'sun' light
     commands.spawn(DirectionalLightBundle {
         directional_light: DirectionalLight {
-            illuminance: 32000.0,
+            illuminance: 3200.0,
             ..default()
         },
         transform: Transform {
@@ -92,8 +89,7 @@ pub fn environment_setup(
     });
     commands.spawn((
         MaterialMeshBundle {
-            mesh: meshes.add(
-                Plane3d::default().mesh().size(200.0, 200.0)            ),
+            mesh: meshes.add(Plane3d::default().mesh().size(200.0, 200.0)),
             material: custom_materials.add(CustomMaterial {
                 color: LinearRgba::new(0.5, 0.5, 0.5, 1.0),
                 alpha_mode: AlphaMode::Add,
@@ -121,8 +117,8 @@ pub fn environment_setup(
         RenderLayers::layer(RenderLayerMap::Main as usize),
         // ContextMenuActions {},
     ));
-    let my_gltf = asset_server.load("3d_models/environment/planet.glb#Scene0");
-    commands.spawn(SpawnAsset { handle: my_gltf });
+    // let my_gltf = asset_server.load("3d_models/environment/planet.glb#Scene0");
+    // commands.spawn(SpawnAsset { handle: my_gltf });
     let parent: Entity = commands
         .spawn((
             SceneBundle {
@@ -143,8 +139,8 @@ pub fn environment_setup(
             }, // ContextMenuActions {},
         ))
         .id();
-    let my_gltf = asset_server.load("3d_models/environment/asteroid_01.glb");
-    commands.spawn(SpawnAsset { handle: my_gltf });
+    // let my_gltf = asset_server.load("3d_models/environment/asteroid_01.glb");
+    // commands.spawn(SpawnAsset { handle: my_gltf });
     commands.spawn((
         EntityWrapper { entity: parent },
         UnitSpecification {
@@ -176,8 +172,8 @@ pub fn environment_setup(
             // ContextMenuActions {},
         ))
         .id();
-    let my_gltf = asset_server.load("3d_models/environment/sun.glb");
-    commands.spawn(SpawnAsset { handle: my_gltf });
+    // let my_gltf = asset_server.load("3d_models/environment/sun.glb");
+    // commands.spawn(SpawnAsset { handle: my_gltf });
     commands.spawn((
         EntityWrapper { entity: parent },
         UnitSpecification {
@@ -195,23 +191,23 @@ pub fn environment_setup(
     // ambient light
     // NOTE: The ambient light is used to scale how bright the environment map is so with a bright
     // environment map, use an appropriate colour and brightness to match
-    commands.insert_resource(AmbientLight {
-        color: Color::ANTIQUE_WHITE,
-        brightness: 1.0,
-    });
-    commands.spawn(SpotLightBundle {
-        transform: Transform::from_xyz(-1.0, 20.0, 0.0)
-            .looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Z),
-        spot_light: SpotLight {
-            intensity: 1600000.0, // lumens - roughly a 100W non-halogen incandescent bulb
-            color: Color::DARK_GRAY,
-            shadows_enabled: true,
-            // inner_angle: 0.6,
-            // outer_angle: 0.8,
-            ..default()
-        },
-        ..default()
-    });
+    // commands.insert_resource(AmbientLight {
+    //     color: Color::from(bevy::color::palettes::css::ANTIQUE_WHITE),
+    //     brightness: 1.0,
+    // });
+    // commands.spawn(SpotLightBundle {
+    //     transform: Transform::from_xyz(-1.0, 20.0, 0.0)
+    //         .looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Z),
+    //     spot_light: SpotLight {
+    //         intensity: 160.0, // lumens - roughly a 100W non-halogen incandescent bulb
+    //         color: Color::from(bevy::color::palettes::css::DARK_GRAY),
+    //         shadows_enabled: true,
+    //         // inner_angle: 0.6,
+    //         // outer_angle: 0.8,
+    //         ..default()
+    //     },
+    //     ..default()
+    // });
 }
 fn setup_movement_grid(mut movement_grid: ResMut<MovementGrid>) {
     for i in 0..movement_grid.settings.grid_width as usize {

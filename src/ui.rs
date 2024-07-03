@@ -7,8 +7,8 @@ use crate::spawner::{
     InstanceSpawnRequest, UnitInformation, UnitSpecification, UnitSpecifications,
 };
 use crate::{ContextMenuAction, LocalPlayer, PlayerInfo};
-use bevy::render::camera::ClearColorConfig;
 use bevy::diagnostic::DiagnosticsStore;
+use bevy::render::camera::ClearColorConfig;
 use bevy::render::camera::RenderTarget;
 use bevy::render::render_resource::{
     Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
@@ -88,9 +88,7 @@ fn initialise_mini_map(commands: &mut Commands, mut images: ResMut<Assets<Image>
     let image_handle = images.add(image);
     commands.spawn((
         Camera3dBundle {
-            camera_3d: Camera3d {
-                ..default()
-            },
+            camera_3d: Camera3d { ..default() },
             camera: Camera {
                 clear_color: ClearColorConfig::Custom(Color::WHITE),
                 // render before the "main pass" camera
@@ -103,7 +101,10 @@ fn initialise_mini_map(commands: &mut Commands, mut images: ResMut<Assets<Image>
             ..default()
         },
         // UiCameraConfig { show_ui: false },
-        RenderLayers::from_layers(&[RenderLayerMap::General as u8, RenderLayerMap::Minimap as u8]),
+        RenderLayers::from_layers(&[
+            RenderLayerMap::General as usize,
+            RenderLayerMap::Minimap as usize,
+        ]),
     ));
     commands
         .spawn(NodeBundle {
@@ -824,7 +825,7 @@ fn update_resources(
                 }
             }
         }
-    }else{
+    } else {
         error!("No local player found");
         process::exit(1);
     }

@@ -117,8 +117,6 @@ pub fn environment_setup(
         RenderLayers::layer(RenderLayerMap::Main as usize),
         // ContextMenuActions {},
     ));
-    // let my_gltf = asset_server.load("3d_models/environment/planet.glb#Scene0");
-    // commands.spawn(SpawnAsset { handle: my_gltf });
     let parent: Entity = commands
         .spawn((
             SceneBundle {
@@ -139,8 +137,6 @@ pub fn environment_setup(
             }, // ContextMenuActions {},
         ))
         .id();
-    // let my_gltf = asset_server.load("3d_models/environment/asteroid_01.glb");
-    // commands.spawn(SpawnAsset { handle: my_gltf });
     commands.spawn((
         EntityWrapper { entity: parent },
         UnitSpecification {
@@ -172,8 +168,6 @@ pub fn environment_setup(
             // ContextMenuActions {},
         ))
         .id();
-    // let my_gltf = asset_server.load("3d_models/environment/sun.glb");
-    // commands.spawn(SpawnAsset { handle: my_gltf });
     commands.spawn((
         EntityWrapper { entity: parent },
         UnitSpecification {
@@ -188,26 +182,6 @@ pub fn environment_setup(
             base_stats: UnitStats(Vec::new()),
         },
     ));
-    // ambient light
-    // NOTE: The ambient light is used to scale how bright the environment map is so with a bright
-    // environment map, use an appropriate colour and brightness to match
-    // commands.insert_resource(AmbientLight {
-    //     color: Color::from(bevy::color::palettes::css::ANTIQUE_WHITE),
-    //     brightness: 1.0,
-    // });
-    // commands.spawn(SpotLightBundle {
-    //     transform: Transform::from_xyz(-1.0, 20.0, 0.0)
-    //         .looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Z),
-    //     spot_light: SpotLight {
-    //         intensity: 160.0, // lumens - roughly a 100W non-halogen incandescent bulb
-    //         color: Color::from(bevy::color::palettes::css::DARK_GRAY),
-    //         shadows_enabled: true,
-    //         // inner_angle: 0.6,
-    //         // outer_angle: 0.8,
-    //         ..default()
-    //     },
-    //     ..default()
-    // });
 }
 fn setup_movement_grid(mut movement_grid: ResMut<MovementGrid>) {
     for i in 0..movement_grid.settings.grid_width as usize {

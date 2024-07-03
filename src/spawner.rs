@@ -8,7 +8,6 @@ use bevy::{prelude::*, render::view::RenderLayers, utils::HashMap};
 use bevy_rapier3d::{prelude::*, rapier::prelude::ShapeType};
 use std::ops::{Deref, DerefMut};
 // use std::collections::HashMap;
-// use bgel::SpawnAsset;
 use std::fmt;
 // Create some sort of unit map with regards to civ
 #[derive(Eq, Hash, PartialEq, Clone, Copy)]
@@ -130,8 +129,6 @@ fn populate_units(
             base_stats: UnitStats(Vec::new()),
         },
     );
-    // let my_gltf = asset_server.load("3d_models/units/greek/cruiser/greek_cruiser.gltf");
-    // commands.spawn(SpawnAsset { handle: my_gltf });
     unit_specifications.unit_specifications.insert(
         (Civilisation::Greek, UnitType::MiningStation),
         UnitSpecification {
@@ -154,8 +151,6 @@ fn populate_units(
             ]),
         },
     );
-    // let my_gltf = asset_server.load("3d_models/buildings/greek/spacestation.glb");
-    // commands.spawn(SpawnAsset { handle: my_gltf });
     unit_specifications.unit_specifications.insert(
         (Civilisation::Greek, UnitType::Spacestation),
         UnitSpecification {

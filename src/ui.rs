@@ -7,6 +7,7 @@ use crate::spawner::{
     InstanceSpawnRequest, UnitInformation, UnitSpecification, UnitSpecifications,
 };
 use crate::{ContextMenuAction, LocalPlayer, PlayerInfo};
+use bevy::core_pipeline::Skybox;
 use bevy::diagnostic::DiagnosticsStore;
 use bevy::render::camera::ClearColorConfig;
 use bevy::render::camera::RenderTarget;
@@ -63,7 +64,11 @@ impl Plugin for GameUI {
 }
 #[derive(Component)]
 pub struct RayBlock;
-fn initialise_mini_map(commands: &mut Commands, mut images: ResMut<Assets<Image>>) -> Entity {
+fn initialise_mini_map(
+    commands: &mut Commands,
+    mut images: ResMut<Assets<Image>>,
+    asset_server: &Res<AssetServer>,
+) -> Entity {
     let size = Extent3d {
         width: 256,
         height: 256,
@@ -86,6 +91,9 @@ fn initialise_mini_map(commands: &mut Commands, mut images: ResMut<Assets<Image>
     };
     image.resize(size);
     let image_handle = images.add(image);
+
+    let skybox_handle: Handle<Image> = asset_server.load("textures/skybox/stacked.png");
+
     commands.spawn((
         Camera3dBundle {
             camera_3d: Camera3d { ..default() },
@@ -96,11 +104,15 @@ fn initialise_mini_map(commands: &mut Commands, mut images: ResMut<Assets<Image>
                 target: RenderTarget::Image(image_handle.clone()),
                 ..default()
             },
+
             transform: Transform::from_translation(Vec3::new(0.0, 200.0, 0.0))
                 .looking_at(Vec3::ZERO, Vec3::Z),
             ..default()
         },
-        // UiCameraConfig { show_ui: false },
+        Skybox {
+            image: skybox_handle.clone(),
+            brightness: 1000.0,
+        }, // UiCameraConfig { show_ui: false },
         RenderLayers::from_layers(&[
             RenderLayerMap::General as usize,
             RenderLayerMap::Minimap as usize,
@@ -204,7 +216,7 @@ fn game_overlay(
 ) {
     let map_ui_content: Vec<Entity> = vec![
         // commands.spawn(NodeBundle::default()).id(),
-        initialise_mini_map(&mut commands, images),
+        initialise_mini_map(&mut commands, images, &asset_server),
         // commands.spawn(NodeBundle::default()).id(),
     ];
     let default_column_style: Style = Style {

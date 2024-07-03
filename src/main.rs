@@ -25,7 +25,6 @@ use civilisation::CivilisationPlugin;
 use resource_collection::ResourceCollection;
 use resources::{ResourceStockpiles, ResourceType};
 use spawner::{Civilisation, InstanceSpawnRequest, UnitType};
-use bgel::GLTFExtender;
 enum TechLevel {
     L0,
 }
@@ -60,7 +59,6 @@ fn main() {
         // .add_plugins((RapierPhysicsPlugin::<NoUserData>::default(), CivilisationPlugin, RapierDebugRenderPlugin::default()))
         .insert_resource(Msaa::Sample4)
         .add_plugins((
-            GLTFExtender,
             PlayerController,
             Environment,
             UnitMovement,
@@ -76,10 +74,7 @@ fn main() {
         .run();
 }
 
-fn setup(
-    mut commands: Commands,
-    mut spawn_events: EventWriter<InstanceSpawnRequest>,
-) {
+fn setup(mut commands: Commands, mut spawn_events: EventWriter<InstanceSpawnRequest>) {
     let mut player_info: PlayerInfo = PlayerInfo {
         civilisation: Civilisation::Greek,
         tech_level: TechLevel::L0,

@@ -101,8 +101,8 @@ pub fn calculate_a_star(
     mut movables: Query<(Entity, &mut AStarParams), Without<MovementPath>>,
     gridmap: Res<MovementGrid>,
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    // mut meshes: ResMut<Assets<Mesh>>,
+    // mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     for (entity, mut params) in movables.iter_mut() {
         let mut current: NodeCoords = NodeCoords {
@@ -122,8 +122,8 @@ pub fn calculate_a_star(
             }
         }
 
-        let current_real: Vec2 =
-            (current.xy.as_vec2() - gridmap.settings.xy_offset) * gridmap.settings.cell_size;
+        // let current_real: Vec2 =
+        //     (current.xy.as_vec2() - gridmap.settings.xy_offset) * gridmap.settings.cell_size;
         //        commands.spawn(PbrBundle {
         //            mesh: meshes.add(Mesh::from(shape::Plane {
         //                size: 0.5,

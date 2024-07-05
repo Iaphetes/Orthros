@@ -1,5 +1,5 @@
 use bevy::{prelude::*, utils::HashMap};
-#[derive(PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
 pub enum ResourceType {
     Plotanium,
 }

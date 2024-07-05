@@ -27,7 +27,7 @@ const MAIN_UI_BACKGROUND: Color = Color::srgba(
     0xF0 as f32 / 256.0,
 );
 const MAIN_UI_TEXT: Color = Color::srgb(12.0 / 256.0, 11.0 / 256.0, 13.0 / 256.0);
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
 enum UIType {
     MapUI,
     SelectionInfo,
@@ -35,7 +35,7 @@ enum UIType {
     Resources(ResourceType),
     Diagnostics,
 }
-#[derive(Component, PartialEq, Eq, Clone, Copy)]
+#[derive(Component, PartialEq, Eq, Clone, Copy, Debug)]
 enum UIContent {
     Content(UIType),
     Decoration(UIType),
@@ -150,6 +150,7 @@ fn create_ui_segment(
     content: Vec<Entity>,
     foreground_decoration: Vec<Entity>,
 ) -> Entity {
+    println!("Creating {:?} UI", ui_type);
     commands
         .spawn((NodeBundle { style, ..default() }, Interaction::None))
         .with_children(|parent| {
@@ -169,6 +170,7 @@ fn create_ui_segment(
                     },
                 ))
                 .push_children(&background_decoration);
+
             parent
                 .spawn((
                     UIContent::Content(ui_type),
@@ -448,6 +450,7 @@ fn game_overlay(
             },
             UIType::ContextMenu,
             context_menu_decoration,
+            // map_ui_content.clone(),
             Vec::new(),
             Vec::new(),
         ),
@@ -464,6 +467,7 @@ fn game_overlay(
             },
             UIType::SelectionInfo,
             selection_info_decoration,
+            // map_ui_content.clone(),
             Vec::new(),
             Vec::new(),
         ),
@@ -726,34 +730,25 @@ fn populate_lower_ui(
     asset_server: Res<AssetServer>,
     mut ray_hit_event: EventReader<RayHit>,
     mut unit_info: Query<&UnitInformation, With<Selectable>>,
-    ui_elements: Query<(Entity, &UIContent, &Children)>,
-    ui_children: Query<Entity, With<Style>>,
+    ui_elements: Query<(Entity, &UIContent)>,
     player_info: Query<&PlayerInfo, With<LocalPlayer>>,
     unit_specifications: Res<UnitSpecifications>,
 ) {
     if let Ok(player_info) = player_info.get_single() {
         for hit in ray_hit_event.read() {
             if hit.mouse_key_enable_mouse {
-                let (selection_info_content, _, children): (Entity, _, &Children) = ui_elements
+                let (selection_info_content, _): (Entity, _) = ui_elements
                     .into_iter()
-                    .find(|(_, content, _)| **content == UIContent::Content(UIType::SelectionInfo))
+                    .find(|(_, content)| **content == UIContent::Content(UIType::SelectionInfo))
                     .unwrap();
-                for &child in children.iter() {
-                    println!("{:#?}", child);
-                    if let Ok(child) = ui_children.get(child) {
-                        commands.entity(child).despawn_recursive();
-                    }
-                }
-                let (context_menu_content, _, children): (Entity, _, &Children) = ui_elements
+                commands
+                    .entity(selection_info_content)
+                    .despawn_descendants();
+                let (context_menu_content, _): (Entity, _) = ui_elements
                     .into_iter()
-                    .find(|(_, content, _)| **content == UIContent::Content(UIType::ContextMenu))
+                    .find(|(_, content)| **content == UIContent::Content(UIType::ContextMenu))
                     .unwrap();
-                for &child in children.iter() {
-                    println!("{:#?}", child);
-                    if let Ok(child) = ui_children.get(child) {
-                        commands.entity(child).despawn_recursive();
-                    }
-                }
+                commands.entity(context_menu_content).despawn_descendants();
                 if let Ok(unit_information) = unit_info.get_mut(hit.hit_entity) {
                     update_selection_info(
                         &mut commands,

@@ -1,21 +1,17 @@
 use crate::{
     movable::Movable,
     ownable::{Selectable, SelectionCircle},
-    player_controller::RenderLayerMap,
+    player_controller::{Civilisation, RenderLayerMap},
     resources::ResourceType,
+    utils::ShapeTypeSerializable,
 };
 use bevy::{prelude::*, render::view::RenderLayers, utils::HashMap};
 use bevy_rapier3d::{prelude::*, rapier::prelude::ShapeType};
+use serde::{Deserialize, Serialize};
 use std::ops::{Deref, DerefMut};
 // use std::collections::HashMap;
 use std::fmt;
 // Create some sort of unit map with regards to civ
-#[derive(Eq, Hash, PartialEq, Clone, Copy)]
-pub enum Civilisation {
-    Greek,
-    // ROMAN,
-    // JAPANESE,
-}
 impl fmt::Display for Civilisation {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -23,13 +19,13 @@ impl fmt::Display for Civilisation {
         }
     }
 }
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Serialize, Deserialize)]
 pub enum UnitStat {
     MaxMiningDist(f32),
     BaseMiningRate(f32),
     BonusMiningRate((ResourceType, f32)),
 }
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct UnitStats(pub Vec<UnitStat>);
 impl Deref for UnitStats {
     type Target = Vec<UnitStat>;
@@ -66,17 +62,19 @@ pub struct UnitSpecifications {
     pub unit_specifications: HashMap<(Civilisation, UnitType), UnitSpecification>,
 }
 //TODO specify modifications to model (e.g #update_emissiveness)
-#[derive(Clone, Component)]
+#[derive(Clone, Component, Serialize, Deserialize)]
 pub struct UnitSpecification {
     pub file_path: String,
     pub scene: String,
     pub icon_path: String,
     pub unit_name: String,
     pub movable: bool,
-    pub shape: ShapeType,
+    pub shape: ShapeTypeSerializable,
     pub dimensions: Vec3,
     pub prescaling: f32,
     pub base_stats: UnitStats,
+    pub unit_info: String,
+    pub unit_cost: HashMap<ResourceType, f32>,
 }
 pub struct InstanceSpawner;
 #[derive(Event)]
@@ -93,6 +91,8 @@ pub struct UnitInformation {
     pub civilisation: Civilisation,
     pub thumbnail: String,
     pub stats: UnitStats,
+    pub unit_info: String,
+    pub unit_cost: HashMap<ResourceType, f32>,
 }
 impl Plugin for InstanceSpawner {
     fn build(&self, app: &mut App) {
@@ -103,72 +103,69 @@ impl Plugin for InstanceSpawner {
         // populate_units(app);
     }
 }
-fn populate_units(
-    // app: &mut App,
-    asset_server: Res<AssetServer>,
-    mut commands: Commands,
-) {
+fn populate_units(mut commands: Commands) {
     let mut unit_specifications: UnitSpecifications = UnitSpecifications {
         unit_specifications: HashMap::new(),
     };
-    unit_specifications.unit_specifications.insert(
-        (Civilisation::Greek, UnitType::Cruiser),
-        UnitSpecification {
-            file_path: "./assets/3d_models/units/greek/cruiser/greek_cruiser.gltf".into(),
-            scene: "Scene0".to_owned(),
-            icon_path: "./3d_models/units/greek/cruiser/greek_cruiser_thumbnail.png".into(),
-            unit_name: "Andreia Class Cruiser".into(),
-            movable: true,
-            shape: ShapeType::Capsule,
-            dimensions: Vec3 {
-                x: 1.0,
-                y: 1.0,
-                z: 2.0,
-            },
-            prescaling: 0.1,
-            base_stats: UnitStats(Vec::new()),
-        },
-    );
-    unit_specifications.unit_specifications.insert(
-        (Civilisation::Greek, UnitType::MiningStation),
-        UnitSpecification {
-            file_path: "./assets/3d_models/units/greek/mining_rig/mining_rig.gltf".into(),
-            scene: "Scene0".to_owned(),
-            icon_path: "./3d_models/units/greek/mining_rig/mining_rig_thumbnail.png".into(),
-            unit_name: "Hephaestus Mining Station".into(),
-            movable: true,
-            shape: ShapeType::Capsule,
-            dimensions: Vec3 {
-                x: 1.0,
-                y: 1.0,
-                z: 2.0,
-            },
-            prescaling: 0.05,
-            base_stats: UnitStats(vec![
-                UnitStat::MaxMiningDist(1.5),
-                UnitStat::BaseMiningRate(24.0),
-                UnitStat::BonusMiningRate((ResourceType::Plotanium, 5.0)),
-            ]),
-        },
-    );
-    unit_specifications.unit_specifications.insert(
-        (Civilisation::Greek, UnitType::Spacestation),
-        UnitSpecification {
-            file_path: "./assets/3d_models/buildings/greek/spacestation.glb".into(),
-            scene: "Scene0".to_owned(),
-            icon_path: "./3d_models/buildings/greek/spacestation_thumbnail.png".into(),
-            unit_name: "Akinetos Space Station".into(),
-            movable: false,
-            shape: ShapeType::Ball,
-            dimensions: Vec3 {
-                x: 50.0,
-                y: 50.0,
-                z: 30.0,
-            },
-            prescaling: 0.02,
-            base_stats: UnitStats(Vec::new()),
-        },
-    );
+    todo!("Read from file");
+    // unit_specifications.unit_specifications.insert(
+    //     (Civilisation::Greek, UnitType::Cruiser),
+    //     UnitSpecification {
+    //         file_path: "./assets/3d_models/units/greek/cruiser/greek_cruiser.gltf".into(),
+    //         scene: "Scene0".to_owned(),
+    //         icon_path: "./3d_models/units/greek/cruiser/greek_cruiser_thumbnail.png".into(),
+    //         unit_name: "Andreia Class Cruiser".into(),
+    //         movable: true,
+    //         shape: ShapeTypeSerializable(ShapeType::Capsule),
+    //         dimensions: Vec3 {
+    //             x: 1.0,
+    //             y: 1.0,
+    //             z: 2.0,
+    //         },
+    //         prescaling: 0.1,
+    //         base_stats: UnitStats(Vec::new()),
+    //     },
+    // );
+    // unit_specifications.unit_specifications.insert(
+    //     (Civilisation::Greek, UnitType::MiningStation),
+    //     UnitSpecification {
+    //         file_path: "./assets/3d_models/units/greek/mining_rig/mining_rig.gltf".into(),
+    //         scene: "Scene0".to_owned(),
+    //         icon_path: "./3d_models/units/greek/mining_rig/mining_rig_thumbnail.png".into(),
+    //         unit_name: "Hephaestus Mining Station".into(),
+    //         movable: true,
+    //         shape: ShapeTypeSerializable(ShapeType::Capsule),
+    //         dimensions: Vec3 {
+    //             x: 1.0,
+    //             y: 1.0,
+    //             z: 2.0,
+    //         },
+    //         prescaling: 0.05,
+    //         base_stats: UnitStats(vec![
+    //             UnitStat::MaxMiningDist(1.5),
+    //             UnitStat::BaseMiningRate(24.0),
+    //             UnitStat::BonusMiningRate((ResourceType::Plotanium, 5.0)),
+    //         ]),
+    //     },
+    // );
+    // unit_specifications.unit_specifications.insert(
+    //     (Civilisation::Greek, UnitType::Spacestation),
+    //     UnitSpecification {
+    //         file_path: "./assets/3d_models/buildings/greek/spacestation.glb".into(),
+    //         scene: "Scene0".to_owned(),
+    //         icon_path: "./3d_models/buildings/greek/spacestation_thumbnail.png".into(),
+    //         unit_name: "Akinetos Space Station".into(),
+    //         movable: false,
+    //         shape: ShapeTypeSerializable(ShapeType::Ball),
+    //         dimensions: Vec3 {
+    //             x: 50.0,
+    //             y: 50.0,
+    //             z: 30.0,
+    //         },
+    //         prescaling: 0.02,
+    //         base_stats: UnitStats(Vec::new()),
+    //     },
+    // );
 
     commands.insert_resource(unit_specifications);
 }
@@ -195,7 +192,7 @@ fn spawn(
                 alpha_mode: AlphaMode::Blend,
                 ..default()
             });
-            let collider: Collider = match unit_specification.shape {
+            let collider: Collider = match unit_specification.shape.0 {
                 ShapeType::Ball => Collider::ball(unit_specification.dimensions.max_element()),
                 ShapeType::Capsule => Collider::capsule_z(
                     unit_specification.dimensions.max_element() / 2.0,
@@ -232,6 +229,8 @@ fn spawn(
                         civilisation: spawn_request.civilisation,
                         thumbnail: unit_specification.icon_path.clone(),
                         stats: unit_specification.base_stats.clone(),
+                        unit_info: unit_specification.unit_info.clone(),
+                        unit_cost: unit_specification.unit_cost.clone(),
                     },
                     RigidBody::KinematicPositionBased,
                     collider,

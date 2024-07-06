@@ -9,6 +9,7 @@ mod resource_collection;
 mod resources;
 mod spawner;
 mod ui;
+mod utils;
 
 use crate::environment::Environment;
 use crate::movable::UnitMovement;
@@ -22,29 +23,15 @@ use bevy::{
 };
 use bevy_rapier3d::prelude::*;
 use civilisation::CivilisationPlugin;
+use player_controller::{Civilisation, ContextMenuAction, LocalPlayer, PlayerInfo, TechLevel};
 use resource_collection::ResourceCollection;
 use resources::{ResourceStockpiles, ResourceType};
-use spawner::{Civilisation, InstanceSpawnRequest, UnitType};
-enum TechLevel {
-    L0,
-}
+use spawner::{InstanceSpawnRequest, UnitType};
 
 // #[derive(Component)]
 // struct ContextMenuActions {
 //     actions: Vec<ContextMenuAction>,
 // }
-#[derive(Component, Clone)]
-enum ContextMenuAction {
-    Build(UnitType),
-}
-#[derive(Component)]
-struct PlayerInfo {
-    civilisation: Civilisation,
-    tech_level: TechLevel,
-    context_menu_actions: HashMap<UnitType, Vec<ContextMenuAction>>,
-}
-#[derive(Component)]
-struct LocalPlayer;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {

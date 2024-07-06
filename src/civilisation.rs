@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use bevy::prelude::*;
 
-use crate::{resources::ResourceType, spawner::Civilisation};
+use crate::{player_controller::Civilisation, resources::ResourceType};
 
 pub struct EcoBoni {
     pub resource_boni: HashMap<ResourceType, f32>,

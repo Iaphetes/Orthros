@@ -1,6 +1,8 @@
 use crate::resources::{ResourceLevel, ResourceSource, ResourceType};
 use crate::spawner::{UnitSpecification, UnitStats};
+use crate::utils::ShapeTypeSerializable;
 use crate::{player_controller::RenderLayerMap, spawner::EntityWrapper};
+use bevy::utils::HashMap;
 use bevy::{
     prelude::*,
     reflect::TypePath,
@@ -145,10 +147,12 @@ pub fn environment_setup(
             icon_path: "".to_owned(),
             unit_name: "Asteroid".to_owned(),
             movable: true,
-            shape: bevy_rapier3d::rapier::prelude::ShapeType::Ball,
+            shape: ShapeTypeSerializable(bevy_rapier3d::rapier::prelude::ShapeType::Ball),
             dimensions: Vec3::splat(1.0),
             prescaling: 1.0,
             base_stats: UnitStats(Vec::new()),
+            unit_info: "Asteroid. Rich in Plotanium".into(),
+            unit_cost: HashMap::new(),
         },
     ));
 
@@ -176,10 +180,12 @@ pub fn environment_setup(
             icon_path: "".to_owned(),
             unit_name: "Sun".to_owned(),
             movable: true,
-            shape: bevy_rapier3d::rapier::prelude::ShapeType::Ball,
+            shape: ShapeTypeSerializable(bevy_rapier3d::rapier::prelude::ShapeType::Ball),
             dimensions: Vec3::splat(1.0),
             prescaling: 1.0,
             base_stats: UnitStats(Vec::new()),
+            unit_info: "The central star of the system. Don't come to close".into(),
+            unit_cost: HashMap::new(),
         },
     ));
 }

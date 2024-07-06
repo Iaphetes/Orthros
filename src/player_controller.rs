@@ -1,6 +1,6 @@
 use crate::movable::{Movable, MoveCommand};
-use crate::ownable::SelectionCircle;
-use crate::ownable::{Selectable, Selected};
+use crate::ownable::{Selectable, Selected, SelectionCircle};
+use crate::spawner::UnitType;
 use crate::ui::RayBlock;
 
 use bevy::asset::LoadState;
@@ -11,10 +11,32 @@ use bevy::input::mouse::MouseWheel;
 use bevy::math::Quat;
 use bevy::render::render_resource::{TextureViewDescriptor, TextureViewDimension};
 use bevy::render::view::RenderLayers;
+use bevy::utils::HashMap;
 use bevy::window::PrimaryWindow;
 use bevy::{core_pipeline::bloom::BloomSettings, prelude::*};
 use bevy_rapier3d::prelude::*;
 
+pub enum TechLevel {
+    L0,
+}
+#[derive(Eq, Hash, PartialEq, Clone, Copy)]
+pub enum Civilisation {
+    Greek,
+    // ROMAN,
+    // JAPANESE,
+}
+#[derive(Component, Clone)]
+pub enum ContextMenuAction {
+    Build(UnitType),
+}
+#[derive(Component)]
+pub struct PlayerInfo {
+    pub civilisation: Civilisation,
+    pub tech_level: TechLevel,
+    pub context_menu_actions: HashMap<UnitType, Vec<ContextMenuAction>>,
+}
+#[derive(Component)]
+pub struct LocalPlayer;
 #[repr(usize)]
 pub enum RenderLayerMap {
     General = 0,

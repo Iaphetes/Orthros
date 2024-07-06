@@ -1,5 +1,6 @@
 use bevy::{prelude::*, utils::HashMap};
-#[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
+use serde::{Deserialize, Serialize};
+#[derive(PartialEq, Eq, Clone, Copy, Hash, Debug, Serialize, Deserialize)]
 pub enum ResourceType {
     Plotanium,
 }

@@ -1,11 +1,9 @@
 use crate::{
     civilisation::CivilisationBoniMap,
     ownable::Selected,
-    player_controller::RayHit,
+    player_controller::{LocalPlayer, PlayerInfo, RayHit},
     resources::{ResourceLevel, ResourceStockpiles, ResourceType},
     spawner::{EntityWrapper, UnitInformation, UnitStat, UnitType},
-    ui::UIResourceUpdateEvent,
-    LocalPlayer, PlayerInfo,
 };
 
 use bevy::{prelude::*, time::Stopwatch};
@@ -29,13 +27,10 @@ struct Collector {
 }
 
 pub struct ResourceCollection;
-#[derive(Event)]
-pub struct DeselectEvent;
 impl Plugin for ResourceCollection {
     fn build(&self, app: &mut App) {
         app.add_event::<RayHit>()
-            .add_systems(Update, (process_collection_command, collect))
-            .add_event::<UIResourceUpdateEvent>();
+            .add_systems(Update, (process_collection_command, collect));
     }
 }
 

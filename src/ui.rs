@@ -1,12 +1,12 @@
 use std::process;
 
 use crate::ownable::{Selectable, Selected};
+use crate::player_controller::{ContextMenuAction, LocalPlayer, PlayerInfo};
 use crate::player_controller::{DeselectEvent, RayHit, RenderLayerMap};
-use crate::resources::{ResourceLevel, ResourceStockpiles, ResourceType};
+use crate::resources::{ResourceStockpiles, ResourceType};
 use crate::spawner::{
     InstanceSpawnRequest, UnitInformation, UnitSpecification, UnitSpecifications,
 };
-use crate::{ContextMenuAction, LocalPlayer, PlayerInfo};
 use bevy::core_pipeline::Skybox;
 use bevy::diagnostic::DiagnosticsStore;
 use bevy::render::camera::ClearColorConfig;
@@ -41,7 +41,6 @@ enum UIContent {
     Decoration(UIType),
 }
 #[derive(Event)]
-pub struct UIResourceUpdateEvent(pub ResourceLevel);
 pub struct GameUI;
 impl Plugin for GameUI {
     fn build(&self, app: &mut App) {
@@ -618,47 +617,55 @@ fn catch_interaction(
 }
 fn button_system(
     mut interaction_query: Query<
-        (&Parent, &Interaction, &ContextMenuAction),
+        (
+            &Interaction,
+            &ContextMenuAction,
+            &mut BackgroundColor,
+            &mut BorderColor,
+        ),
         (Changed<Interaction>, With<Button>),
     >,
-    mut button_background: Query<&mut BackgroundColor>,
     player_info: Query<&PlayerInfo, With<LocalPlayer>>,
     selected_entities: Query<&Transform, With<Selected>>,
     mut spawn_events: EventWriter<InstanceSpawnRequest>,
 ) {
     if let Ok(player_info) = player_info.get_single() {
         for transform in selected_entities.iter() {
-            for (entity, interaction, action) in &mut interaction_query {
-                if let Ok(mut background_color) = button_background.get_mut(entity.get()) {
-                    match *interaction {
-                        Interaction::Pressed => {
-                            match action {
-                                ContextMenuAction::Build(unit_type) => {
-                                    spawn_events.send(InstanceSpawnRequest {
-                                        location: Vec3 {
-                                            x: transform.translation.x + 2.0,
-                                            y: 2.0,
-                                            z: transform.translation.z + 1.0,
-                                        },
-                                        unit_type: unit_type.clone(),
-                                        civilisation: player_info.civilisation,
-                                    });
-                                }
-                            };
-                            *background_color = PRESSED_BUTTON.into();
-                        }
-                        Interaction::Hovered => {
-                            *background_color = HOVERED_BUTTON.into();
-                        }
-                        Interaction::None => {
-                            *background_color = NORMAL_BUTTON.into();
-                        }
+            for (interaction, action, mut background_color, mut border_color) in
+                &mut interaction_query
+            {
+                match *interaction {
+                    Interaction::Pressed => {
+                        match action {
+                            ContextMenuAction::Build(unit_type) => {
+                                spawn_events.send(InstanceSpawnRequest {
+                                    location: Vec3 {
+                                        x: transform.translation.x + 2.0,
+                                        y: 2.0,
+                                        z: transform.translation.z + 1.0,
+                                    },
+                                    unit_type: unit_type.clone(),
+                                    civilisation: player_info.civilisation,
+                                });
+                            }
+                        };
+                        *background_color = PRESSED_BUTTON.into();
+                        border_color.0 = Color::BLACK;
+                    }
+                    Interaction::Hovered => {
+                        border_color.0 = Color::BLACK;
+                        *background_color = HOVERED_BUTTON.into();
+                    }
+                    Interaction::None => {
+                        border_color.0 = Color::BLACK;
+                        *background_color = NORMAL_BUTTON.into();
                     }
                 }
             }
         }
     }
 }
+
 fn update_context_menu(
     commands: &mut Commands,
     asset_server: &Res<AssetServer>,
@@ -677,11 +684,12 @@ fn update_context_menu(
                     commands
                         .spawn(NodeBundle {
                             style: Style {
-                                width: Val::Px(60.0),
-                                height: Val::Px(60.0),
+                                width: Val::Px(70.0),
+                                height: Val::Px(70.0),
+                                flex_direction: FlexDirection::ColumnReverse,
                                 ..default()
                             },
-                            background_color: ICON_BACKGROUND.into(),
+                            // background_color: ICON_BACKGROUND.into(),
                             ..default()
                         })
                         .with_children(|parent| {
@@ -692,13 +700,15 @@ fn update_context_menu(
                                         height: Val::Px(65.0),
                                         justify_content: JustifyContent::Center,
                                         align_items: AlignItems::Center,
+                                        border: UiRect::percent(5.0, 5.0, 5.0, 5.0),
                                         ..default()
                                     },
                                     image: UiImage {
                                         texture: asset_server.load(&unit_information.icon_path),
                                         ..default()
                                     },
-                                    background_color: Color::BLACK.into(),
+                                    background_color: NORMAL_BUTTON.into(),
+                                    border_color: Color::BLACK.into(),
                                     ..default()
                                 },
                                 action.clone(),
@@ -779,30 +789,22 @@ fn populate_lower_ui(
 // remove all children
 fn clear_ui(
     mut commands: Commands,
-    ui_elements: Query<(&UIContent, &Children)>,
-    ui_children: Query<Entity, With<Style>>,
+    ui_elements: Query<(Entity, &UIContent)>,
     deselect_event: EventReader<DeselectEvent>,
 ) {
     if !deselect_event.is_empty() {
-        let (_, children): (_, &Children) = ui_elements
+        let (selection_info_content, _): (Entity, _) = ui_elements
             .into_iter()
-            .find(|(content, _)| **content == UIContent::Content(UIType::SelectionInfo))
+            .find(|(_, content)| **content == UIContent::Content(UIType::SelectionInfo))
             .unwrap();
-        for &child in children.iter() {
-            if let Ok(child) = ui_children.get(child) {
-                commands.entity(child).despawn_recursive();
-            }
-        }
-        let (_, children): (_, &Children) = ui_elements
+        commands
+            .entity(selection_info_content)
+            .despawn_descendants();
+        let (contect_menu_content, _): (Entity, _) = ui_elements
             .into_iter()
-            .find(|(content, _)| **content == UIContent::Content(UIType::ContextMenu))
+            .find(|(_, content)| **content == UIContent::Content(UIType::ContextMenu))
             .unwrap();
-        for &child in children.iter() {
-            println!("{:#?}", child);
-            if let Ok(child) = ui_children.get(child) {
-                commands.entity(child).despawn_recursive();
-            }
-        }
+        commands.entity(contect_menu_content).despawn_descendants();
     }
 }
 fn update_fps(diagnostics: Res<DiagnosticsStore>, mut query: Query<(&mut Text, &UIContent)>) {

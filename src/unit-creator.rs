@@ -10,12 +10,21 @@ mod spawner;
 mod ui;
 mod utils;
 
-use std::{f32::consts::TAU, fs, io::BufWriter};
+use std::{
+    f32::consts::TAU,
+    // fs,
+    // io::BufWriter
+};
 
+use bevy::color::palettes::css::RED;
+use bevy::prelude::*;
 use bevy::{
+    color::palettes::css::{DARK_GRAY, DARK_OLIVEGREEN},
     core_pipeline::{bloom::BloomSettings, tonemapping::Tonemapping},
+    diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin},
     math::Vec3,
-    reflect::DynamicTypePath,
+    // prelude::*,
+    // reflect::DynamicTypePath,
     render::{
         camera::RenderTarget,
         render_resource::{
@@ -24,54 +33,40 @@ use bevy::{
         view::RenderLayers,
     },
 };
-use bevy_rapier3d::parry::shape::ShapeType;
-use resources::ResourceType;
-use spawner::{UnitSpecification, UnitStats};
-use utils::ShapeTypeSerializable;
+use bevy_file_dialog::prelude::*;
+// use bevy_rapier3d::parry::shape::ShapeType;
+// use resources::ResourceType;
+// use spawner::{UnitSpecification, UnitStats};
+// use utils::ShapeTypeSerializable;
 
-// fn main() {
-//     let test_instance = UnitSpecification {
-//         file_path: "./assets/3d_models/buildings/greek/spacestation.glb".into(),
-//         scene: "Scene0".to_owned(),
-//         icon_path: "./3d_models/buildings/greek/spacestation_thumbnail.png".into(),
-//         unit_name: "Akinetos Space Station".into(),
-//         movable: false,
-//         shape: ShapeTypeSerializable(ShapeType::Ball),
-//         dimensions: Vec3 {
-//             x: 50.0,
-//             y: 50.0,
-//             z: 30.0,
-//         },
-//         prescaling: 0.02,
-//         base_stats: UnitStats(Vec::new()),
-//         unit_info: "The greek Akinetos Space Station. This is the hub of all activity in a system."
-//             .into(),
-//         unit_cost: vec![(ResourceType::Plotanium, 100.0)].into_iter().collect(),
-//     };
-//     let serialized: String =
-//         ron::ser::to_string_pretty(&test_instance, ron::ser::PrettyConfig::default()).unwrap();
-//     let file = fs::File::create("greek_spacestation.ron").expect("Could not create a file");
+const NORMAL_BUTTON: Color = Color::srgb(0.15, 0.15, 0.15);
+const HOVERED_BUTTON: Color = Color::srgb(0.25, 0.25, 0.25);
+const PRESSED_BUTTON: Color = Color::srgb(0.35, 0.75, 0.35);
 
-//     // ron::ser::to_writer_pretty(
-//     //     BufWriter::new(file),
-//     //     &test_instance,
-//     //     ron::ser::PrettyConfig::default(),
-//     // );
-//     println!("{}", serialized.clone(),);
-// }
-
-use bevy::{
-    color::palettes::css::{DARK_GRAY, DARK_OLIVEGREEN},
-    diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin},
-    prelude::*,
-};
+struct TextFileContents;
 #[derive(Component)]
-struct RenderedUnit;
+struct RenderedUnit(String);
+struct PrintFilePath;
 fn main() {
     App::new()
-        .add_plugins((DefaultPlugins, FrameTimeDiagnosticsPlugin))
+        .add_plugins((
+            DefaultPlugins,
+            FrameTimeDiagnosticsPlugin,
+            FileDialogPlugin::new()
+                // allow saving of files marked with TextFileContents
+                // allow loading of files marked with TextFileContents
+                .with_pick_file::<PrintFilePath>(),
+        ))
         .add_systems(Startup, setup)
-        .add_systems(Update, (text_update_system, rotate_rendered))
+        .add_systems(
+            Update,
+            (
+                button_system,
+                file_picked,
+                text_update_system,
+                rotate_rendered,
+            ),
+        )
         .run();
 }
 
@@ -186,6 +181,48 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, images: ResMut<
         ]),
         FpsText,
     ));
+    commands
+        .spawn(NodeBundle {
+            style: Style {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                align_items: AlignItems::Start,
+                justify_content: JustifyContent::Center,
+                ..default()
+            },
+            ..default()
+        })
+        .with_children(|parent| {
+            parent
+                .spawn(ButtonBundle {
+                    style: Style {
+                        width: Val::Px(75.0),
+                        height: Val::Px(25.0),
+                        border: UiRect::all(Val::Px(1.0)),
+                        // horizontally center child text
+                        justify_content: JustifyContent::Center,
+                        // vertically center child text
+                        align_items: AlignItems::Center,
+                        ..default()
+                    },
+                    border_color: BorderColor(Color::BLACK),
+                    border_radius: BorderRadius::MAX,
+                    background_color: NORMAL_BUTTON.into(),
+                    ..default()
+                })
+                .with_children(|parent| {
+                    parent.spawn(TextBundle::from_section(
+                        "Load File",
+                        TextStyle {
+                            font: asset_server
+                                .load("fonts/android-insomnia-font/AndroidInsomniaRegular.ttf"),
+                            font_size: 10.0,
+                            color: Color::srgb(0.9, 0.9, 0.9),
+                        },
+                    ));
+                });
+        });
+
     commands.spawn((
         SceneBundle {
             scene: asset_server.load(
@@ -194,9 +231,40 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, images: ResMut<
             ),
             ..default()
         },
-        RenderedUnit,
+        RenderedUnit("3d_models/units/greek/cruiser/greek_cruiser.gltf".to_owned()),
         RenderLayers::layer(1),
     ));
+}
+fn button_system(
+    mut commands: Commands,
+    mut interaction_query: Query<
+        (
+            &Interaction,
+            &mut BackgroundColor,
+            &mut BorderColor,
+            &Children,
+        ),
+        (Changed<Interaction>, With<Button>),
+    >,
+) {
+    for (interaction, mut color, mut border_color, children) in &mut interaction_query {
+        match *interaction {
+            Interaction::Pressed => {
+                // commands.dialog().load_file::<TextFileContents>();
+                commands.dialog().pick_file_path::<PrintFilePath>();
+                *color = PRESSED_BUTTON.into();
+                border_color.0 = RED.into();
+            }
+            Interaction::Hovered => {
+                *color = HOVERED_BUTTON.into();
+                border_color.0 = Color::WHITE;
+            }
+            Interaction::None => {
+                *color = NORMAL_BUTTON.into();
+                border_color.0 = Color::BLACK;
+            }
+        }
+    }
 }
 
 fn text_update_system(
@@ -221,3 +289,43 @@ fn rotate_rendered(mut cameras: Query<&mut Transform, With<RenderedUnit>>, timer
         transform.rotate_y(0.3 * TAU * timer.delta_seconds());
     }
 }
+
+fn pick(mut commands: Commands) {
+    commands.dialog().pick_file_path::<PrintFilePath>();
+}
+
+fn file_picked(mut ev_picked: EventReader<DialogFilePicked<PrintFilePath>>) {
+    for ev in ev_picked.read() {
+        eprintln!("File picked, path {:?}", ev.path);
+    }
+}
+// fn main() {
+//     let test_instance = UnitSpecification {
+//         file_path: "./assets/3d_models/buildings/greek/spacestation.glb".into(),
+//         scene: "Scene0".to_owned(),
+//         icon_path: "./3d_models/buildings/greek/spacestation_thumbnail.png".into(),
+//         unit_name: "Akinetos Space Station".into(),
+//         movable: false,
+//         shape: ShapeTypeSerializable(ShapeType::Ball),
+//         dimensions: Vec3 {
+//             x: 50.0,
+//             y: 50.0,
+//             z: 30.0,
+//         },
+//         prescaling: 0.02,
+//         base_stats: UnitStats(Vec::new()),
+//         unit_info: "The greek Akinetos Space Station. This is the hub of all activity in a system."
+//             .into(),
+//         unit_cost: vec![(ResourceType::Plotanium, 100.0)].into_iter().collect(),
+//     };
+//     let serialized: String =
+//         ron::ser::to_string_pretty(&test_instance, ron::ser::PrettyConfig::default()).unwrap();
+//     let file = fs::File::create("greek_spacestation.ron").expect("Could not create a file");
+
+//     // ron::ser::to_writer_pretty(
+//     //     BufWriter::new(file),
+//     //     &test_instance,
+//     //     ron::ser::PrettyConfig::default(),
+//     // );
+//     println!("{}", serialized.clone(),);
+// }

@@ -13,6 +13,9 @@ strum = "*"
 strum_macros = "*"
 ron = "0.8"
 serde = { version = "1", features = ["derive"] }
+bevy_file_dialog = {git = "https://github.com/globin/bevy_file_dialog.git", branch = "bevy-0-14"}
+# bevy_egui = {version = "0.28", optional=true}
+
 # Enable a small amount of optimization in debug mode
 [profile.dev]
 opt-level = 1
@@ -24,9 +27,13 @@ opt-level = 3
 linker = "clang"
 rustflags = ["-C", "link-arg=-fuse-ld=/usr/bin/mold"]
 
+
+# [features]
+# unit-creator = ["bevy_egui"]
 [[bin]]
 name = "Orthros"
 path = "src/main.rs"
 [[bin]]
 name = "unit-creator"
 path = "src/unit-creator.rs"
+# required-features = ["unit-creator"]

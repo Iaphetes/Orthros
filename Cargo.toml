@@ -7,13 +7,32 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = { version = "0.14", features = ["dynamic_linking"]}
+# bevy = { version = "0.14", features = ["dynamic_linking"]}
+bevy = { version = "0.14", default_features = false, features = [
+    # Core
+    "bevy_core_pipeline",
+    "multi_threaded",
+    "bevy_winit",
+    "bevy_audio",
+    "bevy_sprite",
+    "bevy_text",
+
+    # Core formats
+    "vorbis",
+    "png",
+
+    # ... Enable what you need here
+    "wayland",
+    "bevy_gltf",
+    "tonemapping_luts",
+] }
 bevy_rapier3d = { version = "0.27.0-RC.1", features = [  "debug-render-3d" ] }
 strum = "*"
 strum_macros = "*"
 ron = "0.8"
 serde = { version = "1", features = ["derive"] }
 bevy_file_dialog = {git = "https://github.com/globin/bevy_file_dialog.git", branch = "bevy-0-14"}
+bevy_lunex = { version = "0.2", features = ["debug"] }
 # bevy_egui = {version = "0.28", optional=true}
 
 # Enable a small amount of optimization in debug mode

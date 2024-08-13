@@ -18,6 +18,7 @@ use std::{
 
 use bevy::color::palettes::css::RED;
 use bevy::prelude::*;
+use bevy::sprite::Anchor;
 use bevy::{
     color::palettes::css::{DARK_GRAY, DARK_OLIVEGREEN},
     core_pipeline::{bloom::BloomSettings, tonemapping::Tonemapping},
@@ -34,6 +35,7 @@ use bevy::{
     },
 };
 use bevy_file_dialog::prelude::*;
+use bevy_lunex::prelude::*;
 // use bevy_rapier3d::parry::shape::ShapeType;
 // use resources::ResourceType;
 // use spawner::{UnitSpecification, UnitStats};
@@ -56,12 +58,13 @@ fn main() {
                 // allow saving of files marked with TextFileContents
                 // allow loading of files marked with TextFileContents
                 .with_pick_file::<PrintFilePath>(),
+            UiPlugin,
         ))
         .add_systems(Startup, setup)
         .add_systems(
             Update,
             (
-                button_system,
+                // button_system,
                 file_picked,
                 text_update_system,
                 rotate_rendered,
@@ -73,12 +76,78 @@ fn main() {
 // A unit struct to help identify the FPS UI component, since there may be many Text components
 #[derive(Component)]
 struct FpsText;
-fn initialise_mini_map(commands: &mut Commands, mut images: ResMut<Assets<Image>>) -> Entity {
+// fn initialise_mini_map(commands: &mut Commands, mut images: ResMut<Assets<Image>>) -> Entity {
+//     let size = Extent3d {
+//         width: 1024,
+//         height: 1024,
+//         ..default()
+//     };
+//     let mut image = Image {
+//         texture_descriptor: TextureDescriptor {
+//             label: None,
+//             size,
+//             dimension: TextureDimension::D2,
+//             format: TextureFormat::Bgra8UnormSrgb,
+//             mip_level_count: 1,
+//             sample_count: 1,
+//             usage: TextureUsages::TEXTURE_BINDING
+//                 | TextureUsages::COPY_DST
+//                 | TextureUsages::RENDER_ATTACHMENT,
+//             view_formats: &[],
+//         },
+//         ..default()
+//     };
+//     image.resize(size);
+//     let image_handle = images.add(image);
+
+// commands.spawn((
+//     Camera3dBundle {
+//         camera_3d: Camera3d { ..default() },
+//         camera: Camera {
+//             clear_color: ClearColorConfig::Custom(DARK_GRAY.into()),
+//             // render before the "main pass" camera
+//             order: -1,
+//             target: RenderTarget::Image(image_handle.clone()),
+//             hdr: true,
+//             ..default()
+//         },
+//         tonemapping: Tonemapping::BlenderFilmic,
+//         transform: Transform::from_translation(Vec3::new(10.0, 2.0, 0.0))
+//             .looking_at(Vec3::ZERO, Vec3::Y),
+//         ..default()
+//     },
+//     BloomSettings::default(),
+//     // RenderLayers::from_layers(&[1]),
+// ));
+// }
+fn setup(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    images: ResMut<Assets<Image>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+) {
+    // UI camera
+    commands.spawn((
+        MainUi,
+        Camera2dBundle {
+            transform: Transform::from_xyz(0.0, 0.0, 1000.0),
+            ..default()
+        },
+    ));
+
+    commands.spawn(DirectionalLightBundle {
+        transform: Transform::from_xyz(1.0, 1.0, 0.0).looking_at(Vec3::ZERO, Vec3::Y),
+        ..default()
+    });
+
+    // Create a texture resource that our 3D camera will render to
     let size = Extent3d {
-        width: 1024,
-        height: 1024,
+        width: 512,
+        height: 512,
         ..default()
     };
+
+    // Create the texture
     let mut image = Image {
         texture_descriptor: TextureDescriptor {
             label: None,
@@ -94,8 +163,12 @@ fn initialise_mini_map(commands: &mut Commands, mut images: ResMut<Assets<Image>
         },
         ..default()
     };
+
+    // Initiate the image
     image.resize(size);
-    let image_handle = images.add(image);
+
+    // Add our texture to asset server and get a handle
+    let render_image = asset_server.add(image);
 
     commands.spawn((
         Camera3dBundle {
@@ -104,7 +177,7 @@ fn initialise_mini_map(commands: &mut Commands, mut images: ResMut<Assets<Image>
                 clear_color: ClearColorConfig::Custom(DARK_GRAY.into()),
                 // render before the "main pass" camera
                 order: -1,
-                target: RenderTarget::Image(image_handle.clone()),
+                target: RenderTarget::Image(render_image.clone()),
                 hdr: true,
                 ..default()
             },
@@ -117,112 +190,46 @@ fn initialise_mini_map(commands: &mut Commands, mut images: ResMut<Assets<Image>
         // RenderLayers::from_layers(&[1]),
     ));
     commands
-        .spawn(NodeBundle {
-            style: Style {
-                width: Val::Vw(30.0),
-                aspect_ratio: Some(1.0),
-                // height: Val::Px(512.0),
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                align_self: AlignSelf::Center,
-                ..default()
-            },
-            background_color: BackgroundColor(DARK_OLIVEGREEN.into()),
-            border_radius: BorderRadius::all(Val::Px(0.5)),
-            ..default()
-        })
-        .with_children(|parent| {
-            parent.spawn(ImageBundle {
-                image: UiImage::from(image_handle),
-                style: Style {
-                    width: Val::Percent(98.0),
-                    height: Val::Percent(98.0),
-                    align_self: AlignSelf::Center,
-                    ..Default::default()
-                },
-                ..default()
-            });
-        })
-        .id()
-}
-fn setup(mut commands: Commands, asset_server: Res<AssetServer>, images: ResMut<Assets<Image>>) {
-    // UI camera
-    commands.spawn(Camera2dBundle::default());
+        .spawn((
+            // This makes the UI entity able to receive camera data
+            MovableByCamera,
+            // This is our UI system
+            UiTreeBundle::<MainUi>::from(UiTree::new2d("Main Menu")),
+        ))
+        .with_children(|ui| {
+            // Spawn boundary node
 
-    commands.spawn(DirectionalLightBundle {
-        transform: Transform::from_xyz(1.0, 1.0, 0.0).looking_at(Vec3::ZERO, Vec3::Y),
-        ..default()
-    });
-
-    initialise_mini_map(&mut commands, images);
-    // Text with multiple sections
-    commands.spawn((
-        // Create a TextBundle that has a Text with a list of sections.
-        TextBundle::from_sections([
-            TextSection::new(
-                "FPS: ",
-                TextStyle {
-                    // This font is loaded and will be used instead of the default font.
-                    font: asset_server
-                        .load("fonts/android-insomnia-font/AndroidInsomniaRegular.ttf"),
-                    font_size: 20.0,
-                    ..default()
-                },
-            ),
-            TextSection::from_style(
-                // "default_font" feature is unavailable, load a font to use instead.
-                TextStyle {
-                    font: asset_server
-                        .load("fonts/android-insomnia-font/AndroidInsomniaRegular.ttf"),
-                    font_size: 20.0,
-                    ..default()
-                },
-            ),
-        ]),
-        FpsText,
-    ));
-    commands
-        .spawn(NodeBundle {
-            style: Style {
-                width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
-                align_items: AlignItems::Start,
-                justify_content: JustifyContent::Center,
-                ..default()
-            },
-            ..default()
-        })
-        .with_children(|parent| {
-            parent
-                .spawn(ButtonBundle {
-                    style: Style {
-                        width: Val::Px(75.0),
-                        height: Val::Px(25.0),
-                        border: UiRect::all(Val::Px(1.0)),
-                        // horizontally center child text
-                        justify_content: JustifyContent::Center,
-                        // vertically center child text
-                        align_items: AlignItems::Center,
-                        ..default()
-                    },
-                    border_color: BorderColor(Color::BLACK),
-                    border_radius: BorderRadius::MAX,
-                    background_color: NORMAL_BUTTON.into(),
-                    ..default()
-                })
-                .with_children(|parent| {
-                    parent.spawn(TextBundle::from_section(
-                        "Load File",
-                        TextStyle {
-                            font: asset_server
-                                .load("fonts/android-insomnia-font/AndroidInsomniaRegular.ttf"),
-                            font_size: 10.0,
-                            color: Color::srgb(0.9, 0.9, 0.9),
-                        },
-                    ));
-                });
+            let root = UiLink::<MainUi>::path("Root");
+            ui.spawn((
+                root.clone(),
+                // Link the entity
+                // Specify UI layout
+                UiLayout::window_full()
+                    .pos(Ab(5.0))
+                    .size(Rl(100.0) - Ab(10.0))
+                    .pack::<Base>(),
+            ));
+            ui.spawn((
+                root.add("UnitViewer"),
+                UiLayout::solid()
+                    .size(Rw(20.0))
+                    // .size((512.0, 512.0))
+                    // .anchor(Anchor::CenterLeft)
+                    .align_x(Align::LEFT)
+                    // .scaling(Scaling::Fill)
+                    .pack::<Base>(),
+                UiImage2dBundle::from(render_image),
+                PickingPortal, // You can add this component to send picking events through the viewport.
+            ));
+            ui.spawn((
+                // Link the entity
+                root.add("Inputs"),
+                // Specify UI layout
+                UiLayout::solid().size(Rw(10.0)).pack::<Base>(),
+                // Add image to the entity
+                UiImage2dBundle::from(asset_server.load("textures/ui/greek/button_01.png")),
+            ));
         });
-
     commands.spawn((
         SceneBundle {
             scene: asset_server.load(
@@ -235,37 +242,37 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, images: ResMut<
         RenderLayers::layer(1),
     ));
 }
-fn button_system(
-    mut commands: Commands,
-    mut interaction_query: Query<
-        (
-            &Interaction,
-            &mut BackgroundColor,
-            &mut BorderColor,
-            &Children,
-        ),
-        (Changed<Interaction>, With<Button>),
-    >,
-) {
-    for (interaction, mut color, mut border_color, children) in &mut interaction_query {
-        match *interaction {
-            Interaction::Pressed => {
-                // commands.dialog().load_file::<TextFileContents>();
-                commands.dialog().pick_file_path::<PrintFilePath>();
-                *color = PRESSED_BUTTON.into();
-                border_color.0 = RED.into();
-            }
-            Interaction::Hovered => {
-                *color = HOVERED_BUTTON.into();
-                border_color.0 = Color::WHITE;
-            }
-            Interaction::None => {
-                *color = NORMAL_BUTTON.into();
-                border_color.0 = Color::BLACK;
-            }
-        }
-    }
-}
+// fn button_system(
+//     mut commands: Commands,
+//     mut interaction_query: Query<
+//         (
+//             &Interaction,
+//             &mut BackgroundColor,
+//             &mut BorderColor,
+//             &Children,
+//         ),
+//         (Changed<Interaction>, With<Button>),
+//     >,
+// ) {
+//     for (interaction, mut color, mut border_color, children) in &mut interaction_query {
+//         match *interaction {
+//             Interaction::Pressed => {
+//                 // commands.dialog().load_file::<TextFileContents>();
+//                 commands.dialog().pick_file_path::<PrintFilePath>();
+//                 *color = PRESSED_BUTTON.into();
+//                 border_color.0 = RED.into();
+//             }
+//             Interaction::Hovered => {
+//                 *color = HOVERED_BUTTON.into();
+//                 border_color.0 = Color::WHITE;
+//             }
+//             Interaction::None => {
+//                 *color = NORMAL_BUTTON.into();
+//                 border_color.0 = Color::BLACK;
+//             }
+//         }
+//     }
+// }
 
 fn text_update_system(
     diagnostics: Res<DiagnosticsStore>,

@@ -204,28 +204,73 @@ fn setup(
                 root.clone(),
                 // Link the entity
                 // Specify UI layout
-                UiLayout::window_full()
-                    .pos(Ab(5.0))
-                    .size(Rl(100.0) - Ab(10.0))
-                    .pack::<Base>(),
+                UiLayout::window_full().pack::<Base>(),
             ));
             ui.spawn((
                 root.add("UnitViewer"),
-                UiLayout::solid()
-                    .size(Rw(20.0))
-                    // .size((512.0, 512.0))
-                    // .anchor(Anchor::CenterLeft)
-                    .align_x(Align::LEFT)
+                UiLayout::window()
+                    .size(Rw(40.0))
+                    // .size((256.0, 256.0))
+                    .anchor(Anchor::CenterLeft)
+                    .pos((Rh(0.0), Rh(50.0)))
+                    // .align_x(Align::LEFT)
                     // .scaling(Scaling::Fill)
                     .pack::<Base>(),
                 UiImage2dBundle::from(render_image),
                 PickingPortal, // You can add this component to send picking events through the viewport.
             ));
+            let inputs = root.add("Inputs");
             ui.spawn((
                 // Link the entity
-                root.add("Inputs"),
+                // root.add("Inputs"),
+                inputs.clone(),
                 // Specify UI layout
-                UiLayout::solid().size(Rw(10.0)).pack::<Base>(),
+                UiLayout::window()
+                    .size((Rw(50.0), Rh(80.0)))
+                    .anchor(Anchor::CenterLeft)
+                    .pos((Rl(45.0), Rl(50.0)))
+                    .pack::<Base>(),
+                // Add image to the entity
+                // UiImage2dBundle::from(asset_server.load("textures/ui/greek/button_01.png")),
+            ));
+            let gltf = inputs.add("GLTF");
+
+            ui.spawn((
+                // Link the entity
+                // root.add("Inputs"),
+                gltf.clone(),
+                // Specify UI layout
+                UiLayout::window()
+                    .size((Rw(80.0), Rh(5.0)))
+                    .anchor(Anchor::CenterLeft)
+                    .pos((Rl(10.0), Rl(10.0)))
+                    .pack::<Base>(),
+                // Add image to the entity
+                // UiImage2dBundle::from(asset_server.load("textures/ui/greek/button_01.png")),
+            ));
+            ui.spawn((
+                // Link the entity
+                // root.add("Inputs"),
+                gltf.add("text"),
+                // Specify UI layout
+                UiLayout::window()
+                    .size((Rw(80.0), Rh(100.0)))
+                    .anchor(Anchor::CenterLeft)
+                    .pos((Rl(10.0), Rl(50.0)))
+                    .pack::<Base>(),
+                // Add image to the entity
+                // UiImage2dBundle::from(asset_server.load("textures/ui/greek/button_01.png")),
+            ));
+            ui.spawn((
+                // Link the entity
+                // root.add("Inputs"),
+                gltf.add("button"),
+                // Specify UI layout
+                UiLayout::window()
+                    .size((Rw(10.0), Rh(70.0)))
+                    .anchor(Anchor::CenterLeft)
+                    .pos((Rl(90.0), Rl(50.0)))
+                    .pack::<Base>(),
                 // Add image to the entity
                 UiImage2dBundle::from(asset_server.load("textures/ui/greek/button_01.png")),
             ));

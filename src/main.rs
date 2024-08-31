@@ -1,4 +1,4 @@
-#![feature(let_chains)]
+// #![feature(let_chains)]
 mod a_star;
 mod civilisation;
 mod environment;
@@ -15,7 +15,7 @@ use crate::environment::Environment;
 use crate::movable::UnitMovement;
 use crate::player_controller::PlayerController;
 use crate::spawner::InstanceSpawner;
-use crate::ui::GameUI;
+// use crate::ui::GameUI;
 use bevy::{
     prelude::*,
     utils::HashMap,

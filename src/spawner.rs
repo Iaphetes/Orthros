@@ -5,7 +5,11 @@ use crate::{
     resources::ResourceType,
     utils::ShapeTypeSerializable,
 };
-use bevy::{prelude::*, render::view::RenderLayers, utils::HashMap};
+use bevy::{
+    prelude::*,
+    render::view::RenderLayers,
+    utils::{hashbrown::HashMap},
+};
 use bevy_rapier3d::{prelude::*, rapier::prelude::ShapeType};
 use serde::{Deserialize, Serialize};
 use std::ops::{Deref, DerefMut};
@@ -107,65 +111,71 @@ fn populate_units(mut commands: Commands) {
     let mut unit_specifications: UnitSpecifications = UnitSpecifications {
         unit_specifications: HashMap::new(),
     };
-    todo!("Read from file");
-    // unit_specifications.unit_specifications.insert(
-    //     (Civilisation::Greek, UnitType::Cruiser),
-    //     UnitSpecification {
-    //         file_path: "./assets/3d_models/units/greek/cruiser/greek_cruiser.gltf".into(),
-    //         scene: "Scene0".to_owned(),
-    //         icon_path: "./3d_models/units/greek/cruiser/greek_cruiser_thumbnail.png".into(),
-    //         unit_name: "Andreia Class Cruiser".into(),
-    //         movable: true,
-    //         shape: ShapeTypeSerializable(ShapeType::Capsule),
-    //         dimensions: Vec3 {
-    //             x: 1.0,
-    //             y: 1.0,
-    //             z: 2.0,
-    //         },
-    //         prescaling: 0.1,
-    //         base_stats: UnitStats(Vec::new()),
-    //     },
-    // );
-    // unit_specifications.unit_specifications.insert(
-    //     (Civilisation::Greek, UnitType::MiningStation),
-    //     UnitSpecification {
-    //         file_path: "./assets/3d_models/units/greek/mining_rig/mining_rig.gltf".into(),
-    //         scene: "Scene0".to_owned(),
-    //         icon_path: "./3d_models/units/greek/mining_rig/mining_rig_thumbnail.png".into(),
-    //         unit_name: "Hephaestus Mining Station".into(),
-    //         movable: true,
-    //         shape: ShapeTypeSerializable(ShapeType::Capsule),
-    //         dimensions: Vec3 {
-    //             x: 1.0,
-    //             y: 1.0,
-    //             z: 2.0,
-    //         },
-    //         prescaling: 0.05,
-    //         base_stats: UnitStats(vec![
-    //             UnitStat::MaxMiningDist(1.5),
-    //             UnitStat::BaseMiningRate(24.0),
-    //             UnitStat::BonusMiningRate((ResourceType::Plotanium, 5.0)),
-    //         ]),
-    //     },
-    // );
-    // unit_specifications.unit_specifications.insert(
-    //     (Civilisation::Greek, UnitType::Spacestation),
-    //     UnitSpecification {
-    //         file_path: "./assets/3d_models/buildings/greek/spacestation.glb".into(),
-    //         scene: "Scene0".to_owned(),
-    //         icon_path: "./3d_models/buildings/greek/spacestation_thumbnail.png".into(),
-    //         unit_name: "Akinetos Space Station".into(),
-    //         movable: false,
-    //         shape: ShapeTypeSerializable(ShapeType::Ball),
-    //         dimensions: Vec3 {
-    //             x: 50.0,
-    //             y: 50.0,
-    //             z: 30.0,
-    //         },
-    //         prescaling: 0.02,
-    //         base_stats: UnitStats(Vec::new()),
-    //     },
-    // );
+    // todo!("Read from file");
+    unit_specifications.unit_specifications.insert(
+        (Civilisation::Greek, UnitType::Cruiser),
+        UnitSpecification {
+            file_path: "./assets/3d_models/units/greek/cruiser/greek_cruiser.gltf".into(),
+            scene: "Scene0".to_owned(),
+            icon_path: "./3d_models/units/greek/cruiser/greek_cruiser_thumbnail.png".into(),
+            unit_name: "Andreia Class Cruiser".into(),
+            movable: true,
+            shape: ShapeTypeSerializable(ShapeType::Capsule),
+            dimensions: Vec3 {
+                x: 1.0,
+                y: 1.0,
+                z: 2.0,
+            },
+            prescaling: 0.1,
+            base_stats: UnitStats(Vec::new()),
+            unit_info: "The basic cruiser type used by the Greek Empire".into(),
+            unit_cost: HashMap::from_iter(vec![(ResourceType::Plotanium, 22.0)]),
+        },
+    );
+    unit_specifications.unit_specifications.insert(
+        (Civilisation::Greek, UnitType::MiningStation),
+        UnitSpecification {
+            file_path: "./assets/3d_models/units/greek/mining_rig/mining_rig.gltf".into(),
+            scene: "Scene0".to_owned(),
+            icon_path: "./3d_models/units/greek/mining_rig/mining_rig_thumbnail.png".into(),
+            unit_name: "Hephaestus Mining Station".into(),
+            movable: true,
+            shape: ShapeTypeSerializable(ShapeType::Capsule),
+            dimensions: Vec3 {
+                x: 1.0,
+                y: 1.0,
+                z: 2.0,
+            },
+            prescaling: 0.05,
+            base_stats: UnitStats(vec![
+                UnitStat::MaxMiningDist(1.5),
+                UnitStat::BaseMiningRate(24.0),
+                UnitStat::BonusMiningRate((ResourceType::Plotanium, 5.0)),
+            ]),
+            unit_info: "The mining station used by most empires.".into(),
+            unit_cost: HashMap::from_iter(vec![(ResourceType::Plotanium, 22.0)]),
+        },
+    );
+    unit_specifications.unit_specifications.insert(
+        (Civilisation::Greek, UnitType::Spacestation),
+        UnitSpecification {
+            file_path: "./assets/3d_models/buildings/greek/spacestation.glb".into(),
+            scene: "Scene0".to_owned(),
+            icon_path: "./3d_models/buildings/greek/spacestation_thumbnail.png".into(),
+            unit_name: "Akinetos Space Station".into(),
+            movable: false,
+            shape: ShapeTypeSerializable(ShapeType::Ball),
+            dimensions: Vec3 {
+                x: 50.0,
+                y: 50.0,
+                z: 30.0,
+            },
+            prescaling: 0.02,
+            base_stats: UnitStats(Vec::new()),
+            unit_info: "A mighty spacestation, used to construct ships and defend systems".into(),
+            unit_cost: HashMap::from_iter(vec![(ResourceType::Plotanium, 22.0)]),
+        },
+    );
 
     commands.insert_resource(unit_specifications);
 }
